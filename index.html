@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#6d5dfc">
+<title>SchoolFriends — V1 UI</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#fff; --surface2:#f0f1f8; --text:#171827;
+  --muted:#73758a; --line:#e5e6ef; --primary:#6d5dfc; --primary2:#8a7fff;
+  --shadow:0 10px 30px rgba(31,27,70,.08); --danger:#e84b6a; --success:#26a269;
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
+button,input{font:inherit} button{cursor:pointer;border:0}
+.app{min-height:100vh;display:flex}
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--line);padding:22px 14px;position:fixed;inset:0 auto 0 0;z-index:20}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 24px;font-weight:850;font-size:20px}
+.logo{width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,var(--primary),#a66cff);display:grid;place-items:center;color:#fff;box-shadow:0 8px 18px #6d5dfc33}
+.nav{display:grid;gap:5px}.nav button{background:transparent;color:var(--muted);text-align:left;padding:12px 13px;border-radius:13px;font-weight:700;display:flex;gap:11px;align-items:center}.nav button.active,.nav button:hover{background:#eeedff;color:var(--primary)}
+.nav .icon{width:22px;text-align:center}.side-bottom{position:absolute;bottom:18px;left:14px;right:14px}
+.content{margin-left:240px;width:calc(100% - 240px);padding:24px;max-width:1280px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:15px}
+.search{flex:1;max-width:520px;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:12px 16px;outline:none}.search:focus{border-color:var(--primary)}
+.actions{display:flex;gap:8px}.iconbtn{width:43px;height:43px;border-radius:13px;background:var(--surface);border:1px solid var(--line);box-shadow:0 4px 15px #2221}
+.view{display:none}.view.active{display:block}
+.hero{background:linear-gradient(135deg,#6d5dfc,#8f78ff 58%,#b18cff);color:#fff;border-radius:24px;padding:26px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:210px;height:210px;border-radius:50%;background:#fff2;right:-60px;top:-80px}
+.hero h1{margin:0 0 7px;font-size:29px}.hero p{margin:0;color:#eeeaff}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:18px}.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow)}
+.span8{grid-column:span 8}.span4{grid-column:span 4}.span6{grid-column:span 6}.span12{grid-column:span 12}
+.card h2,.card h3{margin:0 0 12px}.muted{color:var(--muted)}.small{font-size:13px}
+.friend-row{display:flex;gap:13px;overflow:auto;padding-bottom:3px}.friend{min-width:74px;text-align:center}.avatar{width:50px;height:50px;border-radius:16px;display:grid;place-items:center;color:#fff;font-weight:800;margin:auto;background:linear-gradient(135deg,#6d5dfc,#a66cff)}.friend .avatar{margin-bottom:7px}
+.list{display:grid;gap:10px}.list-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:15px;background:var(--surface2)}.grow{flex:1}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:#eeedff;color:var(--primary);font-size:12px;font-weight:800}
+.btn{padding:10px 14px;border-radius:12px;font-weight:800;background:var(--surface2);color:var(--text)}.btn.primary{background:var(--primary);color:#fff}.btn.danger{background:#ffe9ee;color:var(--danger)}.btn.ghost{background:transparent;color:var(--primary)}
+.event{border-left:4px solid var(--primary)}.poll-option{padding:11px;border:1px solid var(--line);border-radius:12px;margin-top:8px;background:var(--surface)}
+.progress{height:7px;border-radius:99px;background:var(--surface2);overflow:hidden}.progress i{display:block;height:100%;width:62%;background:var(--primary);border-radius:99px}
+.profile-cover{height:150px;border-radius:22px;background:linear-gradient(135deg,#6d5dfc,#c18cff);position:relative}.profile-main{margin-top:-34px;padding:0 20px 20px}.bigavatar{width:88px;height:88px;border-radius:25px;border:5px solid var(--surface);display:grid;place-items:center;background:#20213a;color:#fff;font-size:28px;font-weight:900}
+.statrow{display:flex;gap:28px;margin-top:14px}.stat b{display:block}.stat span{font-size:12px;color:var(--muted)}
+.ability-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.ability{padding:16px;border:1px solid var(--line);border-radius:17px;background:var(--surface);transition:.2s}.ability:hover{transform:translateY(-2px);box-shadow:var(--shadow)}.ability.active{border-color:var(--primary);background:#f0efff}.ability-icon{font-size:28px}.ability strong{display:block;margin:8px 0 3px}.ability button{margin-top:10px;width:100%}
+.chat-layout{display:grid;grid-template-columns:300px 1fr;gap:16px;height:calc(100vh - 105px)}.chat-list{overflow:auto}.chat-window{display:flex;flex-direction:column;min-height:0}.messages{flex:1;overflow:auto;display:flex;flex-direction:column;gap:9px;padding:8px}.bubble{max-width:70%;padding:10px 13px;border-radius:17px;background:var(--surface2)}.bubble.me{align-self:flex-end;background:var(--primary);color:#fff}.composer{display:flex;gap:8px;padding-top:10px}.composer input{flex:1;border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--surface)}
+.modal-backdrop{display:none;position:fixed;inset:0;background:#11182766;z-index:50;align-items:center;justify-content:center;padding:18px}.modal-backdrop.show{display:flex}.modal{width:min(520px,100%);background:var(--surface);border-radius:24px;padding:22px;box-shadow:0 25px 70px #0003;max-height:90vh;overflow:auto}.modal-head{display:flex;justify-content:space-between;align-items:center}.close{background:var(--surface2);width:38px;height:38px;border-radius:12px}.form{display:grid;gap:12px;margin-top:15px}.form label{font-size:13px;font-weight:800}.form input,.form textarea,.form select{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);outline:none}.form textarea{min-height:90px;resize:vertical}
+.toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%) translateY(20px);background:#20213a;color:#fff;padding:12px 16px;border-radius:13px;opacity:0;pointer-events:none;transition:.25s;z-index:80;font-weight:700}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.mobile-nav{display:none}
+@media(max-width:850px){
+ .sidebar{display:none}.content{margin-left:0;width:100%;padding:16px;padding-bottom:88px}.topbar{margin-bottom:15px}.topbar .search{max-width:none}.grid{grid-template-columns:1fr}.span8,.span4,.span6,.span12{grid-column:span 1}.ability-grid{grid-template-columns:repeat(2,1fr)}.chat-layout{height:calc(100vh - 110px);grid-template-columns:1fr}.chat-list{display:none}.chat-window{display:none}.chat-layout.show-chat .chat-window{display:flex}.mobile-nav{display:flex;position:fixed;z-index:30;bottom:10px;left:10px;right:10px;background:#ffffffee;backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:20px;padding:7px;box-shadow:0 12px 35px #0002;justify-content:space-around}.mobile-nav button{background:transparent;padding:8px 10px;border-radius:12px;color:var(--muted);font-size:11px;font-weight:800}.mobile-nav button.active{color:var(--primary);background:#eeedff}.mobile-nav span{display:block;font-size:19px}.hero h1{font-size:24px}.bubble{max-width:85%}
+}
+@media(min-width:851px){.mobile-back{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="logo">S</div> SchoolFriends</div>
+  <nav class="nav">
+    <button class="active" data-view="home"><span class="icon">🏠</span> Home</button>
+    <button data-view="chats"><span class="icon">💬</span> Chats</button>
+    <button data-view="friends"><span class="icon">👥</span> Friends</button>
+    <button data-view="events"><span class="icon">📅</span> Events</button>
+    <button data-view="groups"><span class="icon">🏫</span> Groups</button>
+    <button data-view="abilities"><span class="icon">✨</span> Abilities</button>
+    <button data-view="profile"><span class="icon">👤</span> Profile</button>
+  </nav>
+  <div class="side-bottom">
+    <button class="btn" style="width:100%" onclick="toggleTheme()">🌙 Toggle theme</button>
+  </div>
+</aside>
+
+<main class="content">
+<header class="topbar">
+  <input class="search" id="globalSearch" placeholder="Search friends, groups, events...">
+  <div class="actions"><button class="iconbtn" onclick="toast('No new notifications 🔔')">🔔</button><button class="iconbtn" onclick="openModal('settingsModal')">⚙️</button></div>
+</header>
+
+<section id="home" class="view active">
+  <div class="hero"><h1>Hey, Azure! 👋</h1><p>Your school space is looking lively today.</p></div>
+  <div class="grid">
+    <div class="card span8"><h2>👥 Your Friends</h2><div class="friend-row">
+      <div class="friend"><div class="avatar">A</div><div class="small">Alex</div></div><div class="friend"><div class="avatar">S</div><div class="small">Sam</div></div><div class="friend"><div class="avatar">J</div><div class="small">Jay</div></div><div class="friend"><div class="avatar">M</div><div class="small">Mia</div></div><div class="friend"><div class="avatar">R</div><div class="small">Riya</div></div>
+    </div></div>
+    <div class="card span4"><h2>🏆 Class Board</h2><div class="list"><div class="list-item"><b>🥇</b><span class="grow">Sam</span><b>820</b></div><div class="list-item"><b>🥈</b><span class="grow">Alex</span><b>760</b></div><div class="list-item"><b>🥉</b><span class="grow">You</span><b>710</b></div></div></div>
+    <div class="card span6"><h2>📢 School Updates</h2><div class="list"><div class="list-item"><span>📣</span><span class="grow"><b>Sports Day</b><br><span class="small muted">Friday · Main Ground</span></span></div><div class="list-item"><span>🎨</span><span class="grow"><b>Art Club</b><br><span class="small muted">New activity posted</span></span></div></div></div>
+    <div class="card span6"><h2>🗳️ Live Poll</h2><p class="muted">What should our next group event be?</p><div class="poll-option" onclick="vote(this)">🎮 Game Night <span class="badge" style="float:right">42%</span></div><div class="poll-option" onclick="vote(this)">🎨 Art Challenge <span class="badge" style="float:right">31%</span></div><div class="poll-option" onclick="vote(this)">🍿 Movie Hangout <span class="badge" style="float:right">27%</span></div></div>
+  </div>
+</section>
+
+<section id="chats" class="view">
+ <div class="chat-layout" id="chatLayout">
+  <div class="card chat-list"><h2>💬 Chats</h2><div class="list">
+   <button class="list-item" style="border:0;text-align:left" onclick="selectChat('Alex')"><div class="avatar">A</div><span class="grow"><b>Alex</b><br><span class="small muted">Yo 😂</span></span><span class="badge">2</span></button>
+   <button class="list-item" style="border:0;text-align:left" onclick="selectChat('School Crew')"><div class="avatar">SC</div><span class="grow"><b>School Crew</b><br><span class="small muted">Sam: event update</span></span></button>
+   <button class="list-item" style="border:0;text-align:left" onclick="selectChat('Mia')"><div class="avatar">M</div><span class="grow"><b>Mia</b><br><span class="small muted">See you tomorrow!</span></span></button>
+  </div></div>
+  <div class="card chat-window"><button class="btn mobile-back" onclick="document.getElementById('chatLayout').classList.remove('show-chat')">← Chats</button><h2 id="chatTitle">Select a chat</h2><div class="messages" id="messages"><div class="muted" style="text-align:center;margin:auto">Choose a conversation to start chatting.</div></div><div class="composer"><input id="messageInput" maxlength="2000" placeholder="Write a message..."><button class="btn primary" onclick="sendMessage()">Send</button></div><div class="small muted">Demo limit: 340 words per message · older messages can be cleaned automatically.</div></div>
+ </div>
+</section>
+
+<section id="friends" class="view"><div class="card"><h2>👥 Friends</h2><div class="list">
+ <div class="list-item"><div class="avatar">A</div><span class="grow"><b>Alex</b><br><span class="small muted">Online · 🎮 Gamer</span></span><button class="btn" onclick="openChat('Alex')">Message</button></div>
+ <div class="list-item"><div class="avatar">S</div><span class="grow"><b>Sam</b><br><span class="small muted">Online · 🏆 Champion</span></span><button class="btn" onclick="openChat('Sam')">Message</button></div>
+ <div class="list-item"><div class="avatar">M</div><span class="grow"><b>Mia</b><br><span class="small muted">Away · 🎨 Artist</span></span><button class="btn" onclick="openChat('Mia')">Message</button></div>
+ </div></div></section>
+
+<section id="events" class="view"><div class="grid"><div class="card span8"><h2>📅 Upcoming Events</h2><div class="list"><div class="list-item event"><span>🏃</span><span class="grow"><b>Sports Day</b><br><span class="small muted">Friday · 9:00 AM · Main Ground</span></span><button class="btn primary" onclick="toast('RSVP saved! 🎉')">RSVP</button></div><div class="list-item event"><span>🎨</span><span class="grow"><b>Art Club Meetup</b><br><span class="small muted">Monday · 3:30 PM · Art Room</span></span><button class="btn" onclick="toast('Reminder set!')">Remind me</button></div></div></div><div class="card span4"><h2>⏰ Reminders</h2><p><b>Sports Day</b><br><span class="muted small">Friday · 9:00 AM</span></p><div class="progress"><i></i></div><p class="small muted">Your next event is coming up.</p></div></div></section>
+
+<section id="groups" class="view"><div class="grid"><div class="card span8"><h2>🏫 Your Groups</h2><div class="list"><div class="list-item"><span class="avatar">9A</span><span class="grow"><b>Class 9A</b><br><span class="small muted">28 members · 3 new updates</span></span><button class="btn primary" onclick="toast('Opened Class 9A')">Open</button></div><div class="list-item"><span class="avatar">🎮</span><span class="grow"><b>Gaming Friends</b><br><span class="small muted">12 members · Private</span></span><button class="btn" onclick="toast('Opened Gaming Friends')">Open</button></div></div></div><div class="card span4"><h2>➕ Join Group</h2><p class="muted">Have an invite code?</p><button class="btn primary" onclick="openModal('joinModal')">Enter code</button></div></div></section>
+
+<section id="abilities" class="view"><div class="hero"><h1>✨ Custom Abilities</h1><p>Equip fun effects for your profile and school groups.</p></div><div class="card" style="margin-top:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h2>My abilities</h2><p class="muted">Abilities are fun cosmetics—not permissions.</p></div><button class="btn primary" onclick="openModal('createAbilityModal')">＋ Create</button></div><div class="ability-grid" style="margin-top:14px">
+ <div class="ability active"><div class="ability-icon">🎮</div><strong>Gamer</strong><span class="small muted">Game Hub + gamer frame</span><button class="btn primary" onclick="equip(this,'Gamer')">Equipped</button></div>
+ <div class="ability"><div class="ability-icon">🎨</div><strong>Artist</strong><span class="small muted">Drawing reaction + frame</span><button class="btn" onclick="equip(this,'Artist')">Equip</button></div>
+ <div class="ability"><div class="ability-icon">🎉</div><strong>Party Starter</strong><span class="small muted">Celebration effect</span><button class="btn" onclick="equip(this,'Party Starter')">Equip</button></div>
+ <div class="ability"><div class="ability-icon">🧙</div><strong>Wizard</strong><span class="small muted">Magic profile effects</span><button class="btn" onclick="equip(this,'Wizard')">Equip</button></div>
+ <div class="ability"><div class="ability-icon">🏆</div><strong>Champion</strong><span class="small muted">Spotlight + champion badge</span><button class="btn" onclick="equip(this,'Champion')">Equip</button></div>
+ <div class="ability"><div class="ability-icon">🎂</div><strong>Birthday Star</strong><span class="small muted">Birthday celebration mode</span><button class="btn" onclick="equip(this,'Birthday Star')">Equip</button></div>
+ </div></div></section>
+
+<section id="profile" class="view"><div class="card" style="padding:0;overflow:hidden"><div class="profile-cover"></div><div class="profile-main"><div class="bigavatar">AZ</div><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px"><div><h1 style="margin:0">Azure</h1><span class="muted">@azure · 🎮 Gamer</span></div><button class="btn primary" onclick="openModal('editProfileModal')">Edit profile</button></div><p>Making school life a little more fun. ✨</p><div class="statrow"><div class="stat"><b>42</b><span>Friends</span></div><div class="stat"><b>7</b><span>Badges</span></div><div class="stat"><b>710</b><span>Points</span></div></div></div></div></section>
+</main>
+</div>
+
+<nav class="mobile-nav">
+ <button class="active" data-view="home"><span>🏠</span>Home</button><button data-view="chats"><span>💬</span>Chats</button><button data-view="friends"><span>👥</span>Friends</button><button data-view="events"><span>📅</span>Events</button><button data-view="profile"><span>👤</span>Profile</button>
+</nav>
+
+<div class="modal-backdrop" id="joinModal"><div class="modal"><div class="modal-head"><h2>Join a group</h2><button class="close" onclick="closeModal('joinModal')">✕</button></div><div class="form"><label>Invite code</label><input id="joinCode" placeholder="e.g. 9A-FRIENDS"><button class="btn primary" onclick="joinGroup()">Join group</button></div></div></div>
+<div class="modal-backdrop" id="createAbilityModal"><div class="modal"><div class="modal-head"><h2>✨ Create Ability</h2><button class="close" onclick="closeModal('createAbilityModal')">✕</button></div><div class="form"><label>Name</label><input id="abilityName" maxlength="20" placeholder="e.g. Meme Lord"><label>Icon</label><input id="abilityIcon" maxlength="2" placeholder="😂"><label>Effects</label><div class="list"><label><input type="checkbox" checked> Profile badge</label><label><input type="checkbox"> Special reaction</label><label><input type="checkbox"> Chat bubble</label><label><input type="checkbox"> Profile frame</label></div><button class="btn primary" onclick="createAbility()">Create ability</button><p class="small muted">Abilities can never grant permissions, read private data, bypass moderation, or run custom code.</p></div></div></div>
+<div class="modal-backdrop" id="editProfileModal"><div class="modal"><div class="modal-head"><h2>Edit profile</h2><button class="close" onclick="closeModal('editProfileModal')">✕</button></div><div class="form"><label>Display name</label><input id="profileName" value="Azure" maxlength="20"><label>Bio</label><textarea id="profileBio">Making school life a little more fun. ✨</textarea><button class="btn primary" onclick="saveProfile()">Save changes</button></div></div></div>
+<div class="modal-backdrop" id="settingsModal"><div class="modal"><div class="modal-head"><h2>⚙️ Settings</h2><button class="close" onclick="closeModal('settingsModal')">✕</button></div><div class="form"><button class="btn" onclick="toggleTheme()">🌙 Toggle dark mode</button><button class="btn" onclick="toast('Privacy settings coming in the backend build.')">🔒 Privacy</button><button class="btn" onclick="toast('Notifications settings coming soon.')">🔔 Notifications</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const views=[...document.querySelectorAll('.view')], navs=[...document.querySelectorAll('[data-view]')];
+function showView(id){views.forEach(v=>v.classList.toggle('active',v.id===id));navs.forEach(n=>n.classList.toggle('active',n.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'});}
+navs.forEach(n=>n.addEventListener('click',()=>showView(n.dataset.view)));
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._toast);window._toast=setTimeout(()=>t.classList.remove('show'),2200)}
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}))
+function vote(el){toast('Vote recorded! 🗳️');el.style.borderColor='var(--primary)'}
+function equip(btn,name){document.querySelectorAll('.ability button').forEach(b=>{b.textContent='Equip';b.classList.remove('primary')});btn.textContent='Equipped';btn.classList.add('primary');document.querySelectorAll('.ability').forEach(a=>a.classList.remove('active'));btn.parentElement.classList.add('active');toast(name+' ability equipped ✨')}
+function createAbility(){let n=document.getElementById('abilityName').value.trim(),i=document.getElementById('abilityIcon').value.trim()||'✨';if(!n){toast('Give your ability a name first!');return}toast(i+' '+n+' created!');closeModal('createAbilityModal')}
+function joinGroup(){let c=document.getElementById('joinCode').value.trim();if(!c){toast('Enter an invite code.');return}toast('Invite accepted! 🎉');closeModal('joinModal')}
+function saveProfile(){let n=document.getElementById('profileName').value.trim()||'Azure';document.querySelector('#profile h1').textContent=n;toast('Profile saved ✓');closeModal('editProfileModal')}
+function openChat(name){showView('chats');selectChat(name)}
+function selectChat(name){document.getElementById('chatLayout').classList.add('show-chat');document.getElementById('chatTitle').textContent=name;const m=document.getElementById('messages');m.innerHTML='';[['them','Hey! 👋'],['them','Welcome to SchoolFriends!'],['me','Yo 😂'],['them','This UI is actually nice.']].forEach(([who,msg])=>{let d=document.createElement('div');d.className='bubble '+(who==='me'?'me':'');d.textContent=msg;m.appendChild(d)});m.scrollTop=m.scrollHeight}
+function sendMessage(){const input=document.getElementById('messageInput'),text=input.value.trim();if(!text)return;let words=text.split(/\s+/).filter(Boolean);if(words.length>340){toast('Message is over the 340-word limit.');return}let d=document.createElement('div');d.className='bubble me';d.textContent=text;document.getElementById('messages').appendChild(d);input.value='';document.getElementById('messages').scrollTop=99999}
+function toggleTheme(){document.body.classList.toggle('dark');if(document.body.classList.contains('dark')){document.documentElement.style.setProperty('--bg','#10111a');document.documentElement.style.setProperty('--surface','#181a26');document.documentElement.style.setProperty('--surface2','#222434');document.documentElement.style.setProperty('--text','#f4f4fb');document.documentElement.style.setProperty('--muted','#a7a8ba');document.documentElement.style.setProperty('--line','#303244')}else{location.reload()}}
+document.getElementById('globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.value.trim())toast('Search is ready for backend data 🔎')});
+</script>
+</body>
+</html>
