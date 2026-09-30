@@ -1,23 +1,5 @@
-# SchoolFriends — V1 UI
+# SchoolFriends V2 — Professional UI
 
-A mobile-first clickable frontend prototype.
+Mobile-first premium frontend with a custom SVG icon/emoji system, custom emoji picker, chats, friends, events, groups, abilities and profile screens.
 
-## Run
-Open `index.html` in a browser, or upload it to GitHub Pages.
-
-## Included
-- Home dashboard
-- Friends
-- Chats with 340-word validation
-- Events
-- Private groups
-- Poll interaction
-- Profile editing
-- Custom Abilities UI
-- Join-group modal
-- Settings modal
-- Responsive mobile bottom navigation
-- Light/dark theme
-- No backend or secrets
-
-This version uses demo/local UI data. The next build can connect the screens to Cloudflare Worker + D1 + R2.
+Upload `index.html` and the entire `assets` folder to the root of the GitHub Pages repository.
