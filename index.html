@@ -2,263 +2,325 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SchoolFriends</title>
-
-  <!-- LOGO & FAVICON -->
-  <link rel="icon" type="image/png" href="favicon.png?v=2">
-  <link rel="shortcut icon" type="image/png" href="favicon.png?v=2">
-  <link rel="apple-touch-icon" sizes="180x180" href="favicon.png?v=2">
-  <meta name="theme-color" content="#2b2d31">
-
-  <!-- TAILWIND CSS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SchoolFriends - SocialChat</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { background-color: #313338; color: #dbdee1; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #1a1b1e; border-radius: 4px; }
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    /* Custom scrollbar for chat feed */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
   </style>
 </head>
-<body class="h-screen w-screen flex overflow-hidden font-sans select-none">
+<body class="bg-slate-950 text-slate-100 h-screen w-screen flex overflow-hidden antialiased select-none">
 
-  <!-- SIDEBAR (CHANNELS & DMS) -->
-  <aside class="w-64 bg-[#2b2d31] flex flex-col shrink-0 border-r border-[#1f2023]">
-    <!-- APP HEADER -->
-    <div class="h-12 px-4 border-b border-[#1f2023] flex items-center justify-between shadow-sm">
-      <h1 class="font-bold text-white text-base tracking-wide flex items-center gap-2">
-        <span class="text-purple-400">#</span> SchoolFriends
-      </h1>
+  <!-- 1. NAVIGATION BAR / SERVER LIST (LEFTMOST BAR) -->
+  <aside class="w-18 bg-slate-950 border-r border-slate-800/80 flex flex-col items-center py-4 space-y-4 z-20">
+    <!-- Main App Icon -->
+    <button class="relative group flex items-center justify-center">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:rounded-xl transition-all duration-300">
+        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      </div>
+      <!-- Tooltip -->
+      <span class="absolute left-16 bg-slate-800 text-xs font-semibold px-2.5 py-1.5 rounded-md shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+        SchoolFriends
+      </span>
+    </button>
+
+    <div class="w-8 h-[2px] bg-slate-800/80 rounded-full"></div>
+
+    <!-- Active Server Button -->
+    <button class="relative group flex items-center justify-center">
+      <div class="absolute -left-3 w-1.5 h-8 bg-cyan-400 rounded-r-full"></div>
+      <div class="w-12 h-12 rounded-xl bg-slate-800 text-cyan-400 flex items-center justify-center font-bold text-lg shadow-md border border-cyan-500/30">
+        SF
+      </div>
+      <span class="absolute left-16 bg-slate-800 text-xs font-semibold px-2.5 py-1.5 rounded-md shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+        Main Campus
+      </span>
+    </button>
+
+    <!-- Add Server / Action -->
+    <button class="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 hover:rounded-xl flex items-center justify-center transition-all duration-200">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+    </button>
+  </aside>
+
+  <!-- 2. CHANNELS SIDEBAR -->
+  <aside class="w-64 bg-slate-900 border-r border-slate-800/80 flex flex-col z-10">
+    <!-- Header -->
+    <div class="h-16 px-4 border-b border-slate-800/80 flex items-center justify-between shadow-sm">
+      <h1 class="font-bold text-slate-100 tracking-wide text-base">SchoolFriends</h1>
+      <span class="px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">Online</span>
     </div>
 
-    <!-- NAVIGATION LIST -->
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-4">
+    <!-- Channel List -->
+    <div class="flex-1 overflow-y-auto px-3 py-4 space-y-6">
       
-      <!-- PUBLIC CHAT SECTION -->
+      <!-- Main Channels Group -->
       <div>
-        <div class="text-[11px] font-bold text-[#949ba4] px-2 mb-1 uppercase tracking-wider">Public Channel</div>
-        <button id="btnPublicChat" onclick="switchTab('public')" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md bg-[#404249] text-white font-medium text-sm">
-          <span class="text-xl text-gray-400">#</span> general-public
-        </button>
+        <div class="px-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+          Channels
+        </div>
+
+        <!-- SOCIALCHAT (ACTIVE CHANNEL WITH CUSTOM LOGO) -->
+        <a href="#" class="group flex items-center justify-between px-3 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500/15 via-indigo-500/10 to-transparent border border-cyan-500/30 text-white shadow-sm transition-all duration-200">
+          <div class="flex items-center space-x-3">
+            <!-- Custom Logo / Badge Icon for SocialChat -->
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-md shadow-cyan-500/30">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <!-- Styled Title -->
+            <span class="font-bold text-sm bg-gradient-to-r from-cyan-300 via-indigo-200 to-white bg-clip-text text-transparent">
+              SocialChat
+            </span>
+          </div>
+          <!-- Live pulse dot -->
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+          </span>
+        </a>
+
+        <!-- Other Channels -->
+        <a href="#" class="flex items-center space-x-3 px-3 py-2 mt-1 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-150">
+          <span class="text-slate-500 text-lg font-semibold">#</span>
+          <span class="font-medium text-sm">announcements</span>
+        </a>
+
+        <a href="#" class="flex items-center space-x-3 px-3 py-2 mt-1 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-150">
+          <span class="text-slate-500 text-lg font-semibold">#</span>
+          <span class="font-medium text-sm">homework-help</span>
+        </a>
+
+        <a href="#" class="flex items-center space-x-3 px-3 py-2 mt-1 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-150">
+          <span class="text-slate-500 text-lg font-semibold">#</span>
+          <span class="font-medium text-sm">chill-lounge</span>
+        </a>
       </div>
 
-      <!-- DIRECT MESSAGES SECTION -->
+      <!-- Direct Messages Group -->
       <div>
-        <div class="flex items-center justify-between px-2 mb-1">
-          <span class="text-[11px] font-bold text-[#949ba4] uppercase tracking-wider">Direct Messages</span>
-          <button onclick="addFriendPrompt()" class="text-xs text-gray-400 hover:text-white" title="Add 1-on-1 Friend">+</button>
+        <div class="px-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+          Direct Messages
         </div>
-        
-        <!-- DMs LIST (DYNAMICALLY POPULATED ON LOG IN) -->
-        <div id="dmList" class="space-y-0.5">
-          <div class="px-2 py-2 text-xs text-gray-500 italic">No 1-on-1 chats yet</div>
-        </div>
+
+        <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-150">
+          <div class="relative">
+            <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">
+              A
+            </div>
+            <span class="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-slate-900"></span>
+          </div>
+          <span class="font-medium text-sm">Alex</span>
+        </a>
+
+        <a href="#" class="flex items-center space-x-3 px-3 py-2 mt-1 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-150">
+          <div class="relative">
+            <div class="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold text-white">
+              S
+            </div>
+            <span class="absolute bottom-0 right-0 w-2 h-2 bg-slate-500 rounded-full ring-2 ring-slate-900"></span>
+          </div>
+          <span class="font-medium text-sm">Sam</span>
+        </a>
       </div>
 
     </div>
 
-    <!-- USER BAR (BOTTOM) -->
-    <div class="h-14 bg-[#232428] px-2 flex items-center justify-between">
-      <div class="flex items-center gap-2 overflow-hidden">
-        <img id="userAvatar" src="favicon.png?v=2" class="w-8 h-8 rounded-full bg-purple-600 object-cover shrink-0" alt="Avatar">
-        <div class="truncate">
-          <div id="userName" class="text-xs font-semibold text-white truncate">Guest</div>
-          <div id="userStatus" class="text-[10px] text-gray-400 truncate">Offline</div>
+    <!-- Current User Profile Footer -->
+    <div class="h-16 px-3 bg-slate-950/60 border-t border-slate-800/80 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="relative">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 p-0.5">
+            <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-xs font-bold text-cyan-300">
+              ME
+            </div>
+          </div>
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-slate-950"></span>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-sm font-semibold text-slate-200 leading-none">You</span>
+          <span class="text-[11px] text-slate-400 leading-tight mt-0.5">Online</span>
         </div>
       </div>
-      <button id="authBtn" onclick="handleAuthAction()" class="bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-medium px-2.5 py-1.5 rounded transition">
-        Sign In
+      <button class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
       </button>
     </div>
   </aside>
 
-  <!-- MAIN CHAT AREA -->
-  <main class="flex-1 flex flex-col bg-[#313338]">
+  <!-- 3. MAIN CHAT AREA -->
+  <main class="flex-1 flex flex-col bg-slate-950 relative overflow-hidden">
     
-    <!-- CHAT HEADER -->
-    <header class="h-12 border-b border-[#1f2023] px-4 flex items-center gap-2 shadow-sm bg-[#313338]">
-      <span id="activeChannelPrefix" class="text-xl text-gray-400">#</span>
-      <h2 id="activeChannelTitle" class="font-bold text-white text-sm">general-public</h2>
+    <!-- Top Header Bar -->
+    <header class="h-16 px-6 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md flex items-center justify-between z-10">
+      <div class="flex items-center space-x-3">
+        <!-- Logo Icon -->
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-md shadow-cyan-500/20">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        </div>
+        <!-- Channel Title -->
+        <div>
+          <h2 class="text-lg font-extrabold tracking-wide bg-gradient-to-r from-cyan-400 via-indigo-300 to-white bg-clip-text text-transparent flex items-center gap-2">
+            SocialChat
+          </h2>
+          <p class="text-xs text-slate-400 font-medium">Public community feed for everyone</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center space-x-3">
+        <div class="relative hidden sm:block">
+          <input type="text" placeholder="Search in SocialChat..." class="w-48 lg:w-60 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 pl-8 pr-3 py-1.5 focus:outline-none focus:border-cyan-500/50 transition-colors">
+          <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
     </header>
 
-    <!-- MESSAGES FEED -->
-    <div id="messagesFeed" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-      <div class="text-center py-8 text-gray-500 text-xs border-b border-white/5">
-        👋 Welcome to the public chat! Sign in to post messages.
+    <!-- Chat Messages Feed -->
+    <div id="chatFeed" class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- Channel Welcome Banner -->
+      <div class="p-6 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-indigo-950/30 to-slate-900 border border-cyan-500/20 mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-3">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        </div>
+        <h3 class="text-2xl font-black text-white">Welcome to <span class="bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">SocialChat</span>!</h3>
+        <p class="text-slate-400 text-sm mt-1">This is the start of the official main chat channel. Say hi and start connecting with your friends!</p>
       </div>
+
+      <!-- Sample Message 1 -->
+      <div class="flex items-start space-x-4 group">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center font-bold text-white text-sm shadow-md shrink-0">
+          A
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-sm text-slate-100 hover:underline cursor-pointer">Alex</span>
+            <span class="px-1.5 py-0.2 text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded">Student</span>
+            <span class="text-[11px] text-slate-500">Today at 2:30 PM</span>
+          </div>
+          <p class="text-slate-300 text-sm mt-1 leading-relaxed">
+            Hey everyone! Welcome to the new <span class="text-cyan-400 font-semibold">SocialChat</span> channel! Everything looks super sleek now. 🔥
+          </p>
+        </div>
+      </div>
+
+      <!-- Sample Message 2 (You) -->
+      <div class="flex items-start space-x-4 group">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 p-0.5 shrink-0">
+          <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-xs font-bold text-cyan-300">
+            ME
+          </div>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-sm text-cyan-300">You</span>
+            <span class="text-[11px] text-slate-500">Today at 2:32 PM</span>
+          </div>
+          <p class="text-slate-300 text-sm mt-1 leading-relaxed">
+            Thanks! Swapped out the old label for <span class="font-semibold text-indigo-300">SocialChat</span> with a fresh custom logo. What do you think?
+          </p>
+        </div>
+      </div>
+
     </div>
 
-    <!-- CHAT INPUT FORM -->
-    <div class="p-4 bg-[#313338]">
-      <form onsubmit="sendMessage(event)" class="bg-[#383a40] rounded-lg px-3 py-2 flex items-center gap-2">
-        <label for="mediaInput" class="cursor-pointer text-gray-400 hover:text-white p-1">
-          📎
-          <input type="file" id="mediaInput" accept="image/*" class="hidden" onchange="uploadImage(event)">
-        </label>
-        <input 
-          type="text" 
-          id="messageInput" 
-          placeholder="Message #general-public" 
-          class="bg-transparent flex-1 text-sm text-white placeholder-[#87898c] focus:outline-none"
-          autocomplete="off"
-        >
-        <button type="submit" class="text-xs bg-[#5865f2] hover:bg-[#4752c4] text-white px-3 py-1.5 rounded font-medium">
-          Send
+    <!-- Message Input Bar Container -->
+    <div class="p-4 bg-slate-950 border-t border-slate-800/80">
+      <form id="chatForm" class="flex items-center bg-slate-900/90 border border-slate-800 focus-within:border-cyan-500/50 rounded-2xl p-2 px-4 shadow-lg transition-all duration-200">
+        
+        <!-- Attachment Button -->
+        <button type="button" class="text-slate-400 hover:text-cyan-400 p-2 rounded-xl hover:bg-slate-800 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+
+        <!-- Message Input -->
+        <input type="text" id="messageInput" placeholder="Message #SocialChat..." class="flex-1 bg-transparent border-none text-slate-100 placeholder-slate-500 text-sm px-3 focus:outline-none">
+
+        <!-- Send Button -->
+        <button type="submit" class="bg-gradient-to-tr from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white p-2.5 rounded-xl shadow-md shadow-cyan-500/20 transition-all duration-200 flex items-center justify-center">
+          <svg class="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+          </svg>
         </button>
       </form>
     </div>
 
   </main>
 
-  <!-- FIREBASE & CLOUDINARY LOGIC -->
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  <!-- Optional JavaScript for sending messages dynamically -->
+  <script>
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const chatFeed = document.getElementById('chatFeed');
 
-    // FIREBASE KEYS (REPLACE WHEN READY)
-    const firebaseConfig = {
-      apiKey: "YOUR_FIREBASE_API_KEY",
-      authDomain: "schoolfriends.pntr.dev",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-
-    const CLOUDINARY_CLOUD_NAME = "YOUR_CLOUD_NAME"; 
-    const CLOUDINARY_UPLOAD_PRESET = "YOUR_UNSIGNED_PRESET"; 
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const googleProvider = new GoogleAuthProvider();
-
-    let currentUser = null;
-    let activeTab = 'public';
-
-    // AUTH HANDLING
-    window.handleAuthAction = async function() {
-      if (currentUser) {
-        await signOut(auth);
-      } else {
-        try {
-          await signInWithPopup(auth, googleProvider);
-        } catch (err) {
-          alert("Firebase credentials not configured yet. Connect keys in index.html!");
-        }
-      }
-    };
-
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user;
-      const userNameEl = document.getElementById('userName');
-      const userStatusEl = document.getElementById('userStatus');
-      const userAvatarEl = document.getElementById('userAvatar');
-      const authBtn = document.getElementById('authBtn');
-
-      if (user) {
-        userNameEl.textContent = user.displayName;
-        userStatusEl.textContent = "Online";
-        userAvatarEl.src = user.photoURL || 'favicon.png?v=2';
-        authBtn.textContent = "Sign Out";
-        authBtn.className = "bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-2.5 py-1.5 rounded transition";
-      } else {
-        userNameEl.textContent = "Guest";
-        userStatusEl.textContent = "Offline";
-        userAvatarEl.src = 'favicon.png?v=2';
-        authBtn.textContent = "Sign In";
-        authBtn.className = "bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-medium px-2.5 py-1.5 rounded transition";
-      }
-    });
-
-    // NAVIGATION TABS
-    window.switchTab = function(tabName, friendName = '') {
-      activeTab = tabName;
-      const titleEl = document.getElementById('activeChannelTitle');
-      const prefixEl = document.getElementById('activeChannelPrefix');
-      const inputEl = document.getElementById('messageInput');
-
-      if (tabName === 'public') {
-        titleEl.textContent = 'general-public';
-        prefixEl.textContent = '#';
-        inputEl.placeholder = 'Message #general-public';
-      } else {
-        titleEl.textContent = friendName;
-        prefixEl.textContent = '@';
-        inputEl.placeholder = `Message @${friendName}`;
-      }
-    };
-
-    window.addFriendPrompt = function() {
-      const name = prompt("Enter friend's user name to start a 1-on-1 chat:");
-      if (!name) return;
-      
-      const dmList = document.getElementById('dmList');
-      if (dmList.innerText.includes('No 1-on-1 chats yet')) {
-        dmList.innerHTML = '';
-      }
-
-      const button = document.createElement('button');
-      button.className = "w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#35373c] text-gray-300 font-medium text-sm text-left truncate";
-      button.onclick = () => switchTab('dm', name);
-      button.innerHTML = `<span class="text-gray-400">@</span> <span class="truncate">${name}</span>`;
-      dmList.appendChild(button);
-
-      switchTab('dm', name);
-    };
-
-    // CHAT MESSAGES
-    window.sendMessage = function(e) {
+    chatForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const input = document.getElementById('messageInput');
-      const text = input.value.trim();
+      const text = messageInput.value.trim();
       if (!text) return;
 
-      const feed = document.getElementById('messagesFeed');
-      const msg = document.createElement('div');
-      msg.className = "flex items-start gap-3";
-
-      const avatar = currentUser ? currentUser.photoURL : 'favicon.png?v=2';
-      const name = currentUser ? currentUser.displayName : 'Guest';
-      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      msg.innerHTML = `
-        <img src="${avatar}" class="w-10 h-10 rounded-full bg-purple-600 object-cover mt-0.5 shrink-0">
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="font-semibold text-white text-sm">${name}</span>
-            <span class="text-[10px] text-gray-400">${time}</span>
+      // Add user message element
+      const messageDiv = document.createElement('div');
+      messageDiv.className = "flex items-start space-x-4 group animate-fade-in";
+      messageDiv.innerHTML = `
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 p-0.5 shrink-0">
+          <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-xs font-bold text-cyan-300">
+            ME
           </div>
-          <p class="text-sm text-gray-200 mt-0.5 leading-relaxed">${text}</p>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-sm text-cyan-300">You</span>
+            <span class="text-[11px] text-slate-500">Just now</span>
+          </div>
+          <p class="text-slate-300 text-sm mt-1 leading-relaxed">${escapeHtml(text)}</p>
         </div>
       `;
 
-      feed.appendChild(msg);
-      input.value = '';
-      feed.scrollTop = feed.scrollHeight;
-    };
+      chatFeed.appendChild(messageDiv);
+      messageInput.value = '';
+      chatFeed.scrollTop = chatFeed.scrollHeight;
+    });
 
-    // CLOUDINARY UPLOAD
-    window.uploadImage = async function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-          method: "POST",
-          body: formData
-        });
-        const data = await res.json();
-        
-        if (data.secure_url) {
-          document.getElementById('messageInput').value += ` ${data.secure_url}`;
-        }
-      } catch (err) {
-        alert("Cloudinary upload preset keys required for image uploads.");
-      }
-    };
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
   </script>
 </body>
-      </html>
-        
+            </html>
+            
