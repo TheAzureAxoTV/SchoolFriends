@@ -2,163 +2,119 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SchoolFriends</title>
 
-  <!-- LOGO & FAVICON CONFIGURATION -->
+  <!-- LOGO & FAVICON -->
   <link rel="icon" type="image/png" href="favicon.png?v=2">
   <link rel="shortcut icon" type="image/png" href="favicon.png?v=2">
   <link rel="apple-touch-icon" sizes="180x180" href="favicon.png?v=2">
-  <meta name="apple-mobile-web-app-title" content="SchoolFriends">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#0F0F17">
+  <meta name="theme-color" content="#2b2d31">
 
-  <!-- GOOGLE FONTS & TAILWIND CSS -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- TAILWIND CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-
   <style>
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #0c0d14;
-      color: #f3f4f6;
-    }
-    .glass-card {
-      background: rgba(22, 22, 34, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-    }
-    .purple-card {
-      background: linear-gradient(135deg, rgba(30, 27, 58, 0.9) 0%, rgba(20, 18, 38, 0.95) 100%);
-      border: 1px solid rgba(139, 92, 246, 0.2);
-    }
-    .avatar-bg {
-      background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
-    }
+    body { background-color: #313338; color: #dbdee1; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #1a1b1e; border-radius: 4px; }
   </style>
 </head>
-<body class="min-h-screen pb-12 px-4 pt-4 max-w-md mx-auto">
+<body class="h-screen w-screen flex overflow-hidden font-sans select-none">
 
-  <!-- TOP BAR / SEARCH -->
-  <header class="flex items-center gap-2 mb-5">
-    <div class="relative flex-1">
-      <input 
-        type="text" 
-        placeholder="Search SchoolFriends" 
-        class="w-full bg-[#161622] text-sm text-gray-200 placeholder-gray-500 rounded-2xl py-3 pl-4 pr-10 focus:outline-none focus:ring-1 focus:ring-purple-500 border border-white/5"
-      />
+  <!-- SIDEBAR (CHANNELS & DMS) -->
+  <aside class="w-64 bg-[#2b2d31] flex flex-col shrink-0 border-r border-[#1f2023]">
+    <!-- APP HEADER -->
+    <div class="h-12 px-4 border-b border-[#1f2023] flex items-center justify-between shadow-sm">
+      <h1 class="font-bold text-white text-base tracking-wide flex items-center gap-2">
+        <span class="text-purple-400">#</span> SchoolFriends
+      </h1>
     </div>
-    <button class="bg-[#161622] p-3 rounded-2xl border border-white/5 text-gray-400 hover:text-white">
-      ⚡
-    </button>
-    <button id="authBtn" onclick="handleLogin()" class="bg-[#161622] p-3 rounded-2xl border border-white/5 text-gray-400 hover:text-white">
-      ⚙️
-    </button>
-  </header>
 
-  <!-- MAIN HERO CARD -->
-  <section class="purple-card rounded-3xl p-6 mb-5 shadow-xl">
-    <span class="text-[11px] font-bold tracking-widest text-purple-400 uppercase">SCHOOL SPACE • TODAY</span>
-    <h1 id="userGreeting" class="text-2xl font-extrabold text-white mt-1 mb-2">Good morning, Azure.</h1>
-    <p class="text-xs text-gray-400 leading-relaxed mb-6">
-      Stay connected with your friends, groups and school events — all in one place.
-    </p>
-
-    <!-- STATS ROW -->
-    <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/10">
+    <!-- NAVIGATION LIST -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-4">
+      
+      <!-- PUBLIC CHAT SECTION -->
       <div>
-        <div class="text-xl font-extrabold text-white">42</div>
-        <div class="text-[11px] text-gray-400">Friends</div>
+        <div class="text-[11px] font-bold text-[#949ba4] px-2 mb-1 uppercase tracking-wider">Public Channel</div>
+        <button id="btnPublicChat" onclick="switchTab('public')" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md bg-[#404249] text-white font-medium text-sm">
+          <span class="text-xl text-gray-400">#</span> general-public
+        </button>
       </div>
+
+      <!-- DIRECT MESSAGES SECTION -->
       <div>
-        <div class="text-xl font-extrabold text-white">7</div>
-        <div class="text-[11px] text-gray-400">Badges</div>
-      </div>
-      <div>
-        <div class="text-xl font-extrabold text-white">710</div>
-        <div class="text-[11px] text-gray-400">Points</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- YOUR FRIENDS SECTION -->
-  <section class="glass-card rounded-3xl p-5 mb-5">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-base font-bold text-white">Your friends</h2>
-      <button class="text-xs text-purple-400 font-semibold bg-white/5 px-3 py-1 rounded-full">View all</button>
-    </div>
-
-    <!-- AVATAR HORIZONTAL SCROLL -->
-    <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
-      <div class="flex flex-col items-center gap-2 min-w-[56px]">
-        <div class="w-14 h-14 avatar-bg rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md">
-          A
+        <div class="flex items-center justify-between px-2 mb-1">
+          <span class="text-[11px] font-bold text-[#949ba4] uppercase tracking-wider">Direct Messages</span>
+          <button onclick="addFriendPrompt()" class="text-xs text-gray-400 hover:text-white" title="Add 1-on-1 Friend">+</button>
         </div>
-        <span class="text-xs text-gray-300 font-medium">Alex</span>
-      </div>
-
-      <div class="flex flex-col items-center gap-2 min-w-[56px]">
-        <div class="w-14 h-14 avatar-bg rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md">
-          S
+        
+        <!-- DMs LIST (DYNAMICALLY POPULATED ON LOG IN) -->
+        <div id="dmList" class="space-y-0.5">
+          <div class="px-2 py-2 text-xs text-gray-500 italic">No 1-on-1 chats yet</div>
         </div>
-        <span class="text-xs text-gray-300 font-medium">Sam</span>
       </div>
 
-      <div class="flex flex-col items-center gap-2 min-w-[56px]">
-        <div class="w-14 h-14 avatar-bg rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md">
-          J
+    </div>
+
+    <!-- USER BAR (BOTTOM) -->
+    <div class="h-14 bg-[#232428] px-2 flex items-center justify-between">
+      <div class="flex items-center gap-2 overflow-hidden">
+        <img id="userAvatar" src="favicon.png?v=2" class="w-8 h-8 rounded-full bg-purple-600 object-cover shrink-0" alt="Avatar">
+        <div class="truncate">
+          <div id="userName" class="text-xs font-semibold text-white truncate">Guest</div>
+          <div id="userStatus" class="text-[10px] text-gray-400 truncate">Offline</div>
         </div>
-        <span class="text-xs text-gray-300 font-medium">Jay</span>
       </div>
+      <button id="authBtn" onclick="handleAuthAction()" class="bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-medium px-2.5 py-1.5 rounded transition">
+        Sign In
+      </button>
+    </div>
+  </aside>
 
-      <div class="flex flex-col items-center gap-2 min-w-[56px]">
-        <div class="w-14 h-14 avatar-bg rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md">
-          M
-        </div>
-        <span class="text-xs text-gray-300 font-medium">Mia</span>
+  <!-- MAIN CHAT AREA -->
+  <main class="flex-1 flex flex-col bg-[#313338]">
+    
+    <!-- CHAT HEADER -->
+    <header class="h-12 border-b border-[#1f2023] px-4 flex items-center gap-2 shadow-sm bg-[#313338]">
+      <span id="activeChannelPrefix" class="text-xl text-gray-400">#</span>
+      <h2 id="activeChannelTitle" class="font-bold text-white text-sm">general-public</h2>
+    </header>
+
+    <!-- MESSAGES FEED -->
+    <div id="messagesFeed" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+      <div class="text-center py-8 text-gray-500 text-xs border-b border-white/5">
+        👋 Welcome to the public chat! Sign in to post messages.
       </div>
     </div>
-  </section>
 
-  <!-- CLASS BOARD SECTION -->
-  <section class="glass-card rounded-3xl p-5 mb-5">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-base font-bold text-white">Class board</h2>
-      <span class="text-xs text-purple-400 font-semibold bg-purple-500/10 px-3 py-1 rounded-full">This week</span>
+    <!-- CHAT INPUT FORM -->
+    <div class="p-4 bg-[#313338]">
+      <form onsubmit="sendMessage(event)" class="bg-[#383a40] rounded-lg px-3 py-2 flex items-center gap-2">
+        <label for="mediaInput" class="cursor-pointer text-gray-400 hover:text-white p-1">
+          📎
+          <input type="file" id="mediaInput" accept="image/*" class="hidden" onchange="uploadImage(event)">
+        </label>
+        <input 
+          type="text" 
+          id="messageInput" 
+          placeholder="Message #general-public" 
+          class="bg-transparent flex-1 text-sm text-white placeholder-[#87898c] focus:outline-none"
+          autocomplete="off"
+        >
+        <button type="submit" class="text-xs bg-[#5865f2] hover:bg-[#4752c4] text-white px-3 py-1.5 rounded font-medium">
+          Send
+        </button>
+      </form>
     </div>
 
-    <div class="space-y-2">
-      <div class="bg-white/5 rounded-2xl p-3 flex items-center gap-3">
-        <span class="text-xs font-bold text-gray-400 w-5">01</span>
-        <span class="text-sm font-semibold text-white flex-1">Sam</span>
-      </div>
-      <div class="bg-white/5 rounded-2xl p-3 flex items-center gap-3">
-        <span class="text-xs font-bold text-gray-400 w-5">02</span>
-        <span class="text-sm font-semibold text-white flex-1">Alex</span>
-      </div>
-      <div class="bg-purple-500/10 border border-purple-500/20 rounded-2xl p-3 flex items-center gap-3">
-        <span class="text-xs font-bold text-purple-400 w-5">03</span>
-        <span class="text-sm font-semibold text-purple-200 flex-1">You</span>
-      </div>
-    </div>
-  </section>
+  </main>
 
-  <!-- MEDIA UPLOAD WIDGET (CLOUDINARY READY) -->
-  <section class="glass-card rounded-3xl p-5">
-    <h2 class="text-base font-bold text-white mb-2">Share a photo</h2>
-    <div class="flex gap-2">
-      <input type="file" id="mediaInput" accept="image/*" class="text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 w-full" />
-      <button onclick="uploadMedia()" class="bg-white/10 text-xs font-bold px-4 py-2 rounded-xl text-white hover:bg-white/20 shrink-0">Upload</button>
-    </div>
-  </section>
-
-  <!-- FIREBASE & CLOUDINARY SCRIPT INTEGRATION -->
+  <!-- FIREBASE & CLOUDINARY LOGIC -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-    // REPLACE THESE WITH YOUR FIREBASE KEYS WHEN READY
+    // FIREBASE KEYS (REPLACE WHEN READY)
     const firebaseConfig = {
       apiKey: "YOUR_FIREBASE_API_KEY",
       authDomain: "schoolfriends.pntr.dev",
@@ -175,28 +131,116 @@
     const auth = getAuth(app);
     const googleProvider = new GoogleAuthProvider();
 
-    window.handleLogin = async function() {
-      try {
-        const result = await signInWithPopup(auth, googleProvider);
-        console.log("User logged in:", result.user.displayName);
-      } catch (err) {
-        console.log("Auth setup pending or login cancelled.");
+    let currentUser = null;
+    let activeTab = 'public';
+
+    // AUTH HANDLING
+    window.handleAuthAction = async function() {
+      if (currentUser) {
+        await signOut(auth);
+      } else {
+        try {
+          await signInWithPopup(auth, googleProvider);
+        } catch (err) {
+          alert("Firebase credentials not configured yet. Connect keys in index.html!");
+        }
       }
     };
 
     onAuthStateChanged(auth, (user) => {
-      const greeting = document.getElementById('userGreeting');
-      if (user && greeting) {
-        const firstName = user.displayName.split(' ')[0];
-        greeting.textContent = `Good day, ${firstName}.`;
+      currentUser = user;
+      const userNameEl = document.getElementById('userName');
+      const userStatusEl = document.getElementById('userStatus');
+      const userAvatarEl = document.getElementById('userAvatar');
+      const authBtn = document.getElementById('authBtn');
+
+      if (user) {
+        userNameEl.textContent = user.displayName;
+        userStatusEl.textContent = "Online";
+        userAvatarEl.src = user.photoURL || 'favicon.png?v=2';
+        authBtn.textContent = "Sign Out";
+        authBtn.className = "bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-2.5 py-1.5 rounded transition";
+      } else {
+        userNameEl.textContent = "Guest";
+        userStatusEl.textContent = "Offline";
+        userAvatarEl.src = 'favicon.png?v=2';
+        authBtn.textContent = "Sign In";
+        authBtn.className = "bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-medium px-2.5 py-1.5 rounded transition";
       }
     });
 
-    window.uploadMedia = async function() {
-      const input = document.getElementById('mediaInput');
-      const file = input.files[0];
-      if (!file) return alert('Select an image first.');
+    // NAVIGATION TABS
+    window.switchTab = function(tabName, friendName = '') {
+      activeTab = tabName;
+      const titleEl = document.getElementById('activeChannelTitle');
+      const prefixEl = document.getElementById('activeChannelPrefix');
+      const inputEl = document.getElementById('messageInput');
+
+      if (tabName === 'public') {
+        titleEl.textContent = 'general-public';
+        prefixEl.textContent = '#';
+        inputEl.placeholder = 'Message #general-public';
+      } else {
+        titleEl.textContent = friendName;
+        prefixEl.textContent = '@';
+        inputEl.placeholder = `Message @${friendName}`;
+      }
+    };
+
+    window.addFriendPrompt = function() {
+      const name = prompt("Enter friend's user name to start a 1-on-1 chat:");
+      if (!name) return;
       
+      const dmList = document.getElementById('dmList');
+      if (dmList.innerText.includes('No 1-on-1 chats yet')) {
+        dmList.innerHTML = '';
+      }
+
+      const button = document.createElement('button');
+      button.className = "w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#35373c] text-gray-300 font-medium text-sm text-left truncate";
+      button.onclick = () => switchTab('dm', name);
+      button.innerHTML = `<span class="text-gray-400">@</span> <span class="truncate">${name}</span>`;
+      dmList.appendChild(button);
+
+      switchTab('dm', name);
+    };
+
+    // CHAT MESSAGES
+    window.sendMessage = function(e) {
+      e.preventDefault();
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const feed = document.getElementById('messagesFeed');
+      const msg = document.createElement('div');
+      msg.className = "flex items-start gap-3";
+
+      const avatar = currentUser ? currentUser.photoURL : 'favicon.png?v=2';
+      const name = currentUser ? currentUser.displayName : 'Guest';
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      msg.innerHTML = `
+        <img src="${avatar}" class="w-10 h-10 rounded-full bg-purple-600 object-cover mt-0.5 shrink-0">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-white text-sm">${name}</span>
+            <span class="text-[10px] text-gray-400">${time}</span>
+          </div>
+          <p class="text-sm text-gray-200 mt-0.5 leading-relaxed">${text}</p>
+        </div>
+      `;
+
+      feed.appendChild(msg);
+      input.value = '';
+      feed.scrollTop = feed.scrollHeight;
+    };
+
+    // CLOUDINARY UPLOAD
+    window.uploadImage = async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
       try {
         const formData = new FormData();
         formData.append("file", file);
@@ -206,12 +250,15 @@
           body: formData
         });
         const data = await res.json();
-        alert('Image uploaded: ' + data.secure_url);
-      } catch (e) {
-        alert('Set up Cloudinary preset keys to enable uploads!');
+        
+        if (data.secure_url) {
+          document.getElementById('messageInput').value += ` ${data.secure_url}`;
+        }
+      } catch (err) {
+        alert("Cloudinary upload preset keys required for image uploads.");
       }
     };
   </script>
 </body>
-  </html>
-  
+      </html>
+        
