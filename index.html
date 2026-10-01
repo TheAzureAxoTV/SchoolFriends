@@ -102,7 +102,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // Firebase Configuration
+        // Firebase Configuration (Replace with your project details)
         const firebaseConfig = {
             apiKey: "YOUR_FIREBASE_API_KEY",
             authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -112,17 +112,19 @@
             appId: "YOUR_APP_ID"
         };
 
-        // Initialize Firebase safely
+        // Initialize Firebase safely with fallback mode
         let db = null;
-        let auth = null;
+        let isFirebaseActive = false;
         try {
-            if (firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
-                firebase.initializeApp(firebaseConfig);
+            if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
                 db = firebase.firestore();
-                auth = firebase.auth();
+                isFirebaseActive = true;
             }
         } catch (e) {
-            console.warn("Firebase credentials not configured yet. Demo mode active.", e);
+            console.warn("Firebase initialization warning. Running in local demo mode.", e);
         }
 
         // Cloudinary Upload Settings
@@ -133,9 +135,9 @@
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [currentChannel, setCurrentChannel] = useState({ id: 'general', name: 'general', type: 'channel' });
             const [messages, setMessages] = useState([
-                { id: 1, user: 'Alex', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Alex', text: 'Hey guys! Welcome to SchoolFriends!', timestamp: '10:15 AM' },
-                { id: 2, user: 'Sarah', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sarah', text: 'Does anyone have the math homework solutions?', timestamp: '10:17 AM' },
-                { id: 3, user: 'David', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=David', text: 'Check the #homework channel!', timestamp: '10:20 AM' }
+                { id: '1', user: 'Alex', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Alex', text: 'Hey guys! Welcome to SchoolFriends!', timestamp: '10:15 AM' },
+                { id: '2', user: 'Sarah', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sarah', text: 'Does anyone have the math homework solutions?', timestamp: '10:17 AM' },
+                { id: '3', user: 'David', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=David', text: 'Check the #homework channel!', timestamp: '10:20 AM' }
             ]);
             const [inputText, setInputText] = useState('');
             const [currentUser] = useState({ name: 'You', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=User' });
@@ -152,12 +154,36 @@
                 { id: 'dm-alex', name: 'Alex', status: 'idle', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Alex' }
             ];
 
+            // Real-time Firestore message synchronization
+            useEffect(() => {
+                if (!isFirebaseActive || !db) return;
+
+                const channelId = currentChannel.id;
+                const unsubscribe = db.collection('channels')
+                    .doc(channelId)
+                    .collection('messages')
+                    .orderBy('createdAt', 'asc')
+                    .onSnapshot((snapshot) => {
+                        const fetchedMessages = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        if (fetchedMessages.length > 0) {
+                            setMessages(fetchedMessages);
+                        }
+                    }, (error) => {
+                        console.error("Firestore sync error:", error);
+                    });
+
+                return () => unsubscribe();
+            }, [currentChannel.id]);
+
             // Auto-scroll to bottom when new messages arrive
             useEffect(() => {
                 messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             }, [messages]);
 
-            // Adjust height dynamically when soft mobile keyboard pops up
+            // Adjust mobile height dynamically for soft keyboards
             useEffect(() => {
                 const handleResize = () => {
                     if (window.visualViewport) {
@@ -169,20 +195,30 @@
                 return () => window.visualViewport?.removeEventListener('resize', handleResize);
             }, []);
 
-            const handleSend = (e) => {
+            const handleSend = async (e) => {
                 e?.preventDefault();
                 if (!inputText.trim()) return;
 
-                const newMessage = {
-                    id: Date.now(),
+                const newMsgData = {
                     user: currentUser.name,
                     avatar: currentUser.avatar,
                     text: inputText,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                setMessages(prev => [...prev, newMessage]);
                 setInputText('');
+
+                if (isFirebaseActive && db) {
+                    try {
+                        await db.collection('channels').doc(currentChannel.id).collection('messages').add(newMsgData);
+                    } catch (err) {
+                        console.error("Error sending message to Firebase:", err);
+                    }
+                } else {
+                    // Local fallback if Firebase isn't hooked up yet
+                    setMessages(prev => [...prev, { id: Date.now(), ...newMsgData }]);
+                }
             };
 
             const handleFileUpload = async (e) => {
@@ -201,20 +237,26 @@
                         });
                         const data = await res.json();
                         if (data.secure_url) {
-                            setMessages(prev => [...prev, {
-                                id: Date.now(),
+                            const mediaMsg = {
                                 user: currentUser.name,
                                 avatar: currentUser.avatar,
                                 text: '',
                                 mediaUrl: data.secure_url,
-                                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                            }]);
+                                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                createdAt: isFirebaseActive ? firebase.firestore.FieldValue.serverTimestamp() : Date.now()
+                            };
+
+                            if (isFirebaseActive && db) {
+                                await db.collection('channels').doc(currentChannel.id).collection('messages').add(mediaMsg);
+                            } else {
+                                setMessages(prev => [...prev, { id: Date.now(), ...mediaMsg }]);
+                            }
                         }
                     } catch (err) {
                         console.error("Cloudinary upload failed:", err);
                     }
                 } else {
-                    // Fallback local blob preview for testing without active Cloudinary key
+                    // Local blob preview fallback
                     const localUrl = URL.createObjectURL(file);
                     setMessages(prev => [...prev, {
                         id: Date.now(),
@@ -237,7 +279,7 @@
                         />
                     )}
 
-                    {/* Collapsible Discord-style Sidebar */}
+                    {/* Collapsible Sidebar */}
                     <aside className={`
                         fixed md:static inset-y-0 left-0 z-30
                         w-72 bg-discord-sidebar flex flex-col transition-transform duration-200 ease-in-out
@@ -356,29 +398,4 @@
                         {/* Message Stream */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
                             {messages.map(msg => (
-                                <div key={msg.id} className="flex items-start gap-3 group hover:bg-black/10 -mx-4 px-4 py-1 rounded transition-colors">
-                                    <img src={msg.avatar} alt={msg.user} className="w-10 h-10 rounded-full bg-slate-700 mt-0.5 shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="font-semibold text-white text-sm hover:underline cursor-pointer">{msg.user}</span>
-                                            <span className="text-[10px] text-discord-muted">{msg.timestamp}</span>
-                                        </div>
-                                        {msg.text && <p className="text-sm text-discord-text break-words mt-0.5">{msg.text}</p>}
-                                        {msg.mediaUrl && (
-                                            <div className="mt-2 max-w-xs rounded-lg overflow-hidden border border-black/20 bg-discord-sidebar">
-                                                <img src={msg.mediaUrl} alt="Uploaded attachment" className="max-h-60 object-cover w-full" />
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                            <div ref={messagesEndRef} />
-                        </div>
-
-                        {/* Input Footer */}
-                        <footer className="p-3 bg-discord-bg shrink-0 safe-pb">
-                            <form onSubmit={handleSend} className="bg-discord-sidebar rounded-lg flex items-center px-3 py-2 gap-2 border border-transparent focus-within:border-indigo-500/50">
-                                <label className="text-discord-muted hover:text-white cursor-pointer p-1">
-                                    <i className="fa-solid fa-circle-plus text-lg"></i>
-                                    <input 
-     
+                                <div key={msg.id} className="flex items
