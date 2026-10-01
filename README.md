@@ -1,35 +1,19 @@
-# SchoolFriends 🎓
+# SchoolFriends
 
-A modern, secure student community web application built with a dark, responsive user interface. Connect with friends, track class leaderboard rankings, and share media in one central space.
+This package is fixed for direct GitHub Pages/static hosting.
 
-🔗 **Live Site:** [https://schoolfriends.pntr.dev](https://schoolfriends.pntr.dev)
+## Why the blank screen happened
 
----
+The previous `index.html` tried to load:
 
-## ✨ Features
+`/src/main.tsx`
 
-* **Student Dashboard:** Personal greetings, point tallies, and active badges.
-* **Class Board Leaderboard:** Weekly student rankings and progress tracking.
-* **Friends List:** Quick-access profile carousel.
-* **Media Attachment Uploads:** Direct photo uploads powered by Cloudinary.
-* **Google Authentication:** Secure single sign-on (SSO) via Firebase Auth.
-* **PWA & Custom Branding:** Native-feeling mobile home screen shortcuts and browser favicons featuring the custom **SF** brand mark.
+but the uploaded project did not contain `src/main.tsx`, a Vite build setup, or a compiled JavaScript bundle. It also had `App.tsx` at the repository root, which a browser cannot execute directly.
 
----
+The fixed `index.html` is self-contained and renders the SchoolFriends chat UI directly, so GitHub Pages can serve it without running Vite.
 
-## 🛠️ Tech Stack
+## Deploy
 
-* **Frontend:** HTML5, Tailwind CSS, JavaScript (ES6 Modules)
-* **Authentication & Database:** Firebase v10 (Auth & Firestore)
-* **Media Hosting:** Cloudinary REST API (Unsigned Uploads)
-* **Hosting & Domain:** GitHub Pages + Custom Domain (`schoolfriends.pntr.dev`)
+Upload/push the contents of this folder to the GitHub Pages source branch. No `npm install` or build command is required for this fixed version.
 
----
-
-## 📁 Repository File Structure
-
-```text
-├── index.html        # Main dashboard UI & inline integration scripts
-├── favicon.png       # Primary SF brand icon (App mark & favicon)
-├── CNAME             # Custom domain configuration (schoolfriends.pntr.dev)
-└── README.md         # Project documentation
+The CNAME file is preserved.
