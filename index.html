@@ -1,26 +1,217 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b0c12"><title>SchoolFriends</title><style>
-:root{--bg:#0b0c12;--p:#11131c;--p2:#171925;--line:#292d40;--txt:#f7f7fb;--muted:#969aad;--pri:#7c68ff;--green:#3ed0a2}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% -10%,#29224d,#0b0c12 35%);color:var(--txt);font:14px Inter,system-ui,sans-serif}.app{min-height:100vh}.side{position:fixed;inset:0 auto 0 0;width:245px;padding:22px 14px;background:#0d0e15e8;border-right:1px solid var(--line)}.brand{font-size:19px;font-weight:900;padding:0 10px 28px;display:flex;gap:10px;align-items:center}.logo{width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,#8d7bff,#5b48e9);display:grid;place-items:center}.nav{display:grid;gap:5px}.nav button{padding:12px;border:0;border-radius:13px;background:0;color:var(--muted);text-align:left;font-weight:800}.nav button.active,.nav button:hover{background:#242044;color:white}.main{margin-left:245px;padding:28px;max-width:1250px}.top{display:flex;gap:12px;margin-bottom:22px}.search{flex:1;max-width:580px;background:#12141d;border:1px solid var(--line);border-radius:14px;padding:12px 15px;color:white;outline:0}.icon{width:42px;height:42px;border:1px solid var(--line);background:#12141d;border-radius:13px;color:white}.view{display:none}.view.active{display:block}.hero{padding:28px;border:1px solid #39315e;border-radius:25px;background:linear-gradient(135deg,#242044,#171827);box-shadow:0 18px 55px #0004}.eyebrow{font-size:11px;font-weight:900;letter-spacing:.13em;text-transform:uppercase;color:#a69bff}.hero h1{font-size:31px;margin:7px 0}.hero p{color:#b5b2c6}.stats{display:flex;gap:25px}.stats b{font-size:19px}.stats span{display:block;color:var(--muted);font-size:11px}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:15px;margin-top:16px}.card{background:#11131ce8;border:1px solid var(--line);border-radius:20px;padding:18px}.s8{grid-column:span 8}.s4{grid-column:span 4}.s6{grid-column:span 6}.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}.head h2{margin:0;font-size:17px}.btn{padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:#202332;color:white;font-weight:800}.btn.primary{background:var(--pri);border-color:transparent}.friends{display:flex;gap:18px;overflow:auto}.friend{text-align:center;min-width:58px}.avatar{width:50px;height:50px;border-radius:16px;background:linear-gradient(145deg,#705eff,#9c85ff);display:grid;place-items:center;font-weight:900;margin:auto auto 7px}.rows{display:grid;gap:8px}.row{display:flex;gap:10px;align-items:center;padding:11px;border-radius:13px;background:#171925}.grow{flex:1}.muted{color:var(--muted)}.small{font-size:12px}.pill{font-size:11px;padding:5px 8px;border-radius:99px;background:#24213b;color:#c2b9ff;font-weight:900}.green{background:#17352e;color:#73e1be}.update{display:flex;gap:11px;padding:11px;background:#171925;border-radius:13px;margin-top:8px}.poll button{width:100%;margin-top:8px;padding:11px;background:#171925;color:white;border:1px solid var(--line);border-radius:12px;text-align:left}.bar{height:4px;background:#2b2e3e;margin-top:7px;border-radius:8px}.bar i{display:block;height:100%;background:var(--pri);border-radius:8px}.title{margin-bottom:15px}.title h1{margin:0;font-size:26px}.title p{margin:4px 0;color:var(--muted)}.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.tile{background:#12141d;border:1px solid var(--line);border-radius:18px;padding:17px}.tile h3{margin:12px 0 5px}.tile p{color:var(--muted);font-size:12px;line-height:1.5}.chat{display:grid;grid-template-columns:275px 1fr;height:calc(100vh - 135px);padding:0;overflow:hidden}.chatlist{border-right:1px solid var(--line);padding:15px}.chatlist button{width:100%;display:flex;gap:9px;padding:11px;background:0;color:white;border:0;border-radius:12px;text-align:left}.chatlist button:hover{background:#1b1d2a}.chatmain{display:flex;flex-direction:column}.chathead{padding:15px;border-bottom:1px solid var(--line)}.msgs{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:8px}.bubble{max-width:68%;background:#1b1d29;padding:10px 13px;border-radius:15px}.me{align-self:flex-end;background:var(--pri)}.composer{position:relative;display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}.composer input{flex:1;background:#151722;border:1px solid var(--line);border-radius:12px;color:white;padding:11px}.picker{display:none;position:absolute;bottom:60px;left:10px;background:#12141d;border:1px solid var(--line);padding:12px;border-radius:17px;width:270px}.picker.show{display:block}.eg{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}.eg button{background:#1a1c28;border:0;border-radius:10px;padding:7px}.eg img{width:29px}.profile{overflow:hidden;padding:0}.cover{height:165px;background:linear-gradient(120deg,#272044,#171826)}.body{padding:0 20px 22px;margin-top:-40px}.big{width:88px;height:88px;border:5px solid var(--p);border-radius:25px;background:linear-gradient(145deg,#806cff,#b38cff);display:grid;place-items:center;font-weight:900;font-size:25px}.abilitygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.ability{padding:16px;background:#12141d;border:1px solid var(--line);border-radius:18px}.ability.equipped{border-color:#6c5bf0}.ability img{width:34px}.modal{display:none;position:fixed;inset:0;background:#0009;z-index:50;align-items:center;justify-content:center;padding:18px}.modal.show{display:flex}.box{width:min(500px,100%);background:#12141d;border:1px solid var(--line);border-radius:21px;padding:20px}.box input{width:100%;background:#0e1017;border:1px solid var(--line);border-radius:11px;color:white;padding:11px;margin:10px 0}.mobile{display:none}
-@media(max-width:850px){.side{display:none}.main{margin:0;padding:15px 14px 90px}.grid{grid-template-columns:1fr}.s8,.s4,.s6{grid-column:span 1}.tiles,.abilitygrid{grid-template-columns:1fr 1fr}.chat{grid-template-columns:1fr;height:calc(100vh - 130px)}.chatlist{display:none}.mobile{display:flex;position:fixed;z-index:40;bottom:8px;left:8px;right:8px;background:#171925ee;border:1px solid #303348;border-radius:18px;padding:6px;justify-content:space-around}.mobile button{background:0;border:0;color:#999bad;font-size:10px;font-weight:800;padding:5px}.mobile button.active{color:white;background:#2a2545;border-radius:10px}.mobile span{display:block;font-size:19px}.hero h1{font-size:26px}.stats{margin-top:18px}.bubble{max-width:82%}}@media(max-width:470px){.tiles,.abilitygrid{grid-template-columns:1fr}.hero{padding:21px}}
-</style></head><body><div class="app"><aside class="side"><div class="brand"><div class="logo">S</div>SchoolFriends</div><nav class="nav" id="nav"></nav></aside><main class="main"><header class="top"><input class="search" placeholder="Search SchoolFriends"><button class="icon">⌁</button><button class="icon">⚙</button></header>
-<section id="home" class="view active"><div class="hero"><div class="eyebrow">School space · Today</div><h1>Good morning, Azure.</h1><p>Stay connected with your friends, groups and school events — all in one place.</p><div class="stats"><div><b>42</b><span>Friends</span></div><div><b>7</b><span>Badges</span></div><div><b>710</b><span>Points</span></div></div></div><div class="grid"><div class="card s8"><div class="head"><h2>Your friends</h2><button class="btn" onclick="go('friends')">View all</button></div><div class="friends"><div class="friend"><div class="avatar">A</div><b>Alex</b></div><div class="friend"><div class="avatar">S</div><b>Sam</b></div><div class="friend"><div class="avatar">J</div><b>Jay</b></div><div class="friend"><div class="avatar">M</div><b>Mia</b></div><div class="friend"><div class="avatar">R</div><b>Riya</b></div></div></div><div class="card s4"><div class="head"><h2>Class board</h2><span class="pill">This week</span></div><div class="rows"><div class="row"><b>01</b><span class="grow">Sam</span><b>820</b></div><div class="row"><b>02</b><span class="grow">Alex</span><b>760</b></div><div class="row"><b>03</b><span class="grow">You</span><b>710</b></div></div></div><div class="card s6"><div class="head"><h2>School updates</h2></div><div class="update"><b>Sports Day</b><span class="grow muted">Friday · Main Ground</span></div><div class="update"><b>Art Club</b><span class="grow muted">New activity posted</span></div></div><div class="card s6"><div class="head"><h2>Quick poll</h2><span class="pill green">Live</span></div><div class="poll"><button onclick="vote(this)">Game Night <span style="float:right">42%</span><div class="bar"><i style="width:42%"></i></div></button><button onclick="vote(this)">Art Challenge <span style="float:right">31%</span><div class="bar"><i style="width:31%"></i></div></button></div></div></div></section>
-<section id="chats" class="view"><div class="card chat"><aside class="chatlist"><div class="head"><h2>Messages</h2><span class="pill">3</span></div><button onclick="chat('Alex','A')"><div class="avatar" style="width:40px;height:40px">A</div><span class="grow"><b>Alex</b><div class="small muted">Yo, check this out</div></span></button><button onclick="chat('Class 9A','9A')"><div class="avatar" style="width:40px;height:40px">9A</div><span class="grow"><b>Class 9A</b><div class="small muted">Event update</div></span></button></aside><div class="chatmain"><div class="chathead"><b id="chatname">Alex</b><div class="small muted"> · Online</div></div><div class="msgs" id="msgs"><div class="bubble">Yo, check this out 👀</div><div class="bubble me">Okay 😂</div><div class="bubble">SchoolFriends is looking clean now.</div></div><div class="composer"><button class="icon" onclick="togglePicker()"><img src="assets/emojis/star.svg" width="24"></button><input id="msg" placeholder="Write a message..."><button class="btn primary" onclick="send()">Send</button><div class="picker" id="picker"><div class="small muted">SchoolFriends custom emoji</div><div class="eg" id="eg"></div></div></div></div></div></section>
-<section id="friends" class="view"><div class="title"><h1>Friends</h1><p>People you connect with at SchoolFriends.</p></div><div class="tiles"><div class="tile"><div class="avatar">A</div><h3>Alex</h3><p>@alex · Gamer ability</p><button class="btn" onclick="chat('Alex','A');go('chats')">Message</button></div><div class="tile"><div class="avatar">S</div><h3>Sam</h3><p>@sam · Champion ability</p><button class="btn">Message</button></div><div class="tile"><div class="avatar">M</div><h3>Mia</h3><p>@mia · Artist ability</p><button class="btn">Message</button></div></div></section>
-<section id="events" class="view"><div class="title"><h1>Events</h1><p>School activities and group events.</p></div><div class="tiles"><div class="tile"><div class="eyebrow">FRI · 09:00</div><h3>Sports Day</h3><p>Main Ground · School-wide event</p><button class="btn primary" onclick="toast('RSVP saved')">RSVP</button></div><div class="tile"><div class="eyebrow">MON · 15:30</div><h3>Art Club Meetup</h3><p>Art Room · Class group</p><button class="btn" onclick="toast('Reminder set')">Remind me</button></div></div></section>
-<section id="groups" class="view"><div class="title"><h1>Groups</h1><p>Private spaces for classes and friends.</p></div><div class="tiles"><div class="tile"><h3>Class 9A</h3><p>28 members · 3 new updates</p><button class="btn primary">Open group</button></div><div class="tile"><h3>Gaming Friends</h3><p>12 members · Private</p><button class="btn">Open group</button></div></div></section>
-<section id="abilities" class="view"><div class="hero"><div class="eyebrow">Identity layer</div><h1>Custom Abilities</h1><p>Fun social effects — never permissions.</p></div><div class="card" style="margin-top:16px"><div class="head"><h2>Ability collection</h2><button class="btn primary" onclick="openM('create')">＋ Create</button></div><div class="abilitygrid" id="abilities"></div></div></section>
-<section id="profile" class="view"><div class="card profile"><div class="cover"></div><div class="body"><div class="big">AZ</div><h1>Azure</h1><div class="muted">@azure · Gamer ability</div><p class="muted">Making school life a little more fun.</p><div class="stats"><div><b>42</b><span>Friends</span></div><div><b>7</b><span>Badges</span></div><div><b>710</b><span>Points</span></div></div></div></div></section>
-</main></div><nav class="mobile" id="mobile"></nav><div class="modal" id="create"><div class="box"><div class="head"><h2>Create custom ability</h2><button class="icon" onclick="closeM('create')">×</button></div><input id="aname" maxlength="20" placeholder="Ability name"><button class="btn primary" onclick="makeAbility()">Create ability</button><p class="small muted">Abilities cannot grant roles, access private data, bypass moderation, or run custom code.</p></div></div><div id="toast" style="position:fixed;left:50%;bottom:75px;transform:translateX(-50%);background:#fff;color:#111;padding:10px 15px;border-radius:11px;font-weight:800;display:none;z-index:90"></div><script>
-const nav=[['home','⌂'],['chats','◌'],['friends','♧'],['events','▣'],['groups','◇'],['abilities','✦'],['profile','○']];const mk=(mobile)=>nav.map(([id,ic])=>`<button data-v="${id}" class="${id==='home'?'active':''}">${ic}<span>${id[0].toUpperCase()+id.slice(1)}</span></button>`).join('');document.getElementById('nav').innerHTML=mk();document.getElementById('mobile').innerHTML=mk(1);document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>go(b.dataset.v));function go(id){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===id));scrollTo(0,0)}function toast(s){let t=document.getElementById('toast');t.textContent=s;t.style.display='block';clearTimeout(window.x);window.x=setTimeout(()=>t.style.display='none',1800)}function vote(){toast('Vote saved')}function chat(n,i){document.getElementById('chatname').textContent=n}function send(){let i=document.getElementById('msg'),t=i.value.trim();if(!t)return;if(t.split(/\s+/).length>340)return toast('340-word limit');let d=document.createElement('div');d.className='bubble me';d.textContent=t;document.getElementById('msgs').appendChild(d);i.value=''}function togglePicker(){document.getElementById('picker').classList.toggle('show')}function openM(id){document.getElementById(id).classList.add('show')}function closeM(id){document.getElementById(id).classList.remove('show')}const ef=['joy','wave','star','love','fire','party'];document.getElementById('eg').innerHTML=ef.map(x=>`<button onclick="insert('${x}')"><img src="assets/emojis/${x}.svg"></button>`).join('');function insert(x){document.getElementById('msg').value+=' ['+x+'] ';togglePicker()}const abs=[['Gamer','star'],['Artist','love'],['Party Starter','party'],['Wizard','star'],['Champion','fire'],['Birthday Star','joy']];document.getElementById('abilities').innerHTML=abs.map((a,i)=>`<div class="ability ${i?'':'equipped'}"><img src="assets/emojis/${a[1]}.svg"><h3>${a[0]}</h3><p class="small muted">${i?'Fun profile effect and reaction pack':'Game Hub + gamer profile frame'}</p><button class="btn ${i?'':'primary'}" onclick="equip(this)">${i?'Equip':'Equipped'}</button></div>`).join('');function equip(b){document.querySelectorAll('.ability').forEach(x=>{x.classList.remove('equipped');x.querySelector('.btn').classList.remove('primary');x.querySelector('.btn').textContent='Equip'});b.closest('.ability').classList.add('equipped');b.classList.add('primary');b.textContent='Equipped';toast('Ability equipped')};function makeAbility(){let n=document.getElementById('aname').value.trim();if(!n)return toast('Name your ability first');toast(n+' created');closeM('create')}</script></body></html>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- Browser Tab Icon -->
-  <link rel="icon" type="image/png" href="favicon.png">
-  
-  <!-- Mobile Home Screen Shortcut Icon -->
-  <link rel="apple-touch-icon" href="favicon.png">
-  
   <title>SchoolFriends</title>
+
+  <!-- LOGO & FAVICON CONFIGURATION -->
+  <link rel="icon" type="image/png" href="favicon.png?v=2">
+  <link rel="shortcut icon" type="image/png" href="favicon.png?v=2">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon.png?v=2">
+  <meta name="apple-mobile-web-app-title" content="SchoolFriends">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0F0F17">
+
+  <!-- GOOGLE FONTS & TAILWIND CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0c0d14;
+      color: #f3f4f6;
+    }
+    .glass-card {
+      background: rgba(22, 22, 34, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .purple-card {
+      background: linear-gradient(135deg, rgba(30, 27, 58, 0.9) 0%, rgba(20, 18, 38, 0.95) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+    .avatar-bg {
+      background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+    }
+  </style>
 </head>
+<body class="min-h-screen pb-12 px-4 pt-4 max-w-md mx-auto">
+
+  <!-- TOP BAR / SEARCH -->
+  <header class="flex items-center gap-2 mb-5">
+    <div class="relative flex-1">
+      <input 
+        type="text" 
+        placeholder="Search SchoolFriends" 
+        class="w-full bg-[#161622] text-sm text-gray-200 placeholder-gray-500 rounded-2xl py-3 pl-4 pr-10 focus:outline-none focus:ring-1 focus:ring-purple-500 border border-white/5"
+      />
+    </div>
+    <button class="bg-[#161622] p-3 rounded-2xl border border-white/5 text-gray-400 hover:text-white">
+      ⚡
+    </button>
+    <button id="authBtn" onclick="handleLogin()" class="bg-[#161622] p-3 rounded-2xl border border-white/5 text-gray-400 hover:text-white">
+      ⚙️
+    </button>
+  </header>
+
+  <!-- MAIN HERO CARD -->
+  <section class="purple-card rounded-3xl p-6 mb-5 shadow-xl">
+    <span class="text-[11px] font-bold tracking-widest text-purple-400 uppercase">SCHOOL SPACE • TODAY</span>
+    <h1 id="userGreeting" class="text-2xl font-extrabold text-white mt-1 mb-2">Good morning, Azure.</h1>
+    <p class="text-xs text-gray-400 leading-relaxed mb-6">
+      Stay connected with your friends, groups and school events — all in one place.
+    </p>
+
+    <!-- STATS ROW -->
+    <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/10">
+      <div>
+        <div class="text-xl font-extrabold text-white">42</div>
+        <div class="text-[11px] text-gray-400">Friends</div>
+      </div>
+      <div>
+        <div class="text-xl font-extrabold text-white">7</div>
+        <div class="text-[11px] text-gray-400">Badges</div>
+      </div>
+      <div>
+        <div class="text-xl font-extrabold text-white">710</div>
+        <div class="text-[11px] text-gray-400">Points</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- YOUR FRIENDS SECTION -->
+  <section class="glass-card rounded-3xl p-5 mb-5">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-base font-bold text-white">Your friends</h2>
+      <button class="text-xs text-purple-400 font-semibold bg-white/5 px-3 py-1 rounded-full">View all</button>
+    </div>
+
+    <!-- AVATAR HORIZONTAL SCROLL -->
+    <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+      <div class="flex flex-col items-center gap-2 min-w-[56px]">
+        <div class="w-14 h-14 avatar-bg rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md">
+          A
+        </div>
+        <span class="text-xs text-gray-300 font-medium">Alex</span>
+      </div>
+
+      <div class="flex flex-col items-center gap-2 min-w-[56px]">
+        <div class="w-14 h-14 avatar-bg rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md">
+          S
+        </div>
+        <span class="text-xs text-gray-300 font-medium">Sam</span>
+      </div>
+
+      <div class="flex flex-col items-center gap-2 min-w-[56px]">
+        <div class="w-14 h-14 avatar-bg rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md">
+          J
+        </div>
+        <span class="text-xs text-gray-300 font-medium">Jay</span>
+      </div>
+
+      <div class="flex flex-col items-center gap-2 min-w-[56px]">
+        <div class="w-14 h-14 avatar-bg rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md">
+          M
+        </div>
+        <span class="text-xs text-gray-300 font-medium">Mia</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLASS BOARD SECTION -->
+  <section class="glass-card rounded-3xl p-5 mb-5">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-base font-bold text-white">Class board</h2>
+      <span class="text-xs text-purple-400 font-semibold bg-purple-500/10 px-3 py-1 rounded-full">This week</span>
+    </div>
+
+    <div class="space-y-2">
+      <div class="bg-white/5 rounded-2xl p-3 flex items-center gap-3">
+        <span class="text-xs font-bold text-gray-400 w-5">01</span>
+        <span class="text-sm font-semibold text-white flex-1">Sam</span>
+      </div>
+      <div class="bg-white/5 rounded-2xl p-3 flex items-center gap-3">
+        <span class="text-xs font-bold text-gray-400 w-5">02</span>
+        <span class="text-sm font-semibold text-white flex-1">Alex</span>
+      </div>
+      <div class="bg-purple-500/10 border border-purple-500/20 rounded-2xl p-3 flex items-center gap-3">
+        <span class="text-xs font-bold text-purple-400 w-5">03</span>
+        <span class="text-sm font-semibold text-purple-200 flex-1">You</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEDIA UPLOAD WIDGET (CLOUDINARY READY) -->
+  <section class="glass-card rounded-3xl p-5">
+    <h2 class="text-base font-bold text-white mb-2">Share a photo</h2>
+    <div class="flex gap-2">
+      <input type="file" id="mediaInput" accept="image/*" class="text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 w-full" />
+      <button onclick="uploadMedia()" class="bg-white/10 text-xs font-bold px-4 py-2 rounded-xl text-white hover:bg-white/20 shrink-0">Upload</button>
+    </div>
+  </section>
+
+  <!-- FIREBASE & CLOUDINARY SCRIPT INTEGRATION -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+    // REPLACE THESE WITH YOUR FIREBASE KEYS WHEN READY
+    const firebaseConfig = {
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "schoolfriends.pntr.dev",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const CLOUDINARY_CLOUD_NAME = "YOUR_CLOUD_NAME"; 
+    const CLOUDINARY_UPLOAD_PRESET = "YOUR_UNSIGNED_PRESET"; 
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const googleProvider = new GoogleAuthProvider();
+
+    window.handleLogin = async function() {
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        console.log("User logged in:", result.user.displayName);
+      } catch (err) {
+        console.log("Auth setup pending or login cancelled.");
+      }
+    };
+
+    onAuthStateChanged(auth, (user) => {
+      const greeting = document.getElementById('userGreeting');
+      if (user && greeting) {
+        const firstName = user.displayName.split(' ')[0];
+        greeting.textContent = `Good day, ${firstName}.`;
+      }
+    });
+
+    window.uploadMedia = async function() {
+      const input = document.getElementById('mediaInput');
+      const file = input.files[0];
+      if (!file) return alert('Select an image first.');
+      
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        alert('Image uploaded: ' + data.secure_url);
+      } catch (e) {
+        alert('Set up Cloudinary preset keys to enable uploads!');
+      }
+    };
+  </script>
+</body>
+  </html>
+  
