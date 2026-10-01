@@ -1,401 +1,83 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
-<head>
-    <meta charset="UTF-8">
-    <!-- Mobile Viewport Fixes & Notch/Safe Area Integration -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#0f172a">
-    <title>SchoolFriends Chat</title>
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        discord: {
-                            bg: '#313338',
-                            sidebar: '#2b2d31',
-                            server: '#1e1f22',
-                            hover: '#35373c',
-                            active: '#404249',
-                            text: '#dbdee1',
-                            muted: '#949ba4'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Mobile Viewport Fixes & Soft Keyboard Resize Listener -->
+    <meta 
+      name="viewport" 
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" 
+    />
+
+    <title>SchoolFriends | SocialChat</title>
+
+    <meta name="theme-color" content="#313338" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <link rel="manifest" href="/manifest.json" />
 
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- React 18 & ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-
-    <!-- Babel Standalone for JSX Browser Rendering -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- Firebase Compat SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
     <style>
-        /* Mobile Dynamic Viewport & Overscroll Containment */
-        :root {
-            --app-height: 100%;
-        }
+      :root {
+        --app-height: 100dvh;
+      }
 
-        html, body {
-            height: 100%;
-            height: 100dvh;
-            width: 100%;
-            overflow: hidden;
-            overscroll-behavior-y: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+      /* Base Layout Reset */
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: var(--app-height);
+        overscroll-behavior-y: none;
+        overflow: hidden;
+        background-color: #313338;
+        color: #dbdee1;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-        #root {
-            height: 100%;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-        }
+      #root {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
 
-        /* Prevent auto-zooming on iOS inputs */
-        input, select, textarea {
-            font-size: 16px !important;
-        }
+      /* Prevent iOS Safari auto-zoom bug on input focus (Must be >= 16px) */
+      input, textarea, select {
+        font-size: 16px !important;
+      }
 
-        /* Safe area handling for notched mobile screens */
-        .safe-pb {
-            padding-bottom: env(safe-area-inset-bottom, 16px);
-        }
-        .safe-pt {
-            padding-top: env(safe-area-inset-top, 0px);
-        }
-
-        /* Dark Mode Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #2b2d31;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #1a1b1e;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #111214;
-        }
+      /* Smooth scrolling container */
+      .scroll-container {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+      }
     </style>
-</head>
-<body class="bg-discord-bg text-discord-text font-sans antialiased">
+  </head>
+  <body class="bg-[#313338] text-[#dbdee1]">
     <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+    <!-- Soft Keyboard Dynamic Height Fixer -->
+    <script>
+      function setAppHeight() {
+        const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        document.documentElement.style.setProperty('--app-height', `${height}px`);
+      }
 
-        // Firebase Configuration (Replace with your project details)
-        const firebaseConfig = {
-            apiKey: "YOUR_FIREBASE_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', setAppHeight);
+        window.visualViewport.addEventListener('scroll', setAppHeight);
+      } else {
+        window.addEventListener('resize', setAppHeight);
+      }
 
-        // Initialize Firebase safely with fallback mode
-        let db = null;
-        let isFirebaseActive = false;
-        try {
-            if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                db = firebase.firestore();
-                isFirebaseActive = true;
-            }
-        } catch (e) {
-            console.warn("Firebase initialization warning. Running in local demo mode.", e);
-        }
+      setAppHeight();
+    </script>
 
-        // Cloudinary Upload Settings
-        const CLOUDINARY_UPLOAD_PRESET = "YOUR_PRESET";
-        const CLOUDINARY_CLOUD_NAME = "YOUR_CLOUD_NAME";
-
-        function App() {
-            const [sidebarOpen, setSidebarOpen] = useState(false);
-            const [currentChannel, setCurrentChannel] = useState({ id: 'general', name: 'general', type: 'channel' });
-            const [messages, setMessages] = useState([
-                { id: '1', user: 'Alex', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Alex', text: 'Hey guys! Welcome to SchoolFriends!', timestamp: '10:15 AM' },
-                { id: '2', user: 'Sarah', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sarah', text: 'Does anyone have the math homework solutions?', timestamp: '10:17 AM' },
-                { id: '3', user: 'David', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=David', text: 'Check the #homework channel!', timestamp: '10:20 AM' }
-            ]);
-            const [inputText, setInputText] = useState('');
-            const [currentUser] = useState({ name: 'You', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=User' });
-            const messagesEndRef = useRef(null);
-
-            const channels = [
-                { id: 'general', name: 'general', icon: 'hashtag' },
-                { id: 'announcements', name: 'announcements', icon: 'bullhorn' },
-                { id: 'homework', name: 'homework', icon: 'book' }
-            ];
-
-            const directMessages = [
-                { id: 'dm-sarah', name: 'Sarah', status: 'online', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sarah' },
-                { id: 'dm-alex', name: 'Alex', status: 'idle', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Alex' }
-            ];
-
-            // Real-time Firestore message synchronization
-            useEffect(() => {
-                if (!isFirebaseActive || !db) return;
-
-                const channelId = currentChannel.id;
-                const unsubscribe = db.collection('channels')
-                    .doc(channelId)
-                    .collection('messages')
-                    .orderBy('createdAt', 'asc')
-                    .onSnapshot((snapshot) => {
-                        const fetchedMessages = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            ...doc.data()
-                        }));
-                        if (fetchedMessages.length > 0) {
-                            setMessages(fetchedMessages);
-                        }
-                    }, (error) => {
-                        console.error("Firestore sync error:", error);
-                    });
-
-                return () => unsubscribe();
-            }, [currentChannel.id]);
-
-            // Auto-scroll to bottom when new messages arrive
-            useEffect(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, [messages]);
-
-            // Adjust mobile height dynamically for soft keyboards
-            useEffect(() => {
-                const handleResize = () => {
-                    if (window.visualViewport) {
-                        document.documentElement.style.setProperty('--app-height', `${window.visualViewport.height}px`);
-                    }
-                };
-                window.visualViewport?.addEventListener('resize', handleResize);
-                handleResize();
-                return () => window.visualViewport?.removeEventListener('resize', handleResize);
-            }, []);
-
-            const handleSend = async (e) => {
-                e?.preventDefault();
-                if (!inputText.trim()) return;
-
-                const newMsgData = {
-                    user: currentUser.name,
-                    avatar: currentUser.avatar,
-                    text: inputText,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                setInputText('');
-
-                if (isFirebaseActive && db) {
-                    try {
-                        await db.collection('channels').doc(currentChannel.id).collection('messages').add(newMsgData);
-                    } catch (err) {
-                        console.error("Error sending message to Firebase:", err);
-                    }
-                } else {
-                    // Local fallback if Firebase isn't hooked up yet
-                    setMessages(prev => [...prev, { id: Date.now(), ...newMsgData }]);
-                }
-            };
-
-            const handleFileUpload = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                if (CLOUDINARY_CLOUD_NAME !== "YOUR_CLOUD_NAME") {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
-                    try {
-                        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-                            method: 'POST',
-                            body: formData
-                        });
-                        const data = await res.json();
-                        if (data.secure_url) {
-                            const mediaMsg = {
-                                user: currentUser.name,
-                                avatar: currentUser.avatar,
-                                text: '',
-                                mediaUrl: data.secure_url,
-                                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                                createdAt: isFirebaseActive ? firebase.firestore.FieldValue.serverTimestamp() : Date.now()
-                            };
-
-                            if (isFirebaseActive && db) {
-                                await db.collection('channels').doc(currentChannel.id).collection('messages').add(mediaMsg);
-                            } else {
-                                setMessages(prev => [...prev, { id: Date.now(), ...mediaMsg }]);
-                            }
-                        }
-                    } catch (err) {
-                        console.error("Cloudinary upload failed:", err);
-                    }
-                } else {
-                    // Local blob preview fallback
-                    const localUrl = URL.createObjectURL(file);
-                    setMessages(prev => [...prev, {
-                        id: Date.now(),
-                        user: currentUser.name,
-                        avatar: currentUser.avatar,
-                        text: `Uploaded attachment: ${file.name}`,
-                        mediaUrl: localUrl,
-                        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    }]);
-                }
-            };
-
-            return (
-                <div className="flex h-full w-full overflow-hidden bg-discord-bg relative">
-                    {/* Mobile Backdrop Overlay */}
-                    {sidebarOpen && (
-                        <div 
-                            className="fixed inset-0 bg-black/60 z-20 md:hidden"
-                            onClick={() => setSidebarOpen(false)}
-                        />
-                    )}
-
-                    {/* Collapsible Sidebar */}
-                    <aside className={`
-                        fixed md:static inset-y-0 left-0 z-30
-                        w-72 bg-discord-sidebar flex flex-col transition-transform duration-200 ease-in-out
-                        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-                    `}>
-                        {/* Server Header */}
-                        <div className="h-14 border-b border-black/20 flex items-center justify-between px-4 font-bold text-white shadow-sm safe-pt">
-                            <span className="flex items-center gap-2">
-                                <i className="fa-solid fa-graduation-cap text-indigo-400"></i>
-                                SchoolFriends
-                            </span>
-                            <button className="md:hidden text-discord-muted" onClick={() => setSidebarOpen(false)}>
-                                <i className="fa-solid fa-xmark text-lg"></i>
-                            </button>
-                        </div>
-
-                        {/* Navigation Items */}
-                        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-6">
-                            {/* Text Channels */}
-                            <div>
-                                <div className="px-2 mb-1 text-xs font-semibold uppercase tracking-wider text-discord-muted flex justify-between items-center">
-                                    <span>Text Channels</span>
-                                    <i className="fa-solid fa-plus cursor-pointer hover:text-white"></i>
-                                </div>
-                                <div className="space-y-0.5">
-                                    {channels.map(ch => (
-                                        <button
-                                            key={ch.id}
-                                            onClick={() => {
-                                                setCurrentChannel({ ...ch, type: 'channel' });
-                                                setSidebarOpen(false);
-                                            }}
-                                            className={`
-                                                w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors
-                                                ${currentChannel.id === ch.id ? 'bg-discord-active text-white' : 'text-discord-muted hover:bg-discord-hover hover:text-discord-text'}
-                                            `}
-                                        >
-                                            <i className={`fa-solid fa-${ch.icon} text-base`}></i>
-                                            <span>{ch.name}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Direct Messages */}
-                            <div>
-                                <div className="px-2 mb-1 text-xs font-semibold uppercase tracking-wider text-discord-muted flex justify-between items-center">
-                                    <span>Direct Messages</span>
-                                    <i className="fa-solid fa-plus cursor-pointer hover:text-white"></i>
-                                </div>
-                                <div className="space-y-0.5">
-                                    {directMessages.map(dm => (
-                                        <button
-                                            key={dm.id}
-                                            onClick={() => {
-                                                setCurrentChannel({ ...dm, type: 'dm' });
-                                                setSidebarOpen(false);
-                                            }}
-                                            className={`
-                                                w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors
-                                                ${currentChannel.id === dm.id ? 'bg-discord-active text-white' : 'text-discord-muted hover:bg-discord-hover hover:text-discord-text'}
-                                            `}
-                                        >
-                                            <div className="relative">
-                                                <img src={dm.avatar} alt={dm.name} className="w-6 h-6 rounded-full bg-slate-700" />
-                                                <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-discord-sidebar ${dm.status === 'online' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
-                                            </div>
-                                            <span>{dm.name}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* User Footer Bar */}
-                        <div className="bg-discord-server p-2 flex items-center justify-between safe-pb">
-                            <div className="flex items-center gap-2 px-1">
-                                <img src={currentUser.avatar} alt="User Avatar" className="w-8 h-8 rounded-full bg-slate-600" />
-                                <div className="text-xs">
-                                    <div className="font-semibold text-white leading-tight">{currentUser.name}</div>
-                                    <div className="text-discord-muted text-[10px]">#0001</div>
-                                </div>
-                            </div>
-                            <div className="flex gap-2 text-discord-muted">
-                                <button className="hover:text-white p-1"><i className="fa-solid fa-microphone"></i></button>
-                                <button className="hover:text-white p-1"><i className="fa-solid fa-gear"></i></button>
-                            </div>
-                        </div>
-                    </aside>
-
-                    {/* Chat Section */}
-                    <main className="flex-1 flex flex-col h-full min-w-0 bg-discord-bg">
-                        {/* Header */}
-                        <header className="h-14 border-b border-black/20 flex items-center justify-between px-4 shadow-sm bg-discord-bg shrink-0 safe-pt">
-                            <div className="flex items-center gap-3">
-                                <button 
-                                    className="md:hidden text-discord-muted hover:text-white"
-                                    onClick={() => setSidebarOpen(true)}
-                                >
-                                    <i className="fa-solid fa-bars text-lg"></i>
-                                </button>
-                                <div className="flex items-center gap-2 font-bold text-white">
-                                    <span className="text-discord-muted text-xl">
-                                        {currentChannel.type === 'channel' ? '#' : '@'}
-                                    </span>
-                                    <span>{currentChannel.name}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 text-discord-muted text-lg">
-                                <i className="fa-solid fa-phone text-base cursor-pointer hover:text-white"></i>
-                                <i className="fa-solid fa-bell text-base cursor-pointer hover:text-white"></i>
-                                <i className="fa-solid fa-user-group text-base cursor-pointer hover:text-white"></i>
-                            </div>
-                        </header>
-
-                        {/* Message Stream */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                            {messages.map(msg => (
-                                <div key={msg.id} className="flex items
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
