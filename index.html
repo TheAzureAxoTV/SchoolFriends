@@ -1,417 +1,384 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SchoolFriends - SocialChat</title>
-  
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- Google Fonts: Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-  <!-- Cloudinary Upload Widget -->
-  <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
-
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #1e1f22;
-      color: #dbdee1;
-    }
+    <meta charset="UTF-8">
+    <!-- Mobile Viewport Fixes & Notch/Safe Area Integration -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <title>SchoolFriends Chat</title>
     
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #2b2d31;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #1a1b1e;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #111214;
-    }
-
-    /* Discord-inspired Theme Classes */
-    .bg-discord-dark { background-color: #1e1f22; }
-    .bg-discord-sidebar { background-color: #2b2d31; }
-    .bg-discord-chat { background-color: #313338; }
-    .bg-discord-input { background-color: #383a40; }
-    .bg-discord-hover { background-color: #35373c; }
-    .bg-discord-active { background-color: #404249; }
-    .text-discord-muted { color: #949ba4; }
-    .text-discord-link { color: #00a8fc; }
-    
-    /* SocialChat Gradient Badge */
-    .socialchat-badge {
-      background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
-    }
-  </style>
-</head>
-<body class="h-screen w-screen overflow-hidden flex flex-col md:flex-row">
-
-  <!-- Mobile Top Bar Header -->
-  <div class="md:hidden flex items-center justify-between bg-discord-sidebar p-3 border-b border-gray-800 text-white">
-    <div class="flex items-center space-x-2">
-      <button id="mobile-menu-btn" class="text-discord-muted hover:text-white p-1">
-        <i class="fa-solid fa-bars text-xl"></i>
-      </button>
-      <span class="font-bold text-lg text-white tracking-wide">SchoolFriends</span>
-      <span class="socialchat-badge text-xs font-semibold px-2 py-0.5 rounded-full text-white uppercase tracking-wider">SocialChat</span>
-    </div>
-    <div id="mobile-user-status" class="w-3 h-3 bg-green-500 rounded-full"></div>
-  </div>
-
-  <!-- Left Sidebar (Channels & Navigation) -->
-  <aside id="sidebar" class="hidden md:flex flex-col w-64 bg-discord-sidebar flex-shrink-0 border-r border-gray-800 justify-between select-none">
-    
-    <!-- App Header & Channels -->
-    <div class="flex flex-col flex-1 overflow-y-auto">
-      <!-- App Brand Title -->
-      <div class="p-4 border-b border-gray-800 flex items-center justify-between shadow-sm">
-        <div>
-          <h1 class="text-white font-bold text-lg tracking-tight flex items-center gap-2">
-            SchoolFriends
-          </h1>
-          <span class="inline-block socialchat-badge text-[10px] font-bold px-2 py-0.5 rounded-md text-white uppercase tracking-wider mt-1">
-            SocialChat
-          </span>
-        </div>
-        <i class="fa-solid fa-graduation-cap text-indigo-400 text-xl"></i>
-      </div>
-
-      <!-- Navigation Channels List -->
-      <div class="px-2 py-4 space-y-1">
-        <div class="px-3 pb-2 text-xs font-semibold text-discord-muted uppercase tracking-wider">
-          Text Channels
-        </div>
-
-        <button onclick="switchChannel('general-chat', 'General Chat')" class="channel-btn active-channel w-full flex items-center justify-between px-3 py-2 rounded-md text-white bg-discord-active hover:bg-discord-hover group transition">
-          <div class="flex items-center space-x-2">
-            <i class="fa-solid fa-hashtag text-discord-muted group-hover:text-white"></i>
-            <span class="font-medium text-sm">general-chat</span>
-          </div>
-          <span class="bg-indigo-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">3</span>
-        </button>
-
-        <button onclick="switchChannel('announcements', 'Announcements')" class="channel-btn w-full flex items-center space-x-2 px-3 py-2 rounded-md text-discord-muted hover:text-white hover:bg-discord-hover transition">
-          <i class="fa-solid fa-bullhorn text-discord-muted"></i>
-          <span class="font-medium text-sm">announcements</span>
-        </button>
-
-        <button onclick="switchChannel('study-lounge', 'Study Lounge')" class="channel-btn w-full flex items-center space-x-2 px-3 py-2 rounded-md text-discord-muted hover:text-white hover:bg-discord-hover transition">
-          <i class="fa-solid fa-book-open text-discord-muted"></i>
-          <span class="font-medium text-sm">study-lounge</span>
-        </button>
-
-        <button onclick="switchChannel('media-gallery', 'Media & Memes')" class="channel-btn w-full flex items-center space-x-2 px-3 py-2 rounded-md text-discord-muted hover:text-white hover:bg-discord-hover transition">
-          <i class="fa-solid fa-image text-discord-muted"></i>
-          <span class="font-medium text-sm">media-gallery</span>
-        </button>
-
-        <button onclick="switchChannel('projects', 'Project Ideas')" class="channel-btn w-full flex items-center space-x-2 px-3 py-2 rounded-md text-discord-muted hover:text-white hover:bg-discord-hover transition">
-          <i class="fa-solid fa-code text-discord-muted"></i>
-          <span class="font-medium text-sm">projects</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- User Profile Footer Badge -->
-    <div class="p-3 bg-discord-dark flex items-center justify-between border-t border-gray-800">
-      <div class="flex items-center space-x-3">
-        <div class="relative">
-          <img id="user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=SchoolFriend" alt="User Avatar" class="w-9 h-9 rounded-full bg-gray-700" />
-          <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-discord-dark rounded-full"></div>
-        </div>
-        <div class="flex flex-col">
-          <span id="user-name" class="text-sm font-semibold text-white leading-none">StudentUser</span>
-          <span class="text-[11px] text-discord-muted leading-tight mt-0.5">Online</span>
-        </div>
-      </div>
-      <div class="flex items-center space-x-2 text-discord-muted">
-        <button title="Settings" class="hover:text-white p-1.5 rounded transition"><i class="fa-solid fa-gear"></i></button>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Main Chat Workspace Panel -->
-  <main class="flex-1 flex flex-col bg-discord-chat h-full overflow-hidden relative">
-    
-    <!-- Top Workspace Header -->
-    <header class="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-discord-chat shadow-sm flex-shrink-0">
-      <div class="flex items-center space-x-2">
-        <i class="fa-solid fa-hashtag text-discord-muted text-xl"></i>
-        <h2 id="channel-title" class="text-white font-bold text-base">general-chat</h2>
-        <span class="hidden sm:inline text-gray-600">|</span>
-        <span id="channel-desc" class="hidden sm:inline text-xs text-discord-muted truncate">Welcome to the main chatroom for SchoolFriends!</span>
-      </div>
-
-      <div class="flex items-center space-x-3 text-discord-muted">
-        <div class="relative hidden sm:block">
-          <input type="text" placeholder="Search" class="bg-discord-dark text-xs text-white rounded px-2.5 py-1 pl-7 focus:outline-none w-36 focus:w-48 transition-all" />
-          <i class="fa-solid fa-magnifying-glass absolute left-2 top-2 text-[10px] text-discord-muted"></i>
-        </div>
-        <button id="toggle-members-btn" class="hover:text-white p-1" title="Member List">
-          <i class="fa-solid fa-users"></i>
-        </button>
-      </div>
-    </header>
-
-    <!-- Message Feed Window -->
-    <div id="message-container" class="flex-1 overflow-y-auto p-4 space-y-4">
-      
-      <!-- Welcome Channel Banner -->
-      <div class="mt-4 mb-6">
-        <div class="w-16 h-16 rounded-full bg-discord-hover flex items-center justify-center text-3xl text-white mb-2">
-          <i class="fa-solid fa-hashtag"></i>
-        </div>
-        <h3 id="welcome-header" class="text-2xl font-bold text-white">Welcome to #general-chat!</h3>
-        <p class="text-discord-muted text-sm mt-1">This is the start of the #general-chat channel in SchoolFriends SocialChat.</p>
-      </div>
-
-      <!-- Sample Message Item 1 -->
-      <div class="flex items-start space-x-3 group hover:bg-discord-hover -mx-4 px-4 py-1.5 rounded transition">
-        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Alex" class="w-10 h-10 rounded-full bg-indigo-900 flex-shrink-0 mt-0.5" />
-        <div class="flex-1">
-          <div class="flex items-baseline space-x-2">
-            <span class="font-semibold text-white text-sm">Alex</span>
-            <span class="text-[10px] text-discord-muted">Today at 2:15 PM</span>
-          </div>
-          <p class="text-sm text-gray-200 mt-0.5">Hey everyone! Welcome to our new **SocialChat** space for SchoolFriends! 👋</p>
-        </div>
-      </div>
-
-      <!-- Sample Message Item 2 with Attached Image -->
-      <div class="flex items-start space-x-3 group hover:bg-discord-hover -mx-4 px-4 py-1.5 rounded transition">
-        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Sam" class="w-10 h-10 rounded-full bg-purple-900 flex-shrink-0 mt-0.5" />
-        <div class="flex-1">
-          <div class="flex items-baseline space-x-2">
-            <span class="font-semibold text-white text-sm">Sam</span>
-            <span class="text-[10px] text-discord-muted">Today at 2:20 PM</span>
-          </div>
-          <p class="text-sm text-gray-200 mt-0.5">Check out the project layout preview for our study group!</p>
-          <div class="mt-2 max-w-sm rounded-lg overflow-hidden border border-gray-700 bg-discord-dark">
-            <img src="https://picsum.photos/600/350" alt="Attachment" class="w-full object-cover max-h-60" />
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Message Composer Box Footer -->
-    <footer class="p-4 bg-discord-chat flex-shrink-0">
-      
-      <!-- Attachment Preview Box (Hidden by default) -->
-      <div id="attachment-preview" class="hidden mb-2 p-2 bg-discord-input rounded-md flex items-center justify-between border border-gray-700">
-        <div class="flex items-center space-x-2">
-          <i class="fa-solid fa-paperclip text-indigo-400"></i>
-          <span id="attachment-name" class="text-xs text-white truncate max-w-xs">image.png</span>
-        </div>
-        <button onclick="removeAttachment()" class="text-discord-muted hover:text-red-400 text-xs">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <!-- Chat Input Field -->
-      <form id="chat-form" onsubmit="handleSendMessage(event)" class="bg-discord-input rounded-lg flex items-center px-3 py-2.5 border border-transparent focus-within:border-indigo-500 transition">
-        
-        <!-- Upload Attachment Button (Cloudinary Trigger) -->
-        <button type="button" onclick="openCloudinaryWidget()" class="text-discord-muted hover:text-white p-1 mr-2 rounded-full transition" title="Upload Media via Cloudinary">
-          <i class="fa-solid fa-circle-plus text-lg"></i>
-        </button>
-
-        <input id="message-input" type="text" placeholder="Message #general-chat" class="bg-transparent text-white text-sm w-full focus:outline-none placeholder-discord-muted" autocomplete="off" />
-
-        <div class="flex items-center space-x-2 ml-2">
-          <button type="button" class="text-discord-muted hover:text-yellow-400 p-1" title="Emoji">
-            <i class="fa-regular fa-face-smile text-lg"></i>
-          </button>
-          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition flex items-center space-x-1">
-            <span>Send</span>
-            <i class="fa-solid fa-paper-plane text-[10px]"></i>
-          </button>
-        </div>
-      </form>
-    </footer>
-  </main>
-
-  <!-- Right Sidebar (Members List) -->
-  <aside id="members-sidebar" class="hidden lg:flex flex-col w-56 bg-discord-sidebar border-l border-gray-800 p-4 select-none flex-shrink-0">
-    <div class="text-xs font-semibold text-discord-muted uppercase tracking-wider mb-3">
-      Online — <span id="online-count">3</span>
-    </div>
-    
-    <div class="space-y-2">
-      <!-- Member 1 -->
-      <div class="flex items-center space-x-2 p-1 rounded hover:bg-discord-hover transition cursor-pointer">
-        <div class="relative">
-          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=SchoolFriend" class="w-8 h-8 rounded-full bg-gray-700" />
-          <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-discord-sidebar rounded-full"></div>
-        </div>
-        <span class="text-sm font-medium text-white">StudentUser (You)</span>
-      </div>
-
-      <!-- Member 2 -->
-      <div class="flex items-center space-x-2 p-1 rounded hover:bg-discord-hover transition cursor-pointer">
-        <div class="relative">
-          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Alex" class="w-8 h-8 rounded-full bg-indigo-900" />
-          <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-discord-sidebar rounded-full"></div>
-        </div>
-        <span class="text-sm font-medium text-gray-300">Alex</span>
-      </div>
-
-      <!-- Member 3 -->
-      <div class="flex items-center space-x-2 p-1 rounded hover:bg-discord-hover transition cursor-pointer">
-        <div class="relative">
-          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Sam" class="w-8 h-8 rounded-full bg-purple-900" />
-          <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-discord-sidebar rounded-full"></div>
-        </div>
-        <span class="text-sm font-medium text-gray-300">Sam</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Application Logic Scripts -->
-  <script>
-    // --- 1. FIREBASE INITIALIZATION PLACEHOLDER ---
-    const firebaseConfig = {
-      apiKey: "YOUR_FIREBASE_API_KEY",
-      authDomain: "schoolfriends-app.firebaseapp.com",
-      projectId: "schoolfriends-app",
-      storageBucket: "schoolfriends-app.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef123456"
-    };
-
-    // Initialize Firebase if credentials provided
-    if (firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore();
-      const auth = firebase.auth();
-      console.log("Firebase initialized successfully.");
-    }
-
-    // --- 2. CLOUDINARY MEDIA INTEGRATION ---
-    let pendingMediaUrl = null;
-
-    function openCloudinaryWidget() {
-      if (typeof cloudinary === 'undefined') {
-        alert("Cloudinary script loading... Please ensure you are connected to the internet.");
-        return;
-      }
-
-      cloudinary.openUploadWidget({
-        cloudName: 'YOUR_CLOUDINARY_CLOUD_NAME', // Replace with your Cloudinary Cloud Name
-        uploadPreset: 'YOUR_UPLOAD_PRESET',       // Replace with your Upload Preset
-        sources: ['local', 'url', 'camera'],
-        multiple: false,
-        theme: 'minimal'
-      }, (error, result) => {
-        if (!error && result && result.event === "success") {
-          pendingMediaUrl = result.info.secure_url;
-          document.getElementById('attachment-preview').classList.remove('hidden');
-          document.getElementById('attachment-name').innerText = result.info.original_filename + "." + result.info.format;
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        discord: {
+                            bg: '#313338',
+                            sidebar: '#2b2d31',
+                            server: '#1e1f22',
+                            hover: '#35373c',
+                            active: '#404249',
+                            text: '#dbdee1',
+                            muted: '#949ba4'
+                        }
+                    }
+                }
+            }
         }
-      });
-    }
+    </script>
 
-    function removeAttachment() {
-      pendingMediaUrl = null;
-      document.getElementById('attachment-preview').classList.add('hidden');
-    }
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    // --- 3. CHANNEL SWITCHING LOGIC ---
-    let activeChannel = "general-chat";
+    <!-- React 18 & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 
-    function switchChannel(channelId, channelName) {
-      activeChannel = channelId;
-      document.getElementById('channel-title').innerText = channelId;
-      document.getElementById('welcome-header').innerText = `Welcome to #${channelId}!`;
-      document.getElementById('message-input').placeholder = `Message #${channelId}`;
-      document.getElementById('channel-desc').innerText = `This is the channel topic for #${channelId}`;
+    <!-- Babel Standalone for JSX Browser Rendering -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-      // Update Channel List Active Highlight
-      document.querySelectorAll('.channel-btn').forEach(btn => {
-        btn.classList.remove('bg-discord-active', 'text-white');
-        btn.classList.add('text-discord-muted');
-      });
-      event.currentTarget.classList.add('bg-discord-active', 'text-white');
-      event.currentTarget.classList.remove('text-discord-muted');
-    }
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-    // --- 4. MESSAGE FEED & SENDING LOGIC ---
-    function handleSendMessage(e) {
-      e.preventDefault();
-      const input = document.getElementById('message-input');
-      const text = input.value.trim();
+    <style>
+        /* Mobile Dynamic Viewport & Overscroll Containment */
+        :root {
+            --app-height: 100%;
+        }
 
-      if (!text && !pendingMediaUrl) return;
+        html, body {
+            height: 100%;
+            height: 100dvh;
+            width: 100%;
+            overflow: hidden;
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-      const messageContainer = document.getElementById('message-container');
-      const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        #root {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
 
-      // Build Message Element
-      const msgDiv = document.createElement('div');
-      msgDiv.className = "flex items-start space-x-3 group hover:bg-discord-hover -mx-4 px-4 py-1.5 rounded transition";
+        /* Prevent auto-zooming on iOS inputs */
+        input, select, textarea {
+            font-size: 16px !important;
+        }
 
-      let mediaHtml = "";
-      if (pendingMediaUrl) {
-        mediaHtml = `
-          <div class="mt-2 max-w-sm rounded-lg overflow-hidden border border-gray-700 bg-discord-dark">
-            <img src="${pendingMediaUrl}" class="w-full object-cover max-h-60" />
-          </div>
-        `;
-      }
+        /* Safe area handling for notched mobile screens */
+        .safe-pb {
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+        }
+        .safe-pt {
+            padding-top: env(safe-area-inset-top, 0px);
+        }
 
-      msgDiv.innerHTML = `
-        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=SchoolFriend" class="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 mt-0.5" />
-        <div class="flex-1">
-          <div class="flex items-baseline space-x-2">
-            <span class="font-semibold text-white text-sm">StudentUser</span>
-            <span class="text-[10px] text-discord-muted">Today at ${timeString}</span>
-          </div>
-          ${text ? `<p class="text-sm text-gray-200 mt-0.5">${escapeHtml(text)}</p>` : ''}
-          ${mediaHtml}
-        </div>
-      `;
+        /* Dark Mode Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2b2d31;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1a1b1e;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #111214;
+        }
+    </style>
+</head>
+<body class="bg-discord-bg text-discord-text font-sans antialiased">
+    <div id="root"></div>
 
-      messageContainer.appendChild(msgDiv);
-      messageContainer.scrollTop = messageContainer.scrollHeight;
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-      // Reset Input and Attachments
-      input.value = "";
-      removeAttachment();
-    }
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
+        // Initialize Firebase safely
+        let db = null;
+        let auth = null;
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                auth = firebase.auth();
+            }
+        } catch (e) {
+            console.warn("Firebase credentials not configured yet. Demo mode active.", e);
+        }
 
-    // Mobile Sidebar Navigation Toggle
-    document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-      const sidebar = document.getElementById('sidebar');
-      sidebar.classList.toggle('hidden');
-      sidebar.classList.toggle('fixed');
-      sidebar.classList.toggle('inset-0');
-      sidebar.classList.toggle('z-50');
-    });
+        // Cloudinary Upload Settings
+        const CLOUDINARY_UPLOAD_PRESET = "YOUR_PRESET";
+        const CLOUDINARY_CLOUD_NAME = "YOUR_CLOUD_NAME";
 
-    // Toggle Member List Panel
-    document.getElementById('toggle-members-btn').addEventListener('click', () => {
-      const members = document.getElementById('members-sidebar');
-      members.classList.toggle('hidden');
-    });
-  </script>
-</body>
-            </html>
-  
+        function App() {
+            const [sidebarOpen, setSidebarOpen] = useState(false);
+            const [currentChannel, setCurrentChannel] = useState({ id: 'general', name: 'general', type: 'channel' });
+            const [messages, setMessages] = useState([
+                { id: 1, user: 'Alex', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Alex', text: 'Hey guys! Welcome to SchoolFriends!', timestamp: '10:15 AM' },
+                { id: 2, user: 'Sarah', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sarah', text: 'Does anyone have the math homework solutions?', timestamp: '10:17 AM' },
+                { id: 3, user: 'David', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=David', text: 'Check the #homework channel!', timestamp: '10:20 AM' }
+            ]);
+            const [inputText, setInputText] = useState('');
+            const [currentUser] = useState({ name: 'You', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=User' });
+            const messagesEndRef = useRef(null);
+
+            const channels = [
+                { id: 'general', name: 'general', icon: 'hashtag' },
+                { id: 'announcements', name: 'announcements', icon: 'bullhorn' },
+                { id: 'homework', name: 'homework', icon: 'book' }
+            ];
+
+            const directMessages = [
+                { id: 'dm-sarah', name: 'Sarah', status: 'online', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sarah' },
+                { id: 'dm-alex', name: 'Alex', status: 'idle', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Alex' }
+            ];
+
+            // Auto-scroll to bottom when new messages arrive
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [messages]);
+
+            // Adjust height dynamically when soft mobile keyboard pops up
+            useEffect(() => {
+                const handleResize = () => {
+                    if (window.visualViewport) {
+                        document.documentElement.style.setProperty('--app-height', `${window.visualViewport.height}px`);
+                    }
+                };
+                window.visualViewport?.addEventListener('resize', handleResize);
+                handleResize();
+                return () => window.visualViewport?.removeEventListener('resize', handleResize);
+            }, []);
+
+            const handleSend = (e) => {
+                e?.preventDefault();
+                if (!inputText.trim()) return;
+
+                const newMessage = {
+                    id: Date.now(),
+                    user: currentUser.name,
+                    avatar: currentUser.avatar,
+                    text: inputText,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+
+                setMessages(prev => [...prev, newMessage]);
+                setInputText('');
+            };
+
+            const handleFileUpload = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                if (CLOUDINARY_CLOUD_NAME !== "YOUR_CLOUD_NAME") {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+                    try {
+                        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json();
+                        if (data.secure_url) {
+                            setMessages(prev => [...prev, {
+                                id: Date.now(),
+                                user: currentUser.name,
+                                avatar: currentUser.avatar,
+                                text: '',
+                                mediaUrl: data.secure_url,
+                                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            }]);
+                        }
+                    } catch (err) {
+                        console.error("Cloudinary upload failed:", err);
+                    }
+                } else {
+                    // Fallback local blob preview for testing without active Cloudinary key
+                    const localUrl = URL.createObjectURL(file);
+                    setMessages(prev => [...prev, {
+                        id: Date.now(),
+                        user: currentUser.name,
+                        avatar: currentUser.avatar,
+                        text: `Uploaded attachment: ${file.name}`,
+                        mediaUrl: localUrl,
+                        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    }]);
+                }
+            };
+
+            return (
+                <div className="flex h-full w-full overflow-hidden bg-discord-bg relative">
+                    {/* Mobile Backdrop Overlay */}
+                    {sidebarOpen && (
+                        <div 
+                            className="fixed inset-0 bg-black/60 z-20 md:hidden"
+                            onClick={() => setSidebarOpen(false)}
+                        />
+                    )}
+
+                    {/* Collapsible Discord-style Sidebar */}
+                    <aside className={`
+                        fixed md:static inset-y-0 left-0 z-30
+                        w-72 bg-discord-sidebar flex flex-col transition-transform duration-200 ease-in-out
+                        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                    `}>
+                        {/* Server Header */}
+                        <div className="h-14 border-b border-black/20 flex items-center justify-between px-4 font-bold text-white shadow-sm safe-pt">
+                            <span className="flex items-center gap-2">
+                                <i className="fa-solid fa-graduation-cap text-indigo-400"></i>
+                                SchoolFriends
+                            </span>
+                            <button className="md:hidden text-discord-muted" onClick={() => setSidebarOpen(false)}>
+                                <i className="fa-solid fa-xmark text-lg"></i>
+                            </button>
+                        </div>
+
+                        {/* Navigation Items */}
+                        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-6">
+                            {/* Text Channels */}
+                            <div>
+                                <div className="px-2 mb-1 text-xs font-semibold uppercase tracking-wider text-discord-muted flex justify-between items-center">
+                                    <span>Text Channels</span>
+                                    <i className="fa-solid fa-plus cursor-pointer hover:text-white"></i>
+                                </div>
+                                <div className="space-y-0.5">
+                                    {channels.map(ch => (
+                                        <button
+                                            key={ch.id}
+                                            onClick={() => {
+                                                setCurrentChannel({ ...ch, type: 'channel' });
+                                                setSidebarOpen(false);
+                                            }}
+                                            className={`
+                                                w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors
+                                                ${currentChannel.id === ch.id ? 'bg-discord-active text-white' : 'text-discord-muted hover:bg-discord-hover hover:text-discord-text'}
+                                            `}
+                                        >
+                                            <i className={`fa-solid fa-${ch.icon} text-base`}></i>
+                                            <span>{ch.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Direct Messages */}
+                            <div>
+                                <div className="px-2 mb-1 text-xs font-semibold uppercase tracking-wider text-discord-muted flex justify-between items-center">
+                                    <span>Direct Messages</span>
+                                    <i className="fa-solid fa-plus cursor-pointer hover:text-white"></i>
+                                </div>
+                                <div className="space-y-0.5">
+                                    {directMessages.map(dm => (
+                                        <button
+                                            key={dm.id}
+                                            onClick={() => {
+                                                setCurrentChannel({ ...dm, type: 'dm' });
+                                                setSidebarOpen(false);
+                                            }}
+                                            className={`
+                                                w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors
+                                                ${currentChannel.id === dm.id ? 'bg-discord-active text-white' : 'text-discord-muted hover:bg-discord-hover hover:text-discord-text'}
+                                            `}
+                                        >
+                                            <div className="relative">
+                                                <img src={dm.avatar} alt={dm.name} className="w-6 h-6 rounded-full bg-slate-700" />
+                                                <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-discord-sidebar ${dm.status === 'online' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
+                                            </div>
+                                            <span>{dm.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* User Footer Bar */}
+                        <div className="bg-discord-server p-2 flex items-center justify-between safe-pb">
+                            <div className="flex items-center gap-2 px-1">
+                                <img src={currentUser.avatar} alt="User Avatar" className="w-8 h-8 rounded-full bg-slate-600" />
+                                <div className="text-xs">
+                                    <div className="font-semibold text-white leading-tight">{currentUser.name}</div>
+                                    <div className="text-discord-muted text-[10px]">#0001</div>
+                                </div>
+                            </div>
+                            <div className="flex gap-2 text-discord-muted">
+                                <button className="hover:text-white p-1"><i className="fa-solid fa-microphone"></i></button>
+                                <button className="hover:text-white p-1"><i className="fa-solid fa-gear"></i></button>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Chat Section */}
+                    <main className="flex-1 flex flex-col h-full min-w-0 bg-discord-bg">
+                        {/* Header */}
+                        <header className="h-14 border-b border-black/20 flex items-center justify-between px-4 shadow-sm bg-discord-bg shrink-0 safe-pt">
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    className="md:hidden text-discord-muted hover:text-white"
+                                    onClick={() => setSidebarOpen(true)}
+                                >
+                                    <i className="fa-solid fa-bars text-lg"></i>
+                                </button>
+                                <div className="flex items-center gap-2 font-bold text-white">
+                                    <span className="text-discord-muted text-xl">
+                                        {currentChannel.type === 'channel' ? '#' : '@'}
+                                    </span>
+                                    <span>{currentChannel.name}</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4 text-discord-muted text-lg">
+                                <i className="fa-solid fa-phone text-base cursor-pointer hover:text-white"></i>
+                                <i className="fa-solid fa-bell text-base cursor-pointer hover:text-white"></i>
+                                <i className="fa-solid fa-user-group text-base cursor-pointer hover:text-white"></i>
+                            </div>
+                        </header>
+
+                        {/* Message Stream */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {messages.map(msg => (
+                                <div key={msg.id} className="flex items-start gap-3 group hover:bg-black/10 -mx-4 px-4 py-1 rounded transition-colors">
+                                    <img src={msg.avatar} alt={msg.user} className="w-10 h-10 rounded-full bg-slate-700 mt-0.5 shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="font-semibold text-white text-sm hover:underline cursor-pointer">{msg.user}</span>
+                                            <span className="text-[10px] text-discord-muted">{msg.timestamp}</span>
+                                        </div>
+                                        {msg.text && <p className="text-sm text-discord-text break-words mt-0.5">{msg.text}</p>}
+                                        {msg.mediaUrl && (
+                                            <div className="mt-2 max-w-xs rounded-lg overflow-hidden border border-black/20 bg-discord-sidebar">
+                                                <img src={msg.mediaUrl} alt="Uploaded attachment" className="max-h-60 object-cover w-full" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        {/* Input Footer */}
+                        <footer className="p-3 bg-discord-bg shrink-0 safe-pb">
+                            <form onSubmit={handleSend} className="bg-discord-sidebar rounded-lg flex items-center px-3 py-2 gap-2 border border-transparent focus-within:border-indigo-500/50">
+                                <label className="text-discord-muted hover:text-white cursor-pointer p-1">
+                                    <i className="fa-solid fa-circle-plus text-lg"></i>
+                                    <input 
+     
