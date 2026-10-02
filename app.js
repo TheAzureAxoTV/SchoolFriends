@@ -14,7 +14,7 @@ const firebaseConfig = {
 };
 
 // YOUR CLOUDFLARE WORKER ENDPOINT
-const API_BASE_URL = "https://your-worker.your-subdomain.workers.dev";
+const API_BASE_URL = "https://schoolfriends-api.mukhopadhyaysudip3.workers.dev";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
