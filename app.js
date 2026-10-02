@@ -8,9 +8,8 @@ import {
   signOut 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-// Firebase Config
 const firebaseConfig = {
-  apiKey: "AIzaSyD...", // Make sure your real API Key is here!
+  apiKey: "AIzaSyD...", // Put your full Firebase API key here
   authDomain: "schoolfriends-dev.firebaseapp.com",
   projectId: "schoolfriends-dev",
   storageBucket: "schoolfriends-dev.appspot.com",
@@ -27,10 +26,9 @@ const API_BASE_URL = "https://schoolfriends-api.mukhopadhyaysudip3.workers.dev";
 let currentUser = null;
 let selectedImageBase64 = "";
 
-// Handle Auth Redirect
 getRedirectResult(auth).catch(console.error);
 
-// Wait for DOM to load fully
+// DOM Event Handlers
 document.addEventListener("DOMContentLoaded", () => {
   const authSection = document.getElementById('authSection');
   const mainAppSection = document.getElementById('mainAppSection');
@@ -50,21 +48,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const consoleInput = document.getElementById('consoleInput');
   const consoleOutput = document.getElementById('consoleOutput');
 
-  // Sign In Click
   if (googleSignInBtn) {
-    googleSignInBtn.addEventListener('click', () => {
-      signInWithRedirect(auth, provider);
-    });
+    googleSignInBtn.addEventListener('click', () => signInWithRedirect(auth, provider));
   }
 
-  // Sign Out Click
   if (signOutBtn) {
-    signOutBtn.addEventListener('click', () => {
-      signOut(auth).then(() => window.location.reload());
-    });
+    signOutBtn.addEventListener('click', () => signOut(auth).then(() => window.location.reload()));
   }
 
-  // Image Attachment Handling
   if (imageInput) {
     imageInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -88,7 +79,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Terminal Console Modal Toggle
   if (ownerConsoleBtn && consoleModal) {
     ownerConsoleBtn.addEventListener('click', () => consoleModal.classList.remove('hidden'));
   }
@@ -96,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
     closeConsoleBtn.addEventListener('click', () => consoleModal.classList.add('hidden'));
   }
 
-  // Run Terminal Commands
   if (consoleInput) {
     consoleInput.addEventListener('keypress', async (e) => {
       if (e.key === 'Enter') {
@@ -116,13 +105,12 @@ document.addEventListener("DOMContentLoaded", () => {
             consoleOutput.scrollTop = consoleOutput.scrollHeight;
           }
         } catch (err) {
-          if (consoleOutput) consoleOutput.innerText += `\n> Error executing command\n`;
+          if (consoleOutput) consoleOutput.innerText += `\n> Error running command\n`;
         }
       }
     });
   }
 
-  // Send Message
   async function sendMessage() {
     const text = messageInput ? messageInput.value.trim() : "";
     if (!text && !selectedImageBase64) return;
@@ -160,7 +148,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Load Messages from API
   async function loadMessages() {
     if (!chatBox) return;
     try {
@@ -182,13 +169,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Auth State Listener
+  // Auth Listener: Hard Force Display Toggle
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      // Force UI to show Main App immediately
-      if (authSection) authSection.style.display = 'none';
+      // Force UI switch
+      if (authSection) authSection.style.setProperty('display', 'none', 'important');
       if (mainAppSection) mainAppSection.classList.remove('hidden');
       if (userAvatar && user.photoURL) userAvatar.src = user.photoURL;
+
+      const userId = user.email ? user.email.split('@')[0] : 'user';
+      currentUser = { id: userId, username: user.displayName || userId };
 
       try {
         const res = await fetch(`${API_BASE_URL}/api/auth/sync`, {
@@ -202,22 +192,22 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const data = await res.json();
-        currentUser = data.user;
-
-        if (currentUser && currentUser.role === 'OWNER' && ownerConsoleBtn) {
-          ownerConsoleBtn.classList.remove('hidden');
+        if (data.user) {
+          currentUser = data.user;
+          if (currentUser.role === 'OWNER' && ownerConsoleBtn) {
+            ownerConsoleBtn.classList.remove('hidden');
+          }
         }
-
-        loadMessages();
-        setInterval(loadMessages, 3000);
       } catch (err) {
         console.error("DB Sync error:", err);
-        // Fallback user object if DB worker is down
-        currentUser = { id: user.email.split('@')[0], username: user.displayName };
       }
+
+      loadMessages();
+      setInterval(loadMessages, 3000);
     } else {
-      if (authSection) authSection.style.display = 'flex';
+      if (authSection) authSection.style.setProperty('display', 'flex', 'important');
       if (mainAppSection) mainAppSection.classList.add('hidden');
     }
   });
 });
+              
