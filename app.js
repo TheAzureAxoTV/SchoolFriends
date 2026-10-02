@@ -9,7 +9,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD...", // Your API Key
+  apiKey: "AIzaSyD...", // Make sure your real API key is here
   authDomain: "schoolfriends-dev.firebaseapp.com",
   projectId: "schoolfriends-dev",
   storageBucket: "schoolfriends-dev.appspot.com",
@@ -25,20 +25,13 @@ const API_BASE_URL = "https://schoolfriends-api.mukhopadhyaysudip3.workers.dev";
 let currentUser = null;
 let selectedImageBase64 = "";
 
-// DOM Elements
-const authSection = document.getElementById('authSection');
-const mainAppSection = document.getElementById('mainAppSection');
+// Element Selectors
 const googleSignInBtn = document.getElementById('googleSignInBtn');
-const chatBox = document.getElementById('chatBox');
-const messageInput = document.getElementById('messageInput');
-const sendBtn = document.getElementById('sendBtn');
-const imageInput = document.getElementById('imageInput');
-const ownerConsoleBtn = document.getElementById('ownerConsoleBtn');
-const consoleModal = document.getElementById('consoleModal');
-const consoleInput = document.getElementById('consoleInput');
-const consoleOutput = document.getElementById('consoleOutput');
+const messageInput = document.querySelector('input[placeholder*="max 340 chars"]');
+const sendBtn = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Send');
+const chatBoxContainer = messageInput ? messageInput.closest('.min-h-screen, body').querySelector('.rounded-lg:nth-child(2)') || messageInput.parentElement.previousElementSibling : null;
 
-// Sign-In Redirect Handler
+// Sign In Redirect
 getRedirectResult(auth).catch(console.error);
 
 if (googleSignInBtn) {
@@ -47,28 +40,16 @@ if (googleSignInBtn) {
   });
 }
 
-// Convert image to Base64
-if (imageInput) {
-  imageInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        selectedImageBase64 = reader.result;
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-}
-
-// Send Chat Message
+// Send Message Handler
 async function sendMessage() {
+  if (!messageInput || !currentUser) return;
   const text = messageInput.value.trim();
   if (!text && !selectedImageBase64) return;
 
-  sendBtn.disabled = true;
+  if (sendBtn) sendBtn.disabled = true;
+
   try {
-    await fetch(`${API_BASE_URL}/api/messages`, {
+    const res = await fetch(`${API_BASE_URL}/api/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -78,83 +59,68 @@ async function sendMessage() {
       })
     });
 
-    messageInput.value = "";
-    selectedImageBase64 = "";
-    if (imageInput) imageInput.value = "";
-    loadMessages();
+    if (res.ok) {
+      messageInput.value = "";
+      selectedImageBase64 = "";
+      loadMessages();
+    }
   } catch (err) {
-    alert("Failed to send message: " + err.message);
+    console.error("Failed to send message:", err);
   } finally {
-    sendBtn.disabled = false;
+    if (sendBtn) sendBtn.disabled = false;
   }
 }
 
 if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+if (messageInput) {
+  messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+}
 
-// Load Messages
+// Load Chat Messages
 async function loadMessages() {
+  if (!chatBoxContainer) return;
   try {
     const res = await fetch(`${API_BASE_URL}/api/messages`);
     const messages = await res.json();
     
-    if (chatBox) {
-      chatBox.innerHTML = messages.map(msg => `
-        <div class="mb-3 p-2 bg-slate-800 rounded-lg">
-          <div class="text-xs text-indigo-400 font-bold">${msg.username}</div>
-          ${msg.text ? `<div class="text-white text-sm mt-1">${msg.text}</div>` : ''}
-          ${msg.image ? `<img src="${msg.image}" class="mt-2 max-h-48 rounded" />` : ''}
-        </div>
-      `).join('');
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+    const messagesHTML = messages.map(msg => `
+      <div class="mb-3 p-3 bg-slate-800/80 rounded-xl border border-slate-700/50">
+        <div class="text-xs font-semibold text-indigo-400 mb-1">${msg.username}</div>
+        ${msg.text ? `<div class="text-slate-100 text-sm leading-relaxed">${msg.text}</div>` : ''}
+        ${msg.image ? `<img src="${msg.image}" class="mt-2 max-h-52 rounded-lg object-cover" />` : ''}
+      </div>
+    `).join('');
+
+    chatBoxContainer.innerHTML = messagesHTML || `<div class="text-center text-slate-500 py-10 text-sm">No messages yet. Say hello!</div>`;
+    chatBoxContainer.scrollTop = chatBoxContainer.scrollHeight;
   } catch (e) {
-    console.error("Load messages error:", e);
+    console.error("Error loading chat messages:", e);
   }
 }
 
-// Owner Terminal Command
-if (consoleInput) {
-  consoleInput.addEventListener('keypress', async (e) => {
-    if (e.key === 'Enter') {
-      const command = consoleInput.value;
-      consoleInput.value = "";
-      
-      const res = await fetch(`${API_BASE_URL}/api/admin/console`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser.id, command })
-      });
-      const data = await res.json();
-      consoleOutput.innerText += `\n> ${command}\n${data.output || data.error}`;
-    }
-  });
-}
-
-// Auth State Listener
+// Auth State Monitor
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    const res = await fetch(`${API_BASE_URL}/api/auth/sync`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL
-      })
-    });
-    const data = await res.json();
-    currentUser = data.user;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL
+        })
+      });
+      const data = await res.json();
+      currentUser = data.user;
 
-    if (authSection) authSection.classList.add('hidden');
-    if (mainAppSection) mainAppSection.classList.remove('hidden');
-    if (currentUser.role === 'OWNER' && ownerConsoleBtn) {
-      ownerConsoleBtn.classList.remove('hidden');
+      loadMessages();
+      setInterval(loadMessages, 3000); // Poll messages every 3 seconds
+    } catch (e) {
+      console.error("Auth sync error:", e);
     }
-
-    loadMessages();
-    setInterval(loadMessages, 3000); // Auto refresh chat every 3 seconds
-  } else {
-    if (authSection) authSection.classList.remove('hidden');
-    if (mainAppSection) mainAppSection.classList.add('hidden');
   }
 });
+  
