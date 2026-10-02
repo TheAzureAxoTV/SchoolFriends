@@ -6,6 +6,7 @@
   <title>SchoolFriends | Campus Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <style>
     body { background-color: #0b0f17; }
     .chat-scroll::-webkit-scrollbar { width: 4px; }
@@ -13,6 +14,7 @@
   </style>
 </head>
 <body class="text-slate-200 font-sans antialiased h-screen flex flex-col justify-between overflow-hidden">
+  <noscript><div style="padding:16px;background:#111827;color:white;text-align:center">SchoolFriends requires JavaScript to sign in.</div></noscript>
 
   <!-- TOP NAVBAR -->
   <header class="bg-slate-900/90 border-b border-slate-800 px-4 py-3 flex items-center justify-between shrink-0">
@@ -50,10 +52,11 @@
       <h2 class="text-xl font-bold text-white mb-1">Welcome Back</h2>
       <p class="text-xs text-slate-400 mb-6">Connect with your school network, share posts, and chat live.</p>
       
-      <button id="googleSignInBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition shadow-lg shadow-indigo-600/30">
+      <button type="button" id="googleSignInBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition shadow-lg shadow-indigo-600/30">
         <i class="fa-brands fa-google text-lg"></i>
         <span>Continue with Google</span>
       </button>
+      <p id="authStatus" class="min-h-5 mt-3 text-[11px] text-slate-500"></p>
     </div>
   </section>
 
@@ -137,7 +140,7 @@ Examples:
     </div>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <script type="module" src="app.js?v=20261002-1"></script>
 </body>
           </html>
         

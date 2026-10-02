@@ -1,13 +1,17 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { 
-  getAuth, 
-  signInWithRedirect, 
-  getRedirectResult, 
-  GoogleAuthProvider, 
-  onAuthStateChanged, 
-  signOut 
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
+// SchoolFriends Firebase Web App configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBkHqLMsR_UR_NeRaaGb-0c5MRrWzy3w6Y",
   authDomain: "schoolfriends-dev.firebaseapp.com",
@@ -18,225 +22,367 @@ const firebaseConfig = {
   measurementId: "G-P1SRDNQ9PE"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
-
 const API_BASE_URL = "https://schoolfriends-api.mukhopadhyaysudip3.workers.dev";
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: "select_account" });
 
 let currentUser = null;
 let selectedImageBase64 = "";
 let messagePollTimer = null;
+let authBootComplete = false;
 
-// Complete the Google redirect flow. The auth-state listener below is the
-// source of truth for switching from the login screen to the app.
-getRedirectResult(auth).catch((error) => {
-  console.error("Google redirect error:", error);
+const $ = (id) => document.getElementById(id);
+
+function setLoginBusy(busy, label = "Continue with Google") {
+  const button = $("googleSignInBtn");
+  if (!button) return;
+  button.disabled = busy;
+  button.classList.toggle("opacity-70", busy);
+  button.innerHTML = busy
+    ? `<i class="fa-solid fa-spinner fa-spin text-lg"></i><span>${label}</span>`
+    : `<i class="fa-brands fa-google text-lg"></i><span>Continue with Google</span>`;
+}
+
+function setAuthStatus(message = "") {
+  const el = $("authStatus");
+  if (el) el.textContent = message;
+}
+
+function showLogin() {
+  const authSection = $("authSection");
+  const mainAppSection = $("mainAppSection");
+  const userProfile = $("userProfile");
+  const ownerConsoleBtn = $("ownerConsoleBtn");
+
+  if (authSection) authSection.style.display = "flex";
+  if (mainAppSection) mainAppSection.classList.add("hidden");
+  if (userProfile) userProfile.classList.add("hidden");
+  if (ownerConsoleBtn) ownerConsoleBtn.classList.add("hidden");
+}
+
+function showApp(user) {
+  const authSection = $("authSection");
+  const mainAppSection = $("mainAppSection");
+  const userProfile = $("userProfile");
+  const userAvatar = $("userAvatar");
+
+  if (authSection) authSection.style.display = "none";
+  if (mainAppSection) mainAppSection.classList.remove("hidden");
+  if (userProfile) userProfile.classList.remove("hidden");
+  if (userAvatar) {
+    userAvatar.src = user.photoURL || "https://via.placeholder.com/36";
+    userAvatar.alt = user.displayName || "Profile";
+  }
+}
+
+function friendlyAuthError(error) {
   const code = error?.code || "";
-  if (code === "auth/unauthorized-domain") {
-    alert("This website is not authorized for Google sign-in. Add the current domain in Firebase Console → Authentication → Settings → Authorized domains.");
-  } else if (code && code !== "auth/popup-closed-by-user") {
-    alert(`Google sign-in failed: ${error.message || code}`);
-  }
-});
+  const messages = {
+    "auth/unauthorized-domain": `This domain is not authorized by Firebase. Add ${location.hostname} in Firebase Authentication → Settings → Authorized domains.`,
+    "auth/operation-not-allowed": "Google sign-in is disabled. Enable Google under Firebase Authentication → Sign-in method.",
+    "auth/invalid-api-key": "The Firebase API key is invalid or the deployed site is using an old app.js.",
+    "auth/network-request-failed": "Firebase could not reach the network. Check your connection and try again.",
+    "auth/popup-blocked": "The browser blocked the Google login window. Trying the redirect login instead…",
+    "auth/popup-closed-by-user": "The Google login window was closed before completing sign-in.",
+    "auth/cancelled-popup-request": "Another Google login request is already running.",
+    "auth/invalid-credential": "Google returned an invalid credential. Check the Firebase Google provider configuration.",
+    "auth/internal-error": "Firebase returned an internal authentication error. Check the browser console for details."
+  };
+  return messages[code] || error?.message || code || "Unknown Firebase authentication error.";
+}
 
-// DOM Event Handlers
-document.addEventListener("DOMContentLoaded", () => {
-  const authSection = document.getElementById('authSection');
-  const mainAppSection = document.getElementById('mainAppSection');
-  const googleSignInBtn = document.getElementById('googleSignInBtn');
-  const signOutBtn = document.getElementById('signOutBtn');
-  const userAvatar = document.getElementById('userAvatar');
-  const chatBox = document.getElementById('chatBox');
-  const messageInput = document.getElementById('messageInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const imageInput = document.getElementById('imageInput');
-  const imagePreviewContainer = document.getElementById('imagePreviewContainer');
-  const imagePreview = document.getElementById('imagePreview');
-  const removeImageBtn = document.getElementById('removeImageBtn');
-  const ownerConsoleBtn = document.getElementById('ownerConsoleBtn');
-  const consoleModal = document.getElementById('consoleModal');
-  const closeConsoleBtn = document.getElementById('closeConsoleBtn');
-  const consoleInput = document.getElementById('consoleInput');
-  const consoleOutput = document.getElementById('consoleOutput');
+async function beginGoogleLogin() {
+  setLoginBusy(true, "Opening Google…");
+  setAuthStatus("");
 
-  if (googleSignInBtn) {
-    googleSignInBtn.addEventListener('click', async () => {
-      googleSignInBtn.disabled = true;
-      googleSignInBtn.classList.add('opacity-70');
+  try {
+    // Explicit local persistence makes the session survive the OAuth round trip.
+    await setPersistence(auth, browserLocalPersistence);
+    await signInWithPopup(auth, provider);
+    // onAuthStateChanged is the single source of truth and will open the app.
+  } catch (popupError) {
+    console.warn("Google popup login failed:", popupError);
+
+    const fallbackCodes = new Set([
+      "auth/popup-blocked",
+      "auth/popup-closed-by-user",
+      "auth/cancelled-popup-request",
+      "auth/operation-not-supported-in-this-environment"
+    ]);
+
+    if (fallbackCodes.has(popupError?.code)) {
       try {
+        setAuthStatus("Opening Google securely…");
+        await setPersistence(auth, browserLocalPersistence);
         await signInWithRedirect(auth, provider);
-      } catch (error) {
-        console.error("Google sign-in error:", error);
-        googleSignInBtn.disabled = false;
-        googleSignInBtn.classList.remove('opacity-70');
-        alert(`Google sign-in failed: ${error.message || error.code || "Unknown error"}`);
+        return;
+      } catch (redirectError) {
+        console.error("Google redirect login failed:", redirectError);
+        setLoginBusy(false);
+        setAuthStatus(friendlyAuthError(redirectError));
+        alert(`Google sign-in failed:\n\n${friendlyAuthError(redirectError)}`);
+        return;
       }
-    });
-  }
-
-  if (signOutBtn) {
-    signOutBtn.addEventListener('click', () => signOut(auth).then(() => window.location.reload()));
-  }
-
-  if (imageInput) {
-    imageInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          selectedImageBase64 = reader.result;
-          if (imagePreview) imagePreview.src = selectedImageBase64;
-          if (imagePreviewContainer) imagePreviewContainer.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-  }
-
-  if (removeImageBtn) {
-    removeImageBtn.addEventListener('click', () => {
-      selectedImageBase64 = "";
-      if (imageInput) imageInput.value = "";
-      if (imagePreviewContainer) imagePreviewContainer.classList.add('hidden');
-    });
-  }
-
-  if (ownerConsoleBtn && consoleModal) {
-    ownerConsoleBtn.addEventListener('click', () => consoleModal.classList.remove('hidden'));
-  }
-  if (closeConsoleBtn && consoleModal) {
-    closeConsoleBtn.addEventListener('click', () => consoleModal.classList.add('hidden'));
-  }
-
-  if (consoleInput) {
-    consoleInput.addEventListener('keypress', async (e) => {
-      if (e.key === 'Enter') {
-        const command = consoleInput.value.trim();
-        if (!command) return;
-        consoleInput.value = "";
-
-        try {
-          const res = await fetch(`${API_BASE_URL}/api/admin/console`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUser.id, command })
-          });
-          const data = await res.json();
-          if (consoleOutput) {
-            consoleOutput.innerText += `\n> ${command}\n${data.output || data.error}\n`;
-            consoleOutput.scrollTop = consoleOutput.scrollHeight;
-          }
-        } catch (err) {
-          if (consoleOutput) consoleOutput.innerText += `\n> Error running command\n`;
-        }
-      }
-    });
-  }
-
-  async function sendMessage() {
-    const text = messageInput ? messageInput.value.trim() : "";
-    if (!text && !selectedImageBase64) return;
-
-    if (sendBtn) sendBtn.disabled = true;
-
-    try {
-      await fetch(`${API_BASE_URL}/api/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUser.id,
-          text: text,
-          image: selectedImageBase64
-        })
-      });
-
-      if (messageInput) messageInput.value = "";
-      selectedImageBase64 = "";
-      if (imageInput) imageInput.value = "";
-      if (imagePreviewContainer) imagePreviewContainer.classList.add('hidden');
-
-      loadMessages();
-    } catch (err) {
-      alert("Error sending message: " + err.message);
-    } finally {
-      if (sendBtn) sendBtn.disabled = false;
     }
+
+    setLoginBusy(false);
+    setAuthStatus(friendlyAuthError(popupError));
+    alert(`Google sign-in failed:\n\n${friendlyAuthError(popupError)}`);
   }
+}
 
-  if (sendBtn) sendBtn.addEventListener('click', sendMessage);
-  if (messageInput) {
-    messageInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
-  }
-
-  async function loadMessages() {
-    if (!chatBox) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/messages`);
-      const messages = await res.json();
-
-      if (Array.isArray(messages)) {
-        chatBox.innerHTML = messages.map(msg => `
-          <div class="mb-3 p-3 bg-slate-800/80 rounded-xl border border-slate-700/50">
-            <div class="text-xs font-semibold text-indigo-400 mb-1">${msg.username}</div>
-            ${msg.text ? `<div class="text-slate-100 text-sm leading-relaxed">${msg.text}</div>` : ''}
-            ${msg.image ? `<img src="${msg.image}" class="mt-2 max-h-48 rounded-lg object-cover" />` : ''}
-          </div>
-        `).join('');
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }
-    } catch (err) {
-      console.error("Error loading chat:", err);
+async function handleRedirectResult() {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    const result = await getRedirectResult(auth);
+    if (result?.user) {
+      console.log("Google redirect completed:", result.user.uid);
     }
+  } catch (error) {
+    console.error("Google redirect result error:", error);
+    setLoginBusy(false);
+    setAuthStatus(friendlyAuthError(error));
+    // Do not reload or loop. The user can try again.
   }
+}
 
-  // Auth Listener: Hard Force Display Toggle
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      // Force UI switch
-      if (authSection) authSection.style.setProperty('display', 'none', 'important');
-      if (mainAppSection) mainAppSection.classList.remove('hidden');
-      if (userAvatar && user.photoURL) userAvatar.src = user.photoURL;
+async function syncUserToApi(user) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        displayName: user.displayName || "SchoolFriends User",
+        email: user.email || "",
+        photoURL: user.photoURL || ""
+      })
+    });
 
-      const userId = user.email ? user.email.split('@')[0] : 'user';
-      currentUser = { id: userId, username: user.displayName || userId };
+    if (!response.ok) {
+      throw new Error(`Auth sync returned HTTP ${response.status}`);
+    }
 
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/auth/sync`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            displayName: user.displayName,
-            email: user.email,
-            photoURL: user.photoURL
-          })
-        });
+    return await response.json();
+  } catch (error) {
+    // API sync must never kick a successfully authenticated user back to login.
+    console.error("Cloudflare Worker auth sync failed:", error);
+    return null;
+  }
+}
 
-        const data = await res.json();
-        if (data.user) {
-          currentUser = data.user;
-          if (currentUser.role === 'OWNER' && ownerConsoleBtn) {
-            ownerConsoleBtn.classList.remove('hidden');
-          }
-        }
-      } catch (err) {
-        console.error("DB Sync error:", err);
-      }
+async function loadMessages() {
+  const chatBox = $("chatBox");
+  if (!chatBox) return;
 
-      loadMessages();
-      if (messagePollTimer) clearInterval(messagePollTimer);
-      messagePollTimer = setInterval(loadMessages, 3000);
-    } else {
-      currentUser = null;
-      if (messagePollTimer) {
-        clearInterval(messagePollTimer);
-        messagePollTimer = null;
-      }
-      if (authSection) authSection.style.setProperty('display', 'flex', 'important');
-      if (mainAppSection) mainAppSection.classList.add('hidden');
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/messages`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const messages = await response.json();
+
+    if (!Array.isArray(messages)) return;
+
+    chatBox.innerHTML = messages.map((msg) => {
+      const username = escapeHtml(msg.username || "User");
+      const text = escapeHtml(msg.text || "");
+      const image = typeof msg.image === "string" && /^data:image\//i.test(msg.image)
+        ? `<img src="${msg.image}" class="mt-2 max-h-48 max-w-full rounded-lg object-cover" alt="Shared image" loading="lazy">`
+        : "";
+
+      return `<div class="mb-3 p-3 bg-slate-800/80 rounded-xl border border-slate-700/50">
+        <div class="text-xs font-semibold text-indigo-400 mb-1">${username}</div>
+        ${text ? `<div class="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap break-words">${text}</div>` : ""}
+        ${image}
+      </div>`;
+    }).join("");
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+  } catch (error) {
+    console.error("Error loading chat:", error);
+  }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function sendMessage() {
+  const input = $("messageInput");
+  const sendBtn = $("sendBtn");
+  const text = input?.value.trim() || "";
+
+  if (!currentUser || (!text && !selectedImageBase64)) return;
+  if (sendBtn) sendBtn.disabled = true;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: currentUser.id,
+        text,
+        image: selectedImageBase64
+      })
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    if (input) input.value = "";
+    selectedImageBase64 = "";
+    const imageInput = $("imageInput");
+    const preview = $("imagePreviewContainer");
+    if (imageInput) imageInput.value = "";
+    if (preview) preview.classList.add("hidden");
+
+    await loadMessages();
+  } catch (error) {
+    alert(`Error sending message: ${error.message}`);
+  } finally {
+    if (sendBtn) sendBtn.disabled = false;
+  }
+}
+
+function startMessagePolling() {
+  if (messagePollTimer) clearInterval(messagePollTimer);
+  loadMessages();
+  messagePollTimer = setInterval(loadMessages, 3000);
+}
+
+function stopMessagePolling() {
+  if (messagePollTimer) {
+    clearInterval(messagePollTimer);
+    messagePollTimer = null;
+  }
+}
+
+function wireUi() {
+  $("googleSignInBtn")?.addEventListener("click", beginGoogleLogin);
+
+  $("signOutBtn")?.addEventListener("click", async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      alert(`Sign out failed: ${error.message || error}`);
     }
   });
-});
-              
+
+  $("sendBtn")?.addEventListener("click", sendMessage);
+  $("messageInput")?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") sendMessage();
+  });
+
+  $("imageInput")?.addEventListener("change", (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 3 * 1024 * 1024) {
+      alert("Please choose an image smaller than 3 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      selectedImageBase64 = String(reader.result || "");
+      const preview = $("imagePreview");
+      const container = $("imagePreviewContainer");
+      if (preview) preview.src = selectedImageBase64;
+      if (container) container.classList.remove("hidden");
+    };
+    reader.readAsDataURL(file);
+  });
+
+  $("removeImageBtn")?.addEventListener("click", () => {
+    selectedImageBase64 = "";
+    const input = $("imageInput");
+    const preview = $("imagePreviewContainer");
+    if (input) input.value = "";
+    if (preview) preview.classList.add("hidden");
+  });
+
+  $("ownerConsoleBtn")?.addEventListener("click", () => $("consoleModal")?.classList.remove("hidden"));
+  $("closeConsoleBtn")?.addEventListener("click", () => $("consoleModal")?.classList.add("hidden"));
+
+  $("consoleInput")?.addEventListener("keydown", async (event) => {
+    if (event.key !== "Enter") return;
+    const input = event.currentTarget;
+    const command = input.value.trim();
+    if (!command || !currentUser) return;
+    input.value = "";
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/console`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser.id, command })
+      });
+      const data = await response.json();
+      const output = $("consoleOutput");
+      if (output) {
+        output.innerText += `\n> ${command}\n${data.output || data.error || "No output"}\n`;
+        output.scrollTop = output.scrollHeight;
+      }
+    } catch (error) {
+      const output = $("consoleOutput");
+      if (output) output.innerText += `\n> Error running command: ${error.message}\n`;
+    }
+  });
+}
+
+async function boot() {
+  showLogin();
+  setAuthStatus("Checking your sign-in session…");
+  setLoginBusy(true, "Checking session…");
+
+  wireUi();
+
+  // Resolve an OAuth redirect before relying on the auth state listener.
+  await handleRedirectResult();
+
+  onAuthStateChanged(auth, async (user) => {
+    authBootComplete = true;
+
+    if (!user) {
+      currentUser = null;
+      stopMessagePolling();
+      showLogin();
+      setLoginBusy(false);
+      setAuthStatus("");
+      return;
+    }
+
+    currentUser = {
+      id: user.uid,
+      username: user.displayName || user.email?.split("@")[0] || "user",
+      display_name: user.displayName || "",
+      role: "MEMBER"
+    };
+
+    showApp(user);
+    setLoginBusy(false);
+    setAuthStatus("");
+
+    // The Cloudflare API sync is deliberately non-blocking for authentication.
+    const data = await syncUserToApi(user);
+    if (data?.user) {
+      currentUser = { ...currentUser, ...data.user, id: data.user.id || user.uid };
+      if (currentUser.role === "OWNER") {
+        $("ownerConsoleBtn")?.classList.remove("hidden");
+      }
+    }
+
+    startMessagePolling();
+  });
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", boot, { once: true });
+} else {
+  boot();
+}

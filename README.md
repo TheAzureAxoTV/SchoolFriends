@@ -1,19 +1,41 @@
-# SchoolFriends
+# SchoolFriends — Firebase Login Fix
 
-This package is fixed for direct GitHub Pages/static hosting.
+This build uses the SchoolFriends Firebase project and a more robust Google authentication flow.
 
-## Why the blank screen happened
+## Google login flow
 
-The previous `index.html` tried to load:
+1. Firebase local persistence is explicitly enabled.
+2. Google popup sign-in is attempted first.
+3. If the browser blocks/does not support the popup, the app falls back to Firebase redirect sign-in.
+4. `getRedirectResult()` is processed on startup.
+5. `onAuthStateChanged()` is the single source of truth for opening the main app.
+6. A Cloudflare Worker `/api/auth/sync` failure can no longer force the user back to the login screen.
 
-`/src/main.tsx`
+## Firebase settings required
 
-but the uploaded project did not contain `src/main.tsx`, a Vite build setup, or a compiled JavaScript bundle. It also had `App.tsx` at the repository root, which a browser cannot execute directly.
+Firebase Console → Authentication:
 
-The fixed `index.html` is self-contained and renders the SchoolFriends chat UI directly, so GitHub Pages can serve it without running Vite.
+- Google provider: Enabled
+- Authorized domain: `friends.pntr.dev`
+- If testing another hostname, add that hostname too.
 
-## Deploy
+## Cloudflare Worker
 
-Upload/push the contents of this folder to the GitHub Pages source branch. No `npm install` or build command is required for this fixed version.
+The frontend calls:
 
-The CNAME file is preserved.
+`https://schoolfriends-api.mukhopadhyaysudip3.workers.dev`
+
+The Worker must expose:
+
+- `POST /api/auth/sync`
+- `GET /api/messages`
+- `POST /api/messages`
+- `POST /api/admin/console`
+
+The authentication UI does not depend on `/api/auth/sync` succeeding.
+
+## GitHub Pages
+
+Upload the contents of this folder to the repository root (not the ZIP file). Keep `index.html` and `app.js` at the same level.
+
+A cache-busting query is included on `app.js` so browsers are less likely to keep an older JavaScript file after deployment.
