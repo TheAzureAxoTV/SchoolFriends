@@ -9,12 +9,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD...", // Put your full Firebase API key here
+  apiKey: "AIzaSyBkHqLMsR_UR_NeRaaGb-0c5MRrWzy3w6Y",
   authDomain: "schoolfriends-dev.firebaseapp.com",
   projectId: "schoolfriends-dev",
-  storageBucket: "schoolfriends-dev.appspot.com",
+  storageBucket: "schoolfriends-dev.firebasestorage.app",
   messagingSenderId: "807033346729",
-  appId: "1:807033346729:web:..."
+  appId: "1:807033346729:web:46f85493518ec60608e7b8",
+  measurementId: "G-P1SRDNQ9PE"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -25,8 +26,19 @@ const API_BASE_URL = "https://schoolfriends-api.mukhopadhyaysudip3.workers.dev";
 
 let currentUser = null;
 let selectedImageBase64 = "";
+let messagePollTimer = null;
 
-getRedirectResult(auth).catch(console.error);
+// Complete the Google redirect flow. The auth-state listener below is the
+// source of truth for switching from the login screen to the app.
+getRedirectResult(auth).catch((error) => {
+  console.error("Google redirect error:", error);
+  const code = error?.code || "";
+  if (code === "auth/unauthorized-domain") {
+    alert("This website is not authorized for Google sign-in. Add the current domain in Firebase Console → Authentication → Settings → Authorized domains.");
+  } else if (code && code !== "auth/popup-closed-by-user") {
+    alert(`Google sign-in failed: ${error.message || code}`);
+  }
+});
 
 // DOM Event Handlers
 document.addEventListener("DOMContentLoaded", () => {
@@ -49,7 +61,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const consoleOutput = document.getElementById('consoleOutput');
 
   if (googleSignInBtn) {
-    googleSignInBtn.addEventListener('click', () => signInWithRedirect(auth, provider));
+    googleSignInBtn.addEventListener('click', async () => {
+      googleSignInBtn.disabled = true;
+      googleSignInBtn.classList.add('opacity-70');
+      try {
+        await signInWithRedirect(auth, provider);
+      } catch (error) {
+        console.error("Google sign-in error:", error);
+        googleSignInBtn.disabled = false;
+        googleSignInBtn.classList.remove('opacity-70');
+        alert(`Google sign-in failed: ${error.message || error.code || "Unknown error"}`);
+      }
+    });
   }
 
   if (signOutBtn) {
@@ -203,8 +226,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       loadMessages();
-      setInterval(loadMessages, 3000);
+      if (messagePollTimer) clearInterval(messagePollTimer);
+      messagePollTimer = setInterval(loadMessages, 3000);
     } else {
+      currentUser = null;
+      if (messagePollTimer) {
+        clearInterval(messagePollTimer);
+        messagePollTimer = null;
+      }
       if (authSection) authSection.style.setProperty('display', 'flex', 'important');
       if (mainAppSection) mainAppSection.classList.add('hidden');
     }
