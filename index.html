@@ -9,86 +9,115 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <style>
     body { background-color: #0b0f17; }
-    .chat-scroll::-webkit-scrollbar { width: 4px; }
-    .chat-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    .chat-scroll::-webkit-scrollbar { width: 5px; }
+    .chat-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    .chat-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    .chat-scroll::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
   </style>
 </head>
-<body class="text-slate-200 font-sans antialiased h-screen flex flex-col justify-between overflow-hidden">
-  <noscript><div style="padding:16px;background:#111827;color:white;text-align:center">SchoolFriends requires JavaScript to sign in.</div></noscript>
+<body class="text-slate-200 font-sans antialiased h-screen flex flex-col justify-between overflow-hidden bg-slate-950">
+  <noscript>
+    <div class="p-4 bg-red-900/80 text-white text-center font-medium">
+      SchoolFriends requires JavaScript to sign in.
+    </div>
+  </noscript>
 
   <!-- TOP NAVBAR -->
-  <header class="bg-slate-900/90 border-b border-slate-800 px-4 py-3 flex items-center justify-between shrink-0">
+  <header class="bg-slate-900/90 border-b border-slate-800/80 px-5 py-3 flex items-center justify-between shrink-0 shadow-md backdrop-blur-md">
     <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center font-black text-white shadow-lg shadow-indigo-500/20 text-lg tracking-wider">
         SF
       </div>
       <div>
-        <h1 class="text-base font-bold text-white leading-none">SchoolFriends</h1>
-        <span class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Campus Portal</span>
+        <h1 class="text-base font-bold text-white leading-tight tracking-wide">SchoolFriends</h1>
+        <span class="text-[10px] text-indigo-400 uppercase tracking-widest font-semibold">Campus Portal</span>
       </div>
     </div>
 
     <!-- Right Controls -->
-    <div class="flex items-center gap-2">
-      <button id="ownerConsoleBtn" class="hidden bg-slate-800 hover:bg-slate-700 text-emerald-400 px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-mono font-bold transition">
-        &gt;_ Terminal
+    <div class="flex items-center gap-3">
+      <button id="ownerConsoleBtn" class="hidden bg-slate-800/90 hover:bg-slate-700/80 text-emerald-400 px-3 py-1.5 rounded-lg border border-emerald-500/30 text-xs font-mono font-bold transition flex items-center gap-2 shadow-sm">
+        <i class="fa-solid fa-terminal text-[11px]"></i>
+        <span>Terminal</span>
       </button>
 
-      <div id="userProfile" class="flex items-center gap-2">
-        <img id="userAvatar" src="https://via.placeholder.com/36" class="w-8 h-8 rounded-full border border-slate-700 object-cover" />
-        <button id="signOutBtn" class="text-slate-400 hover:text-red-400 p-1 text-sm transition" title="Sign Out">
+      <div id="userProfile" class="flex items-center gap-3 bg-slate-800/50 py-1 px-2.5 rounded-full border border-slate-700/60">
+        <img id="userAvatar" src="https://via.placeholder.com/36" class="w-7 h-7 rounded-full border border-indigo-500/50 object-cover" alt="User Profile" />
+        <button id="signOutBtn" class="text-slate-400 hover:text-red-400 p-1 text-xs transition duration-150" title="Sign Out">
           <i class="fa-solid fa-right-from-bracket"></i>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- LOGIN CARD (Hidden via style when logged in) -->
-  <section id="authSection" class="flex-1 flex flex-col items-center justify-center p-6">
-    <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center shadow-2xl">
-      <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+  <!-- LOGIN CARD (Displayed when logged out) -->
+  <section id="authSection" class="flex-1 flex flex-col items-center justify-center p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-slate-950 to-slate-950">
+    <div class="w-full max-w-sm glass-card rounded-2xl p-8 text-center shadow-2xl relative overflow-hidden border border-slate-800">
+      <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+      
+      <div class="w-16 h-16 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-5 text-2xl shadow-inner">
         <i class="fa-solid fa-user-group"></i>
       </div>
-      <h2 class="text-xl font-bold text-white mb-1">Welcome Back</h2>
-      <p class="text-xs text-slate-400 mb-6">Connect with your school network, share posts, and chat live.</p>
+      <h2 class="text-2xl font-extrabold text-white mb-2 tracking-tight">Welcome Back</h2>
+      <p class="text-xs text-slate-400 mb-6 leading-relaxed">Connect with your school network, share posts, and chat live in real time.</p>
       
-      <button type="button" id="googleSignInBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition shadow-lg shadow-indigo-600/30">
+      <button type="button" id="googleSignInBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition-all duration-200 shadow-lg shadow-indigo-600/25 active:scale-[0.98]">
         <i class="fa-brands fa-google text-lg"></i>
         <span>Continue with Google</span>
       </button>
-      <p id="authStatus" class="min-h-5 mt-3 text-[11px] text-slate-500"></p>
+      <p id="authStatus" class="min-h-5 mt-4 text-[11px] text-slate-400 font-medium"></p>
     </div>
   </section>
 
-  <!-- MAIN CHAT APP (Hidden by default, shown when logged in) -->
-  <main id="mainAppSection" class="hidden flex-1 flex flex-col h-full overflow-hidden p-3 gap-2">
-    <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl px-4 py-2.5 flex items-center justify-between shrink-0">
-      <div>
-        <span class="text-sm font-bold text-indigo-400"># general-lounge</span>
-        <p class="text-[11px] text-slate-400">Campus discussions & announcements</p>
+  <!-- MAIN CHAT APP (Shown when logged in) -->
+  <main id="mainAppSection" class="hidden flex-1 flex flex-col h-full overflow-hidden p-3 md:p-4 gap-3 max-w-6xl w-full mx-auto">
+    <!-- Channel Bar -->
+    <div class="glass-card rounded-xl px-4 py-3 flex items-center justify-between shrink-0 shadow-sm">
+      <div class="flex items-center gap-2.5">
+        <span class="text-indigo-400 font-extrabold text-lg">#</span>
+        <div>
+          <span class="text-sm font-bold text-white tracking-wide">general-lounge</span>
+          <p class="text-[11px] text-slate-400">Campus discussions & announcements</p>
+        </div>
       </div>
-      <span class="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full border border-slate-700">Live Chat</span>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 text-[10px] bg-indigo-500/10 text-indigo-400 font-semibold px-3 py-1 rounded-full border border-indigo-500/20">
+          <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+          Live Chat
+        </span>
+      </div>
     </div>
 
     <!-- Message Area -->
-    <div id="chatBox" class="chat-scroll flex-1 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 overflow-y-auto space-y-3">
-      <div class="text-center text-slate-500 py-10 text-xs">Loading messages...</div>
+    <div id="chatBox" class="chat-scroll flex-1 glass-card rounded-2xl p-4 overflow-y-auto space-y-4 shadow-inner">
+      <div class="flex flex-col items-center justify-center h-full text-slate-500 text-xs gap-2">
+        <i class="fa-solid fa-circle-notch animate-spin text-lg text-indigo-400"></i>
+        <span>Loading messages...</span>
+      </div>
     </div>
 
     <!-- Image Attachment Preview -->
-    <div id="imagePreviewContainer" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-2 flex items-center justify-between shrink-0">
-      <div class="flex items-center gap-2">
-        <img id="imagePreview" class="w-12 h-12 rounded-lg object-cover border border-slate-700" />
-        <span class="text-xs text-slate-300">Image attached</span>
+    <div id="imagePreviewContainer" class="hidden glass-card rounded-xl p-2.5 flex items-center justify-between shrink-0 border border-indigo-500/30">
+      <div class="flex items-center gap-3">
+        <img id="imagePreview" class="w-12 h-12 rounded-lg object-cover border border-slate-700 shadow-sm" alt="Attachment Preview" />
+        <div>
+          <span class="text-xs font-medium text-slate-200 block">Image attached</span>
+          <span class="text-[10px] text-slate-400">Ready to send with your message</span>
+        </div>
       </div>
-      <button id="removeImageBtn" class="text-slate-400 hover:text-red-400 p-2 text-sm">
+      <button id="removeImageBtn" class="text-slate-400 hover:text-red-400 p-2 text-sm transition">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
 
     <!-- Message Controls -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-2 flex items-center gap-2 shrink-0">
-      <label class="cursor-pointer text-slate-400 hover:text-indigo-400 p-2.5 rounded-xl hover:bg-slate-800 transition flex items-center justify-center">
+    <div class="glass-card rounded-2xl p-2 flex items-center gap-2 shrink-0 shadow-lg border border-slate-800">
+      <label class="cursor-pointer text-slate-400 hover:text-indigo-400 p-2.5 rounded-xl hover:bg-slate-800/60 transition flex items-center justify-center">
         <i class="fa-solid fa-paperclip text-lg"></i>
         <input type="file" id="imageInput" accept="image/*" class="hidden" />
       </label>
@@ -96,12 +125,12 @@
       <input 
         type="text" 
         id="messageInput" 
-        placeholder="Type a message..." 
+        placeholder="Type a message in #general-lounge..." 
         class="flex-1 bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none px-2"
         maxlength="340"
       />
 
-      <button id="sendBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2">
+      <button id="sendBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition-all duration-150 flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 active:scale-95">
         <span>Send</span>
         <i class="fa-solid fa-paper-plane text-xs"></i>
       </button>
@@ -109,26 +138,26 @@
   </main>
 
   <!-- OWNER TERMINAL MODAL -->
-  <div id="consoleModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="w-full max-w-lg bg-slate-950 border border-slate-800 rounded-2xl p-4 shadow-2xl flex flex-col h-96">
-      <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
-        <div class="flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold">
+  <div id="consoleModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="w-full max-w-xl bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col h-[28rem]">
+      <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold tracking-wider">
           <i class="fa-solid fa-terminal"></i>
           <span>OWNER ADMIN TERMINAL</span>
         </div>
-        <button id="closeConsoleBtn" class="text-slate-400 hover:text-white text-sm">
+        <button id="closeConsoleBtn" class="text-slate-400 hover:text-white text-sm transition">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <div id="consoleOutput" class="flex-1 bg-slate-900/90 rounded-xl p-3 font-mono text-xs text-emerald-400 overflow-y-auto whitespace-pre-wrap mb-3 border border-slate-800/80">
+      <div id="consoleOutput" class="flex-1 bg-slate-900/90 rounded-xl p-3.5 font-mono text-xs text-emerald-400 overflow-y-auto whitespace-pre-wrap mb-3 border border-slate-800/80 leading-relaxed">
 Welcome Owner! Type commands below.
 Examples:
   role <username> ADMIN
   sql SELECT * FROM users;
       </div>
 
-      <div class="flex items-center gap-2 bg-slate-900 rounded-xl p-2 border border-slate-800">
+      <div class="flex items-center gap-2 bg-slate-900 rounded-xl p-2.5 border border-slate-800 focus-within:border-emerald-500/50 transition">
         <span class="text-emerald-400 font-mono text-xs pl-2">&gt;</span>
         <input 
           type="text" 
@@ -140,7 +169,7 @@ Examples:
     </div>
   </div>
 
-  <script type="module" src="app.js?v=20261002-1"></script>
+  <script type="module" src="app.js?v=20261002-2"></script>
 </body>
-          </html>
-        
+      </html>
+  
