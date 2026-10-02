@@ -1,388 +1,362 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {
-  getAuth,
-  setPersistence,
-  browserLocalPersistence,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+// app.js - SchoolFriends Client Engine
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signInWithRedirect, 
+  signOut, 
+  onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-// SchoolFriends Firebase Web App configuration
+// --- FIREBASE CONFIGURATION ---
+// Replace with your Firebase Project Configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBkHqLMsR_UR_NeRaaGb-0c5MRrWzy3w6Y",
-  authDomain: "schoolfriends-dev.firebaseapp.com",
-  projectId: "schoolfriends-dev",
-  storageBucket: "schoolfriends-dev.firebasestorage.app",
-  messagingSenderId: "807033346729",
-  appId: "1:807033346729:web:46f85493518ec60608e7b8",
-  measurementId: "G-P1SRDNQ9PE"
+  apiKey: "YOUR_FIREBASE_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
-const API_BASE_URL = "https://schoolfriends-api.mukhopadhyaysudip3.workers.dev";
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const provider = new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: "select_account" });
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
+// Cloudflare Worker API URL
+const WORKER_API = "https://schoolfriends-api.mukhopadhyaysudip3.workers.dev";
+
+// Local State
 let currentUser = null;
-let selectedImageBase64 = "";
-let messagePollTimer = null;
-let authBootComplete = false;
+let currentChannel = "general-lounge";
+let selectedImageBase64 = null;
+let messagePollInterval = null;
 
-const $ = (id) => document.getElementById(id);
+// --- DOM ELEMENTS ---
+const authSection = document.getElementById("authSection");
+const mainAppSection = document.getElementById("mainAppSection");
+const googleSignInBtn = document.getElementById("googleSignInBtn");
+const authStatus = document.getElementById("authStatus");
+const signOutBtn = document.getElementById("signOutBtn");
 
-function setLoginBusy(busy, label = "Continue with Google") {
-  const button = $("googleSignInBtn");
-  if (!button) return;
-  button.disabled = busy;
-  button.classList.toggle("opacity-70", busy);
-  button.innerHTML = busy
-    ? `<i class="fa-solid fa-spinner fa-spin text-lg"></i><span>${label}</span>`
-    : `<i class="fa-brands fa-google text-lg"></i><span>Continue with Google</span>`;
-}
+const userAvatar = document.getElementById("userAvatar");
+const openProfileBtn = document.getElementById("openProfileBtn");
+const profileModal = document.getElementById("profileModal");
+const closeProfileBtn = document.getElementById("closeProfileBtn");
+const modalProfileAvatar = document.getElementById("modalProfileAvatar");
+const modalProfileName = document.getElementById("modalProfileName");
+const modalProfileTag = document.getElementById("modalProfileTag");
+const modalProfileBio = document.getElementById("modalProfileBio");
 
-function setAuthStatus(message = "") {
-  const el = $("authStatus");
-  if (el) el.textContent = message;
-}
+const channelSidebar = document.getElementById("channelSidebar");
+const toggleMenuBtn = document.getElementById("toggleMenuBtn");
+const sidebarUserList = document.getElementById("sidebarUserList");
+const directChatList = document.getElementById("directChatList");
 
-function showLogin() {
-  const authSection = $("authSection");
-  const mainAppSection = $("mainAppSection");
-  const userProfile = $("userProfile");
-  const ownerConsoleBtn = $("ownerConsoleBtn");
+const chatBox = document.getElementById("chatBox");
+const messageInput = document.getElementById("messageInput");
+const sendBtn = document.getElementById("sendBtn");
+const imageInput = document.getElementById("imageInput");
+const imagePreviewContainer = document.getElementById("imagePreviewContainer");
+const imagePreview = document.getElementById("imagePreview");
+const removeImageBtn = document.getElementById("removeImageBtn");
 
-  if (authSection) authSection.style.display = "flex";
-  if (mainAppSection) mainAppSection.classList.add("hidden");
-  if (userProfile) userProfile.classList.add("hidden");
-  if (ownerConsoleBtn) ownerConsoleBtn.classList.add("hidden");
-}
+const ownerConsoleBtn = document.getElementById("ownerConsoleBtn");
+const consoleModal = document.getElementById("consoleModal");
+const closeConsoleBtn = document.getElementById("closeConsoleBtn");
+const consoleInput = document.getElementById("consoleInput");
+const consoleOutput = document.getElementById("consoleOutput");
 
-function showApp(user) {
-  const authSection = $("authSection");
-  const mainAppSection = $("mainAppSection");
-  const userProfile = $("userProfile");
-  const userAvatar = $("userAvatar");
+// --- INITIALIZATION & AUTH STATE ---
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    if (authSection) authSection.classList.add("hidden");
+    if (mainAppSection) mainAppSection.classList.remove("hidden");
 
-  if (authSection) authSection.style.display = "none";
-  if (mainAppSection) mainAppSection.classList.remove("hidden");
-  if (userProfile) userProfile.classList.remove("hidden");
-  if (userAvatar) {
-    userAvatar.src = user.photoURL || "https://via.placeholder.com/36";
-    userAvatar.alt = user.displayName || "Profile";
+    // Update Profile Avatars
+    const photo = user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`;
+    if (userAvatar) userAvatar.src = photo;
+    if (modalProfileAvatar) modalProfileAvatar.src = photo;
+    if (modalProfileName) modalProfileName.textContent = user.displayName || "Student User";
+    if (modalProfileTag) modalProfileTag.textContent = user.email || "@student";
+
+    // Sync with Worker Backend
+    syncUserWithWorker(user);
+
+    // Initialize Channels & Start Fetching Messages
+    renderSidebarChannels();
+    loadMessages();
+    startMessagePolling();
+  } else {
+    currentUser = null;
+    if (authSection) authSection.classList.remove("hidden");
+    if (mainAppSection) mainAppSection.classList.add("hidden");
+    stopMessagePolling();
   }
-}
+});
 
-function friendlyAuthError(error) {
-  const code = error?.code || "";
-  const messages = {
-    "auth/unauthorized-domain": `This domain is not authorized by Firebase. Add ${location.hostname} in Firebase Authentication → Settings → Authorized domains.`,
-    "auth/operation-not-allowed": "Google sign-in is disabled. Enable Google under Firebase Authentication → Sign-in method.",
-    "auth/invalid-api-key": "The Firebase API key is invalid or the deployed site is using an old app.js.",
-    "auth/network-request-failed": "Firebase could not reach the network. Check your connection and try again.",
-    "auth/popup-blocked": "The browser blocked the Google login window. Trying the redirect login instead…",
-    "auth/popup-closed-by-user": "The Google login window was closed before completing sign-in.",
-    "auth/cancelled-popup-request": "Another Google login request is already running.",
-    "auth/invalid-credential": "Google returned an invalid credential. Check the Firebase Google provider configuration.",
-    "auth/internal-error": "Firebase returned an internal authentication error. Check the browser console for details."
-  };
-  return messages[code] || error?.message || code || "Unknown Firebase authentication error.";
-}
-
-async function beginGoogleLogin() {
-  setLoginBusy(true, "Opening Google…");
-  setAuthStatus("");
+// --- GOOGLE SIGN IN HANDLER ---
+googleSignInBtn?.addEventListener("click", async () => {
+  if (authStatus) authStatus.textContent = "Connecting to Google...";
+  const provider = new GoogleAuthProvider();
 
   try {
-    // Explicit local persistence makes the session survive the OAuth round trip.
-    await setPersistence(auth, browserLocalPersistence);
     await signInWithPopup(auth, provider);
-    // onAuthStateChanged is the single source of truth and will open the app.
-  } catch (popupError) {
-    console.warn("Google popup login failed:", popupError);
-
-    const fallbackCodes = new Set([
-      "auth/popup-blocked",
-      "auth/popup-closed-by-user",
-      "auth/cancelled-popup-request",
-      "auth/operation-not-supported-in-this-environment"
-    ]);
-
-    if (fallbackCodes.has(popupError?.code)) {
-      try {
-        setAuthStatus("Opening Google securely…");
-        await setPersistence(auth, browserLocalPersistence);
-        await signInWithRedirect(auth, provider);
-        return;
-      } catch (redirectError) {
-        console.error("Google redirect login failed:", redirectError);
-        setLoginBusy(false);
-        setAuthStatus(friendlyAuthError(redirectError));
-        alert(`Google sign-in failed:\n\n${friendlyAuthError(redirectError)}`);
-        return;
-      }
-    }
-
-    setLoginBusy(false);
-    setAuthStatus(friendlyAuthError(popupError));
-    alert(`Google sign-in failed:\n\n${friendlyAuthError(popupError)}`);
-  }
-}
-
-async function handleRedirectResult() {
-  try {
-    await setPersistence(auth, browserLocalPersistence);
-    const result = await getRedirectResult(auth);
-    if (result?.user) {
-      console.log("Google redirect completed:", result.user.uid);
-    }
   } catch (error) {
-    console.error("Google redirect result error:", error);
-    setLoginBusy(false);
-    setAuthStatus(friendlyAuthError(error));
-    // Do not reload or loop. The user can try again.
+    console.warn("Popup blocked or failed, attempting redirect fallback...", error);
+    try {
+      await signInWithRedirect(auth, provider);
+    } catch (fallbackError) {
+      if (authStatus) authStatus.textContent = "Sign-in failed: " + fallbackError.message;
+    }
   }
-}
+});
 
-async function syncUserToApi(user) {
+// --- SIGN OUT HANDLER ---
+signOutBtn?.addEventListener("click", () => {
+  signOut(auth);
+});
+
+// --- WORKER SYNC ---
+async function syncUserWithWorker(user) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/sync`, {
+    const idToken = await user.getIdToken();
+    const res = await fetch(`${WORKER_API}/api/auth/sync`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
       body: JSON.stringify({
-        displayName: user.displayName || "SchoolFriends User",
-        email: user.email || "",
-        photoURL: user.photoURL || ""
+        uid: user.uid,
+        name: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL
       })
     });
-
-    if (!response.ok) {
-      throw new Error(`Auth sync returned HTTP ${response.status}`);
+    
+    const data = await res.json();
+    if (data.role === "OWNER" || data.role === "ADMIN") {
+      if (ownerConsoleBtn) ownerConsoleBtn.classList.remove("hidden");
     }
-
-    return await response.json();
-  } catch (error) {
-    // API sync must never kick a successfully authenticated user back to login.
-    console.error("Cloudflare Worker auth sync failed:", error);
-    return null;
+  } catch (err) {
+    console.warn("Worker sync note: Running in client fallback mode.", err);
   }
 }
 
+// --- RENDER SIDEBAR CHANNELS & FRIENDS ---
+function renderSidebarChannels() {
+  if (!sidebarUserList) return;
+
+  const defaultChannels = [
+    { id: "general-lounge", name: "general-lounge", desc: "Campus discussions" },
+    { id: "announcements", name: "announcements", desc: "Official updates" },
+    { id: "gaming", name: "gaming-room", desc: "Gamers hangout" }
+  ];
+
+  sidebarUserList.innerHTML = defaultChannels.map(ch => `
+    <button onclick="switchChannel('${ch.id}')" class="w-full p-2.5 rounded-xl flex items-center gap-3 hover:bg-slate-800/60 transition text-left ${ch.id === currentChannel ? 'bg-slate-800/80 border border-slate-700/50' : ''}">
+      <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-black text-xs">#</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-bold text-slate-200 truncate">${ch.name}</p>
+        <p class="text-[10px] text-slate-400 truncate">${ch.desc}</p>
+      </div>
+    </button>
+  `).join("");
+
+  // Direct chat icon quick list
+  if (directChatList) {
+    directChatList.innerHTML = `
+      <button onclick="switchChannel('general-lounge')" class="relative group flex items-center justify-center">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-600/30 text-indigo-400 flex items-center justify-center font-bold border border-indigo-500/40">
+          #
+        </div>
+      </button>
+    `;
+  }
+}
+
+window.switchChannel = (channelId) => {
+  currentChannel = channelId;
+  const titleEl = document.getElementById("activeChannelTitle");
+  if (titleEl) titleEl.textContent = channelId;
+  
+  // Close mobile sidebar on selection
+  if (channelSidebar) channelSidebar.classList.add("hidden");
+  renderSidebarChannels();
+  loadMessages();
+};
+
+// --- MOBILE SIDEBAR TOGGLE ---
+toggleMenuBtn?.addEventListener("click", () => {
+  if (channelSidebar) {
+    channelSidebar.classList.toggle("hidden");
+  }
+});
+
+// --- MESSAGES SYSTEM ---
 async function loadMessages() {
-  const chatBox = $("chatBox");
   if (!chatBox) return;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/messages`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const messages = await response.json();
-
-    if (!Array.isArray(messages)) return;
-
-    chatBox.innerHTML = messages.map((msg) => {
-      const username = escapeHtml(msg.username || "User");
-      const text = escapeHtml(msg.text || "");
-      const image = typeof msg.image === "string" && /^data:image\//i.test(msg.image)
-        ? `<img src="${msg.image}" class="mt-2 max-h-48 max-w-full rounded-lg object-cover" alt="Shared image" loading="lazy">`
-        : "";
-
-      return `<div class="mb-3 p-3 bg-slate-800/80 rounded-xl border border-slate-700/50">
-        <div class="text-xs font-semibold text-indigo-400 mb-1">${username}</div>
-        ${text ? `<div class="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap break-words">${text}</div>` : ""}
-        ${image}
-      </div>`;
-    }).join("");
-
-    chatBox.scrollTop = chatBox.scrollHeight;
-  } catch (error) {
-    console.error("Error loading chat:", error);
+    const res = await fetch(`${WORKER_API}/api/messages?channel=${currentChannel}`);
+    if (!res.ok) throw new Error("Failed to fetch");
+    const messages = await res.json();
+    renderMessages(messages);
+  } catch (err) {
+    // If backend endpoint is offline, show helpful state
+    chatBox.innerHTML = `
+      <div class="p-4 text-center text-slate-500 text-xs">
+        <p class="font-semibold text-slate-400">Welcome to #${currentChannel}!</p>
+        <p class="text-[11px] mt-1">Start the conversation by typing a message below.</p>
+      </div>
+    `;
   }
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function renderMessages(messages) {
+  if (!messages || messages.length === 0) {
+    chatBox.innerHTML = `
+      <div class="p-4 text-center text-slate-500 text-xs">
+        <p class="font-semibold text-slate-400">No messages here yet.</p>
+        <p class="text-[11px] mt-1">Be the first to say hello!</p>
+      </div>
+    `;
+    return;
+  }
+
+  chatBox.innerHTML = messages.map(msg => `
+    <div class="flex gap-3 group">
+      <img src="${msg.photoURL || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full bg-slate-800 shrink-0 object-cover" alt="Avatar" />
+      <div class="flex-1 min-w-0">
+        <div class="flex items-baseline gap-2">
+          <span class="text-xs font-bold text-white">${escapeHtml(msg.senderName || 'Anonymous')}</span>
+          <span class="text-[10px] text-slate-500">${new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+        ${msg.text ? `<p class="text-xs text-slate-200 mt-1 leading-relaxed">${escapeHtml(msg.text)}</p>` : ''}
+        ${msg.imageUrl ? `<img src="${msg.imageUrl}" class="mt-2 max-w-xs rounded-xl border border-slate-700 shadow-md max-h-60 object-cover" />` : ''}
+      </div>
+    </div>
+  `).join("");
+
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// Send Message Action
 async function sendMessage() {
-  const input = $("messageInput");
-  const sendBtn = $("sendBtn");
-  const text = input?.value.trim() || "";
+  const text = messageInput?.value.trim();
+  if (!text && !selectedImageBase64) return;
 
-  if (!currentUser || (!text && !selectedImageBase64)) return;
-  if (sendBtn) sendBtn.disabled = true;
+  const payload = {
+    channel: currentChannel,
+    text: text,
+    imageUrl: selectedImageBase64,
+    senderUid: currentUser?.uid,
+    senderName: currentUser?.displayName || "Student",
+    photoURL: currentUser?.photoURL,
+    timestamp: Date.now()
+  };
+
+  // Reset Input
+  if (messageInput) messageInput.value = "";
+  clearImageAttachment();
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/messages`, {
+    const idToken = await currentUser?.getIdToken();
+    await fetch(`${WORKER_API}/api/messages`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: currentUser.id,
-        text,
-        image: selectedImageBase64
-      })
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify(payload)
     });
-
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    if (input) input.value = "";
-    selectedImageBase64 = "";
-    const imageInput = $("imageInput");
-    const preview = $("imagePreviewContainer");
-    if (imageInput) imageInput.value = "";
-    if (preview) preview.classList.add("hidden");
-
-    await loadMessages();
-  } catch (error) {
-    alert(`Error sending message: ${error.message}`);
-  } finally {
-    if (sendBtn) sendBtn.disabled = false;
+    loadMessages();
+  } catch (err) {
+    console.error("Failed to send message:", err);
   }
 }
 
+sendBtn?.addEventListener("click", sendMessage);
+messageInput?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
+
+// --- IMAGE ATTACHMENT HANDLER ---
+imageInput?.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    selectedImageBase64 = event.target.result;
+    if (imagePreview) imagePreview.src = selectedImageBase64;
+    if (imagePreviewContainer) imagePreviewContainer.classList.remove("hidden");
+  };
+  reader.readAsDataURL(file);
+});
+
+removeImageBtn?.addEventListener("click", clearImageAttachment);
+
+function clearImageAttachment() {
+  selectedImageBase64 = null;
+  if (imageInput) imageInput.value = "";
+  if (imagePreviewContainer) imagePreviewContainer.classList.add("hidden");
+}
+
+// --- PROFILE MODAL MODAL HANDLERS ---
+openProfileBtn?.addEventListener("click", () => {
+  if (profileModal) profileModal.classList.remove("hidden");
+});
+closeProfileBtn?.addEventListener("click", () => {
+  if (profileModal) profileModal.classList.add("hidden");
+});
+
+// --- TERMINAL CONSOLE HANDLERS ---
+ownerConsoleBtn?.addEventListener("click", () => {
+  if (consoleModal) consoleModal.classList.remove("hidden");
+});
+closeConsoleBtn?.addEventListener("click", () => {
+  if (consoleModal) consoleModal.classList.add("hidden");
+});
+
+consoleInput?.addEventListener("keydown", async (e) => {
+  if (e.key === "Enter") {
+    const cmd = consoleInput.value.trim();
+    if (!cmd) return;
+    consoleInput.value = "";
+
+    if (consoleOutput) {
+      consoleOutput.textContent += `\n> ${cmd}`;
+      try {
+        const idToken = await currentUser?.getIdToken();
+        const res = await fetch(`${WORKER_API}/api/admin/console`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`
+          },
+          body: JSON.stringify({ command: cmd })
+        });
+        const data = await res.json();
+        consoleOutput.textContent += `\n${data.output || JSON.stringify(data)}`;
+      } catch (err) {
+        consoleOutput.textContent += `\nError: Could not reach admin terminal.`;
+      }
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+  }
+});
+
+// --- HELPERS ---
 function startMessagePolling() {
-  if (messagePollTimer) clearInterval(messagePollTimer);
-  loadMessages();
-  messagePollTimer = setInterval(loadMessages, 3000);
+  stopMessagePolling();
+  messagePollInterval = setInterval(loadMessages, 4000);
 }
-
 function stopMessagePolling() {
-  if (messagePollTimer) {
-    clearInterval(messagePollTimer);
-    messagePollTimer = null;
-  }
+  if (messagePollInterval) clearInterval(messagePollInterval);
 }
-
-function wireUi() {
-  $("googleSignInBtn")?.addEventListener("click", beginGoogleLogin);
-
-  $("signOutBtn")?.addEventListener("click", async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      alert(`Sign out failed: ${error.message || error}`);
-    }
-  });
-
-  $("sendBtn")?.addEventListener("click", sendMessage);
-  $("messageInput")?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") sendMessage();
-  });
-
-  $("imageInput")?.addEventListener("change", (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) return;
-    if (file.size > 3 * 1024 * 1024) {
-      alert("Please choose an image smaller than 3 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      selectedImageBase64 = String(reader.result || "");
-      const preview = $("imagePreview");
-      const container = $("imagePreviewContainer");
-      if (preview) preview.src = selectedImageBase64;
-      if (container) container.classList.remove("hidden");
-    };
-    reader.readAsDataURL(file);
-  });
-
-  $("removeImageBtn")?.addEventListener("click", () => {
-    selectedImageBase64 = "";
-    const input = $("imageInput");
-    const preview = $("imagePreviewContainer");
-    if (input) input.value = "";
-    if (preview) preview.classList.add("hidden");
-  });
-
-  $("ownerConsoleBtn")?.addEventListener("click", () => $("consoleModal")?.classList.remove("hidden"));
-  $("closeConsoleBtn")?.addEventListener("click", () => $("consoleModal")?.classList.add("hidden"));
-
-  $("consoleInput")?.addEventListener("keydown", async (event) => {
-    if (event.key !== "Enter") return;
-    const input = event.currentTarget;
-    const command = input.value.trim();
-    if (!command || !currentUser) return;
-    input.value = "";
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/console`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUser.id, command })
-      });
-      const data = await response.json();
-      const output = $("consoleOutput");
-      if (output) {
-        output.innerText += `\n> ${command}\n${data.output || data.error || "No output"}\n`;
-        output.scrollTop = output.scrollHeight;
-      }
-    } catch (error) {
-      const output = $("consoleOutput");
-      if (output) output.innerText += `\n> Error running command: ${error.message}\n`;
-    }
-  });
-}
-
-async function boot() {
-  showLogin();
-  setAuthStatus("Checking your sign-in session…");
-  setLoginBusy(true, "Checking session…");
-
-  wireUi();
-
-  // Resolve an OAuth redirect before relying on the auth state listener.
-  await handleRedirectResult();
-
-  onAuthStateChanged(auth, async (user) => {
-    authBootComplete = true;
-
-    if (!user) {
-      currentUser = null;
-      stopMessagePolling();
-      showLogin();
-      setLoginBusy(false);
-      setAuthStatus("");
-      return;
-    }
-
-    currentUser = {
-      id: user.uid,
-      username: user.displayName || user.email?.split("@")[0] || "user",
-      display_name: user.displayName || "",
-      role: "MEMBER"
-    };
-
-    showApp(user);
-    setLoginBusy(false);
-    setAuthStatus("");
-
-    // The Cloudflare API sync is deliberately non-blocking for authentication.
-    const data = await syncUserToApi(user);
-    if (data?.user) {
-      currentUser = { ...currentUser, ...data.user, id: data.user.id || user.uid };
-      if (currentUser.role === "OWNER") {
-        $("ownerConsoleBtn")?.classList.remove("hidden");
-      }
-    }
-
-    startMessagePolling();
-  });
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", boot, { once: true });
-} else {
-  boot();
+function escapeHtml(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
