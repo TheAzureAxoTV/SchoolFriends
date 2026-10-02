@@ -28,12 +28,10 @@
 
     <!-- Right Controls -->
     <div class="flex items-center gap-2">
-      <!-- Secret Terminal Button (Hidden by default, unlocked for OWNER) -->
-      <button id="ownerConsoleBtn" class="hidden bg-slate-800 hover:bg-slate-700 text-emerald-400 p-2 rounded-lg border border-slate-700 text-sm font-mono transition">
-        &gt;_
+      <button id="ownerConsoleBtn" class="hidden bg-slate-800 hover:bg-slate-700 text-emerald-400 px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-mono font-bold transition">
+        &gt;_ Terminal
       </button>
 
-      <!-- User Profile / Logout -->
       <div id="userProfile" class="flex items-center gap-2">
         <img id="userAvatar" src="https://via.placeholder.com/36" class="w-8 h-8 rounded-full border border-slate-700 object-cover" />
         <button id="signOutBtn" class="text-slate-400 hover:text-red-400 p-1 text-sm transition" title="Sign Out">
@@ -43,7 +41,7 @@
     </div>
   </header>
 
-  <!-- AUTH SECTION (Show when logged out) -->
+  <!-- LOGIN CARD (Hidden via style when logged in) -->
   <section id="authSection" class="flex-1 flex flex-col items-center justify-center p-6">
     <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center shadow-2xl">
       <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
@@ -59,10 +57,8 @@
     </div>
   </section>
 
-  <!-- MAIN CHAT APP SECTION (Show when logged in) -->
+  <!-- MAIN CHAT APP (Hidden by default, shown when logged in) -->
   <main id="mainAppSection" class="hidden flex-1 flex flex-col h-full overflow-hidden p-3 gap-2">
-    
-    <!-- Channel Header -->
     <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl px-4 py-2.5 flex items-center justify-between shrink-0">
       <div>
         <span class="text-sm font-bold text-indigo-400"># general-lounge</span>
@@ -71,12 +67,12 @@
       <span class="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full border border-slate-700">Live Chat</span>
     </div>
 
-    <!-- Chat Messages Box -->
+    <!-- Message Area -->
     <div id="chatBox" class="chat-scroll flex-1 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 overflow-y-auto space-y-3">
       <div class="text-center text-slate-500 py-10 text-xs">Loading messages...</div>
     </div>
 
-    <!-- Image Preview Bar (Appears when a photo is selected) -->
+    <!-- Image Attachment Preview -->
     <div id="imagePreviewContainer" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-2 flex items-center justify-between shrink-0">
       <div class="flex items-center gap-2">
         <img id="imagePreview" class="w-12 h-12 rounded-lg object-cover border border-slate-700" />
@@ -87,15 +83,13 @@
       </button>
     </div>
 
-    <!-- Message Input Bar -->
+    <!-- Message Controls -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-2 flex items-center gap-2 shrink-0">
-      <!-- Image Picker Button -->
       <label class="cursor-pointer text-slate-400 hover:text-indigo-400 p-2.5 rounded-xl hover:bg-slate-800 transition flex items-center justify-center">
         <i class="fa-solid fa-paperclip text-lg"></i>
         <input type="file" id="imageInput" accept="image/*" class="hidden" />
       </label>
 
-      <!-- Text Input -->
       <input 
         type="text" 
         id="messageInput" 
@@ -104,7 +98,6 @@
         maxlength="340"
       />
 
-      <!-- Send Button -->
       <button id="sendBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2">
         <span>Send</span>
         <i class="fa-solid fa-paper-plane text-xs"></i>
@@ -125,15 +118,13 @@
         </button>
       </div>
 
-      <!-- Terminal Output Screen -->
       <div id="consoleOutput" class="flex-1 bg-slate-900/90 rounded-xl p-3 font-mono text-xs text-emerald-400 overflow-y-auto whitespace-pre-wrap mb-3 border border-slate-800/80">
-Welcome Owner! Type commands here.
+Welcome Owner! Type commands below.
 Examples:
   role <username> ADMIN
   sql SELECT * FROM users;
       </div>
 
-      <!-- Terminal Input Line -->
       <div class="flex items-center gap-2 bg-slate-900 rounded-xl p-2 border border-slate-800">
         <span class="text-emerald-400 font-mono text-xs pl-2">&gt;</span>
         <input 
@@ -149,4 +140,4 @@ Examples:
   <script type="module" src="app.js"></script>
 </body>
           </html>
-  
+        
