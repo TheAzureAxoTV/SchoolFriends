@@ -1,290 +1,225 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
-  <meta name="theme-color" content="#313338" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <title>SchoolFriends | SocialChat</title>
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" href="./favicon.png" type="image/png" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SchoolFriends</title>
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              900: '#312e81',
+            },
+            dark: {
+              bg: '#090d16',
+              card: '#111827',
+              border: '#1f2937',
+              input: '#1a2332'
+            }
+          }
+        }
+      }
+    }
+  </script>
 
   <style>
-    :root { --app-height: 100dvh; }
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: var(--app-height);
-      overflow: hidden;
-      overscroll-behavior-y: none;
-      background: #313338;
-      color: #dbdee1;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-    button, input { font: inherit; }
-    input, textarea, select { font-size: 16px !important; }
-    button { border: 0; }
-    #root { width: 100%; height: 100%; }
-    .app { display:flex; width:100%; height:100%; overflow:hidden; position:relative; background:#313338; }
-    .sidebar {
-      width:288px; height:100%; flex:0 0 288px; background:#2b2d31;
-      border-right:1px solid rgba(0,0,0,.2); display:flex; flex-direction:column;
-      z-index:50; transition:transform .3s ease;
-    }
-    .server-header {
-      height:56px; padding:0 16px; border-bottom:1px solid rgba(0,0,0,.2);
-      display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
-      color:#fff; font-weight:700; box-shadow:0 1px 2px rgba(0,0,0,.15);
-    }
-    .brand { display:flex; align-items:center; gap:8px; }
-    .brand i { color:#818cf8; }
-    .close-btn { display:none; color:#949ba4; background:transparent; padding:6px; }
-    .channel-list { flex:1; overflow-y:auto; padding:8px; overscroll-behavior-y:contain; -webkit-overflow-scrolling:touch; }
-    .section-label { padding:0 8px 4px; margin-bottom:4px; color:#949ba4; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
-    .channel {
-      width:100%; display:flex; align-items:center; gap:10px; padding:9px 10px; margin:2px 0;
-      border-radius:6px; background:transparent; color:#949ba4; cursor:pointer; text-align:left;
-      font-size:14px; font-weight:600;
-    }
-    .channel:hover { background:#35373c; color:#dbdee1; }
-    .channel.active { background:#404249; color:#fff; }
-    .user-footer { background:#1e1f22; padding:8px; display:flex; align-items:center; }
-    .user { display:flex; align-items:center; gap:8px; padding:0 4px; }
-    .avatar { width:40px; height:40px; border-radius:50%; background:#475569; flex:0 0 auto; }
-    .avatar.small { width:32px; height:32px; }
-    .username { color:#fff; font-size:12px; font-weight:700; line-height:1.1; }
-    .tag { color:#949ba4; font-size:10px; margin-top:2px; }
-
-    .main { flex:1; min-width:0; height:100%; display:flex; flex-direction:column; background:#313338; }
-    .header {
-      height:56px; flex:0 0 56px; padding:0 16px; display:flex; align-items:center; gap:12px;
-      border-bottom:1px solid rgba(0,0,0,.2); box-shadow:0 1px 2px rgba(0,0,0,.15); z-index:10;
-    }
-    .menu-btn { display:none; background:transparent; color:#949ba4; padding:6px; cursor:pointer; }
-    .channel-title { display:flex; align-items:center; gap:8px; color:#fff; font-weight:700; }
-    .hash { color:#949ba4; font-size:21px; }
-    .messages {
-      flex:1; min-height:0; overflow-y:auto; padding:16px; overscroll-behavior-y:contain;
-      -webkit-overflow-scrolling:touch;
-    }
-    .message { display:flex; align-items:flex-start; gap:12px; margin:4px 0; padding:4px; border-radius:6px; }
-    .message:hover { background:rgba(0,0,0,.1); }
-    .message-body { flex:1; min-width:0; }
-    .meta { display:flex; align-items:baseline; gap:8px; }
-    .msg-user { color:#fff; font-size:14px; font-weight:700; }
-    .timestamp { color:#949ba4; font-size:10px; }
-    .msg-text { color:#dbdee1; font-size:14px; line-height:1.45; margin-top:2px; overflow-wrap:anywhere; }
-    .composer-wrap {
-      flex:0 0 auto; padding:12px; background:#313338; border-top:1px solid rgba(0,0,0,.1);
-      padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px));
-    }
-    .composer {
-      display:flex; align-items:center; gap:8px; padding:8px 12px; background:#2b2d31;
-      border:1px solid transparent; border-radius:8px;
-    }
-    .composer:focus-within { border-color:rgba(99,102,241,.5); }
-    .composer input {
-      width:100%; min-width:0; border:0; outline:0; background:transparent;
-      color:#dbdee1; padding:4px 0; font-size:16px;
-    }
-    .composer input::placeholder { color:#949ba4; }
-    .send { color:#818cf8; background:transparent; padding:4px; cursor:pointer; }
-    .send:hover { color:#a5b4fc; }
-    .backdrop { display:none; }
-
-    @media (max-width: 767px) {
-      .sidebar {
-        position:fixed; left:0; top:0; transform:translateX(-100%);
-        box-shadow:8px 0 24px rgba(0,0,0,.35);
-      }
-      .sidebar.open { transform:translateX(0); }
-      .close-btn { display:block; }
-      .menu-btn { display:block; }
-      .backdrop {
-        position:fixed; inset:0; display:block; background:rgba(0,0,0,.6);
-        z-index:40; opacity:0; pointer-events:none; transition:opacity .2s;
-      }
-      .backdrop.open { opacity:1; pointer-events:auto; }
-      .message { margin-left:-4px; margin-right:-4px; }
+    /* Custom scrollbar and glass effects */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 9999px; }
+    .glass-panel {
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
   </style>
 </head>
+<body class="bg-dark-bg text-slate-100 font-sans antialiased selection:bg-brand-500 selection:text-white flex flex-col h-screen overflow-hidden">
 
-<body>
-  <div id="root"></div>
+  <!-- TOP HEADER -->
+  <header class="glass-panel sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-dark-border">
+    <div class="flex items-center space-x-3">
+      <!-- App Logo / Icon -->
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center font-bold text-lg shadow-lg shadow-brand-500/20">
+        SF
+      </div>
+      <div>
+        <h1 class="font-bold text-base leading-tight tracking-tight">SchoolFriends</h1>
+        <p class="text-[10px] text-slate-400 font-medium tracking-wide uppercase">Campus Portal</p>
+      </div>
+    </div>
 
+    <!-- Active User & Secret Console Toggle Trigger -->
+    <div class="flex items-center space-x-2">
+      <!-- Hidden Command Trigger button (Owner-only) -->
+      <button id="ownerConsoleBtn" onclick="toggleConsole()" class="hidden p-2 text-slate-400 hover:text-brand-500 hover:bg-slate-800/60 rounded-lg transition" title="Owner Console (Ctrl + ~)">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      </button>
+
+      <!-- Profile Avatar Container -->
+      <div class="flex items-center space-x-2 pl-2 border-l border-dark-border">
+        <div class="relative">
+          <img id="userAvatar" src="https://ui-avatars.com/api/?name=Guest&background=1e293b&color=94a3b8" class="w-8 h-8 rounded-full ring-2 ring-brand-500/30 object-cover" alt="User Avatar">
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-dark-bg rounded-full"></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN DYNAMIC CONTENT CONTAINER -->
+  <main id="appViewport" class="flex-1 overflow-y-auto relative p-4 max-w-4xl w-full mx-auto space-y-4">
+    
+    <!-- AUTH / LANDING VIEW (Shown if not logged in) -->
+    <section id="authCard" class="glass-panel rounded-2xl p-6 text-center space-y-6 mt-8 shadow-2xl border border-white/5">
+      <div class="max-w-xs mx-auto space-y-2">
+        <h2 class="text-2xl font-bold tracking-tight text-white">Welcome Back</h2>
+        <p class="text-xs text-slate-400">Connect with your school network, join groups, and catch up on campus events.</p>
+      </div>
+
+      <!-- Google OAuth Sign-In Button -->
+      <button id="googleSignInBtn" class="w-full max-w-xs mx-auto bg-white hover:bg-slate-100 text-slate-900 font-semibold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center space-x-3 text-sm">
+        <svg class="w-5 h-5" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Continue with Google</span>
+      </button>
+
+      <p class="text-[11px] text-slate-500">By continuing, you agree to the Campus Safety Policies.</p>
+    </section>
+
+    <!-- MAIN CHAT FEED PLACEHOLDER (Hidden until logged in) -->
+    <section id="chatSection" class="hidden flex flex-col h-full space-y-3">
+      <!-- Chat Header -->
+      <div class="glass-panel p-3 rounded-xl flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-sm text-slate-200"># general-lounge</h3>
+          <p class="text-[11px] text-slate-400">Campus discussions & announcements</p>
+        </div>
+        <span class="text-[10px] font-semibold bg-brand-500/10 text-brand-500 border border-brand-500/20 px-2 py-0.5 rounded-full">150 Limit</span>
+      </div>
+
+      <!-- Messages Viewport -->
+      <div id="messageBox" class="flex-1 glass-panel rounded-xl p-4 overflow-y-auto space-y-3 min-h-[350px]">
+        <!-- System Message -->
+        <div class="text-center my-2">
+          <span class="text-[10px] font-medium text-slate-500 bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-700/50">Messages strictly capped to 150 per room</span>
+        </div>
+      </div>
+
+      <!-- Input Bar -->
+      <form id="chatForm" onsubmit="event.preventDefault();" class="flex items-center space-x-2">
+        <input id="messageInput" type="text" maxlength="340" placeholder="Type a message (max 340 chars)..." class="flex-1 bg-dark-input border border-dark-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-slate-100 placeholder-slate-500 transition">
+        <button type="submit" class="bg-brand-600 hover:bg-brand-500 text-white font-medium px-4 py-3 rounded-xl text-sm transition shadow-lg shadow-brand-600/20 flex items-center justify-center">
+          Send
+        </button>
+      </form>
+    </section>
+
+  </main>
+
+  <!-- OWNER DEVELOPER TERMINAL MODAL (Hidden by default) -->
+  <div id="ownerConsoleModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm p-4 flex items-center justify-center">
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col h-[450px]">
+      <!-- Terminal Header -->
+      <div class="bg-slate-900 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+          <span class="text-xs font-mono text-slate-400 ml-2">SchoolFriends Owner Console v1.0</span>
+        </div>
+        <button onclick="toggleConsole()" class="text-slate-400 hover:text-white text-xs font-mono">ESC/CLOSE</button>
+      </div>
+      <!-- Terminal Logs -->
+      <div id="terminalOutput" class="flex-1 p-4 font-mono text-xs text-emerald-400 overflow-y-auto space-y-1 bg-black/50">
+        <div>[SYSTEM]: Owner Console initialized. Auth level: OWNER</div>
+        <div>[SYSTEM]: Type 'help' for available management commands.</div>
+      </div>
+      <!-- Terminal Input Line -->
+      <form id="consoleForm" onsubmit="executeConsoleCommand(event)" class="border-t border-slate-800 bg-slate-900 p-2 flex items-center space-x-2 font-mono text-xs">
+        <span class="text-brand-500 pl-2">&gt;</span>
+        <input id="consoleInput" type="text" class="flex-1 bg-transparent text-white focus:outline-none placeholder-slate-600" placeholder="e.g. role user1 ADMIN or sql SELECT * FROM users;" autocomplete="off">
+      </form>
+    </div>
+  </div>
+
+  <!-- BOTTOM MOBILE NAVIGATION BAR -->
+  <nav class="glass-panel border-t border-dark-border px-6 py-2 flex items-center justify-around z-20">
+    <button class="flex flex-col items-center space-y-1 text-brand-500">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+      <span class="text-[10px] font-medium">Chats</span>
+    </button>
+    <button class="flex flex-col items-center space-y-1 text-slate-400 hover:text-slate-200">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      <span class="text-[10px] font-medium">Groups</span>
+    </button>
+    <button class="flex flex-col items-center space-y-1 text-slate-400 hover:text-slate-200">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      <span class="text-[10px] font-medium">Events</span>
+    </button>
+  </nav>
+
+  <!-- INLINE TOGGLE LOGIC -->
   <script>
-    (() => {
-      const root = document.getElementById("root");
-      const channels = [
-        { id: "general", name: "general", icon: "hashtag" },
-        { id: "homework", name: "homework", icon: "book" },
-        { id: "announcements", name: "announcements", icon: "bullhorn" }
-      ];
-
-      const avatar = seed =>
-        "https://api.dicebear.com/7.x/bottts/svg?seed=" + encodeURIComponent(seed);
-
-      let activeChannel = channels[0];
-      let sidebarOpen = false;
-      const messages = [
-        { id:"1", user:"Alex", avatar:avatar("Alex"), text:"Hey everyone! Welcome to SchoolFriends.", timestamp:"10:42 AM" },
-        { id:"2", user:"Sarah", avatar:avatar("Sarah"), text:"Is the math assignment due tomorrow or Friday?", timestamp:"10:44 AM" }
-      ];
-
-      function escapeHtml(value) {
-        return String(value).replace(/[&<>"']/g, c => ({
-          "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
-        }[c]));
+    function toggleConsole() {
+      const modal = document.getElementById('ownerConsoleModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        document.getElementById('consoleInput').focus();
       }
+    }
 
-      function render() {
-        root.innerHTML = `
-          <div class="app">
-            <div class="backdrop ${sidebarOpen ? "open" : ""}" id="backdrop"></div>
-
-            <aside class="sidebar ${sidebarOpen ? "open" : ""}" id="sidebar">
-              <div class="server-header">
-                <div class="brand">
-                  <i class="fa-solid fa-graduation-cap"></i>
-                  <span>SchoolFriends</span>
-                </div>
-                <button class="close-btn" id="closeSidebar" aria-label="Close Channels">
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
-              </div>
-
-              <div class="channel-list">
-                <div class="section-label">Text Channels</div>
-                ${channels.map(c => `
-                  <button class="channel ${activeChannel.id === c.id ? "active" : ""}" data-channel="${c.id}">
-                    <i class="fa-solid fa-${c.icon}"></i>
-                    <span>${escapeHtml(c.name)}</span>
-                  </button>
-                `).join("")}
-              </div>
-
-              <div class="user-footer">
-                <div class="user">
-                  <img class="avatar small" src="${avatar("You")}" alt="Avatar">
-                  <div>
-                    <div class="username">You</div>
-                    <div class="tag">#0001</div>
-                  </div>
-                </div>
-              </div>
-            </aside>
-
-            <main class="main">
-              <header class="header">
-                <button class="menu-btn" id="openSidebar" aria-label="Open Channels">
-                  <i class="fa-solid fa-bars"></i>
-                </button>
-                <div class="channel-title">
-                  <span class="hash">#</span>
-                  <span>${escapeHtml(activeChannel.name)}</span>
-                </div>
-              </header>
-
-              <div class="messages" id="messages">
-                ${messages.map(m => `
-                  <div class="message">
-                    <img class="avatar" src="${m.avatar}" alt="${escapeHtml(m.user)}">
-                    <div class="message-body">
-                      <div class="meta">
-                        <span class="msg-user">${escapeHtml(m.user)}</span>
-                        <span class="timestamp">${escapeHtml(m.timestamp)}</span>
-                      </div>
-                      <div class="msg-text">${escapeHtml(m.text)}</div>
-                    </div>
-                  </div>
-                `).join("")}
-                <div id="messagesEnd"></div>
-              </div>
-
-              <footer class="composer-wrap">
-                <form class="composer" id="messageForm">
-                  <input id="messageInput" type="text" autocomplete="off"
-                         placeholder="Message #${escapeHtml(activeChannel.name)}">
-                  <button class="send" type="submit" aria-label="Send message">
-                    <i class="fa-solid fa-paper-plane"></i>
-                  </button>
-                </form>
-              </footer>
-            </main>
-          </div>
-        `;
-
-        document.querySelectorAll("[data-channel]").forEach(button => {
-          button.addEventListener("click", () => {
-            activeChannel = channels.find(c => c.id === button.dataset.channel) || channels[0];
-            sidebarOpen = false;
-            render();
-          });
-        });
-
-        document.getElementById("openSidebar").addEventListener("click", () => {
-          sidebarOpen = true;
-          render();
-        });
-        document.getElementById("closeSidebar").addEventListener("click", () => {
-          sidebarOpen = false;
-          render();
-        });
-        document.getElementById("backdrop").addEventListener("click", () => {
-          sidebarOpen = false;
-          render();
-        });
-
-        document.getElementById("messageForm").addEventListener("submit", e => {
-          e.preventDefault();
-          const input = document.getElementById("messageInput");
-          const text = input.value.trim();
-          if (!text) return;
-
-          const now = new Date().toLocaleTimeString([], {
-            hour: "2-digit", minute: "2-digit"
-          });
-          messages.push({
-            id: String(Date.now()),
-            user: "You",
-            avatar: avatar("You"),
-            text,
-            timestamp: now
-          });
-          render();
-          const box = document.getElementById("messages");
-          box.scrollTop = box.scrollHeight;
-          document.getElementById("messageInput").focus();
-        });
-
-        requestAnimationFrame(() => {
-          const box = document.getElementById("messages");
-          if (box) box.scrollTop = box.scrollHeight;
-        });
+    // Hotkey: Ctrl + ~ opens Owner Console
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === '`') {
+        e.preventDefault();
+        toggleConsole();
       }
+    });
 
-      function setAppHeight() {
-        const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        document.documentElement.style.setProperty("--app-height", height + "px");
-      }
+    function executeConsoleCommand(e) {
+      e.preventDefault();
+      const input = document.getElementById('consoleInput');
+      const output = document.getElementById('terminalOutput');
+      const val = input.value.trim();
+      if (!val) return;
 
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener("resize", setAppHeight);
-        window.visualViewport.addEventListener("scroll", setAppHeight);
+      const userLine = document.createElement('div');
+      userLine.className = 'text-white';
+      userLine.innerText = '> ' + val;
+      output.appendChild(userLine);
+
+      if (val === 'clear') {
+        output.innerHTML = '';
       } else {
-        window.addEventListener("resize", setAppHeight);
+        const respLine = document.createElement('div');
+        respLine.innerText = '[EXEC]: Command sent to Worker API...';
+        output.appendChild(respLine);
       }
 
-      setAppHeight();
-      render();
-    })();
+      input.value = '';
+      output.scrollTop = output.scrollHeight;
+    }
   </script>
 </body>
-</html>
+      </html>
+          
