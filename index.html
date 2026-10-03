@@ -1,219 +1,230 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-[#1e1f22] text-[#dbdee1] antialiased">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="SchoolFriends - student community chat">
-  <title>SchoolFriends | Chat Client</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SchoolFriends | Campus Hub</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Single+Day&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e1c;--panel:#0f1530;--raise:#161d3d;--line:#232c52;--text:#eef1ff;--mute:#8f9ac4;--acc:#7b8cff;--ok:#3ddc97;--bad:#ff6b81}
+*{box-sizing:border-box;margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden}
+button,input{font:inherit;color:inherit;border:0;background:none;outline:0}
+button{cursor:pointer}
+.hidden{display:none!important}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
+.ib{width:34px;height:34px;border-radius:10px;color:var(--mute);display:grid;place-items:center;transition:.15s;flex:none}
+.ib:hover{background:#ffffff12;color:#fff}
+.menu{display:none}
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            brand: { DEFAULT:"#5865f2", hover:"#4752c4", active:"#3c45a5", light:"#7983f5" },
-            discord: {
-              sidebar:"#2b2d31", chat:"#313338", rail:"#1e1f22", darkest:"#111214",
-              input:"#383a40", hover:"#35373c", active:"#404249", muted:"#949ba4",
-              subtle:"#80848e", green:"#23a55a", amber:"#f0b232", rose:"#f23f43"
-            }
-          },
-          boxShadow: {
-            "glow-brand":"0 0 15px rgba(88,101,242,.4)",
-            "subtle-bar":"0 1px 2px rgba(0,0,0,.2)"
-          }
-        }
-      }
-    };
-  </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+/* Auth */
+#auth{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px;overflow-y:auto;background:radial-gradient(60% 50% at 12% 8%,#2a3a9a66,transparent),radial-gradient(50% 45% at 92% 96%,#6b3fd166,transparent),var(--bg)}
+.card{width:100%;max-width:400px;padding:34px 28px 26px;border-radius:28px;background:#111835d9;backdrop-filter:blur(18px);border:1px solid var(--line);box-shadow:0 30px 80px #0009,inset 0 1px #ffffff14;text-align:center;animation:rise .6s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.98)}}
+.mark{width:56px;height:56px;border-radius:18px;margin:0 auto 18px;display:grid;place-items:center;font-weight:800;font-size:20px;background:linear-gradient(135deg,#6272ff,#9b7bff);box-shadow:0 10px 30px #6272ff66}
+h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.sub{color:var(--mute);font-size:14px;line-height:1.55;margin:8px 0 22px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;padding:4px;border-radius:14px;background:var(--bg);margin-bottom:14px}
+.tabs button{padding:9px;border-radius:10px;font-size:13px;font-weight:600;color:var(--mute);transition:.2s}
+.tabs .on{background:var(--raise);color:var(--text);box-shadow:0 2px 8px #0006}
+.gbtn{width:100%;height:54px;border-radius:16px;background:#f1f4fa;color:#0b1020;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:12px;transition:transform .15s,box-shadow .2s}
+.gbtn:hover{box-shadow:0 8px 28px #7b8cff44}.gbtn:active{transform:scale(.98)}.gbtn:disabled{opacity:.6}
+.or{display:flex;align-items:center;gap:12px;color:var(--mute);font-size:12px;margin:18px 0}
+.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+.field{position:relative;margin-bottom:10px;text-align:left}
+.field input{width:100%;height:48px;padding:0 44px 0 14px;border-radius:13px;background:var(--bg);border:1px solid var(--line);font-size:14px;transition:.2s}
+.field input:focus{border-color:var(--acc);box-shadow:0 0 0 3px #7b8cff26}
+.field .eye{position:absolute;right:4px;top:4px;width:40px;height:40px;color:var(--mute)}
+.pbtn{width:100%;height:48px;border-radius:13px;font-weight:700;font-size:14px;background:linear-gradient(135deg,#6272ff,#8b6bff);color:#fff;box-shadow:0 8px 24px #6272ff55;margin-top:4px;transition:.15s}
+.pbtn:active{transform:scale(.98)}.pbtn:disabled{opacity:.6}
+.link{color:var(--acc);font-size:12px;font-weight:600}
+.status{min-height:18px;font-size:12px;margin-top:12px;color:#ffc46b;line-height:1.4}
+.terms{margin-top:12px;font-size:12px;color:#6a769f;line-height:1.5}
 
-  <style>
-    html,body { height:100%; margin:0; }
-    ::-webkit-scrollbar { width:6px; height:6px; }
-    ::-webkit-scrollbar-track { background:transparent; }
-    ::-webkit-scrollbar-thumb { background:#1a1b1e; border-radius:9999px; }
-    ::-webkit-scrollbar-thumb:hover { background:#111214; }
-    .glass-header { background:rgba(49,51,56,.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
-    @keyframes fadeInMsg { from {opacity:0;transform:translateY(6px)} to {opacity:1;transform:translateY(0)} }
-    .animate-msg { animation:fadeInMsg .18s cubic-bezier(.16,1,.3,1) forwards; }
-  </style>
+/* Shell */
+#app{display:flex;height:100dvh}
+.rail{width:72px;flex:none;background:#080b17;display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:10px;border-right:1px solid #ffffff08}
+.home{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#6272ff,#9b7bff);font-weight:800;color:#fff}
+.sep{width:30px;height:2px;border-radius:2px;background:var(--line)}
+#rail{display:flex;flex-direction:column;gap:10px;flex:1;width:100%;overflow-y:auto;scrollbar-width:none}
+.srvw{position:relative;display:flex;justify-content:center}
+.srvw.on:before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:0 4px 4px 0;background:#fff}
+.srv{width:48px;height:48px;border-radius:24px;overflow:hidden;opacity:.75;transition:border-radius .2s,opacity .2s}
+.srv img{width:100%;height:100%;object-fit:cover}
+.srv:hover,.srv.on{border-radius:16px;opacity:1}
+.side{width:264px;flex:none;background:var(--panel);display:flex;flex-direction:column;border-right:1px solid var(--line)}
+.sh{height:56px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);font-weight:700;font-size:15px}
+.chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:#3ddc9718;color:var(--ok)}
+.chip.off{background:#ffc46b18;color:#ffc46b}
+.search{margin:12px;padding:0 12px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;gap:8px;color:var(--mute);font-size:13px}
+.search input{flex:1;min-width:0}
+.cat{padding:6px 16px;font-size:12px;font-weight:700;color:var(--mute)}
+#chList{flex:1;overflow-y:auto;padding:0 8px}
+.ch{width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;color:var(--mute);text-align:left;transition:.15s;margin-bottom:2px}
+.ch:hover{background:#ffffff0a;color:var(--text)}
+.ch.on{background:#7b8cff22;color:#fff}
+.ch img{width:30px;height:30px;border-radius:9px;object-fit:cover;flex:none}
+.ch b{display:block;font-size:14px;font-weight:600}.ch small{font-size:11px;opacity:.7}
+.me{display:flex;align-items:center;gap:8px;padding:10px;margin:8px;border-radius:16px;background:var(--raise);border:1px solid var(--line)}
+.av{position:relative;flex:none;border-radius:50%}
+.av img{width:38px;height:38px;border-radius:50%;object-fit:cover;background:var(--bg);display:block}
+.dot{position:absolute;right:-2px;bottom:-2px;width:14px;height:14px;border-radius:50%;background:var(--ok);border:3px solid var(--raise)}
+.who{flex:1;min-width:0;text-align:left}
+.who b,.who small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who b{font-size:13px}.who small{font-size:11px;color:var(--mute)}
+
+/* Chat */
+main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
+header{height:56px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+header img{width:26px;height:26px;border-radius:8px;object-fit:cover}
+header b{font-size:15px;white-space:nowrap}
+.hd{color:var(--mute);font-size:13px;padding-left:10px;border-left:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:10px;background:#3ddc9718;color:var(--ok);font-size:12px;font-weight:700}
+#chat{flex:1;overflow-y:auto;padding:12px 0}
+.m{display:flex;gap:14px;padding:2px 20px}
+.m:hover{background:#ffffff06}
+.m.first{margin-top:16px}
+.m>div{min-width:0}
+.pf{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:none;background:var(--panel)}
+.gut{width:40px;flex:none;font-size:9px;color:var(--mute);opacity:0;text-align:center;padding-top:5px}
+.m:hover .gut{opacity:1}
+.n{font-weight:700;font-size:15px}.ts{font-size:11px;color:var(--mute);margin-left:8px}
+.t{font-size:15px;line-height:1.5;color:#dfe4ff;overflow-wrap:anywhere}
+.pic{display:block;max-width:min(360px,100%);max-height:300px;border-radius:14px;margin:6px 0;border:1px solid var(--line)}
+.empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--mute);font-size:13px;text-align:center;padding:24px}
+.empty img{width:72px;height:72px;border-radius:22px;object-fit:cover;margin-bottom:6px}
+.empty b{color:var(--text);font-size:18px}
+.prev{margin:0 14px 8px;padding:8px;border-radius:14px;background:var(--raise);border:1px solid var(--line);display:flex;align-items:center;gap:10px;font-size:12px}
+.prev img{width:44px;height:44px;border-radius:10px;object-fit:cover}
+.pop{position:absolute;bottom:84px;right:20px;display:flex;gap:4px;padding:8px;border-radius:16px;background:var(--raise);border:1px solid var(--line);box-shadow:0 16px 40px #0009;z-index:5}
+.pop button{font-size:20px;width:38px;height:38px;border-radius:10px}.pop button:hover{background:#ffffff14}
+.bar{margin:0 14px max(14px,env(safe-area-inset-bottom));position:relative;height:56px;border-radius:99px;display:flex;align-items:center;padding:0 12px;gap:6px;overflow:hidden;background:#2a2d36;border:1px solid #3b3f4d;box-shadow:0 8px 24px #0006;flex:none}
+.bar>*{position:relative}
+.bar>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.9;pointer-events:none}
+.bar .ib{color:#bae6fd}
+#msg{flex:1;min-width:0;font-family:'Single Day',cursive;font-size:17px;font-weight:600;color:#e0f2fe;padding:0 6px}
+#msg::placeholder{color:#7dd3fc99}
+
+/* Modals, toast */
+.modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:#050810cc;backdrop-filter:blur(8px)}
+.sheet{width:100%;max-width:400px;border-radius:24px;background:var(--panel);border:1px solid var(--line);overflow:hidden;box-shadow:0 30px 80px #000a;animation:rise .35s cubic-bezier(.2,.8,.2,1)}
+.banner{height:96px;background:linear-gradient(120deg,#4453d6,#8b6bff 60%,#c58bff);position:relative}
+.pad{padding:0 20px 22px}
+.big{position:relative;width:96px;height:96px;margin-top:-48px}
+.big img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:6px solid var(--panel);background:var(--bg)}
+.cam{position:absolute;right:-2px;bottom:2px;width:34px;height:34px;border-radius:50%;background:var(--acc);color:#0a0e1c;display:grid;place-items:center;border:3px solid var(--panel);cursor:pointer;transition:transform .15s}
+.cam:hover{transform:scale(1.12)}
+.lbl{font-size:12px;font-weight:700;color:var(--mute);margin:14px 0 6px;display:block}
+.term{max-width:520px;height:420px;display:flex;flex-direction:column;padding:16px;background:#070a12;gap:10px}
+#cout{flex:1;overflow-y:auto;white-space:pre-wrap;font:12px/1.6 ui-monospace,monospace;color:var(--ok);background:#04060b;border-radius:12px;padding:12px}
+#cin{font-family:ui-monospace,monospace;font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);opacity:0;padding:10px 16px;border-radius:12px;background:var(--raise);border:1px solid var(--line);font-size:13px;transition:.25s;z-index:99;pointer-events:none;max-width:90vw}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media(max-width:767px){
+.menu{display:grid}.hd{display:none}
+.side{position:fixed;left:72px;top:0;bottom:0;z-index:20;transform:translateX(-130%);transition:transform .3s;box-shadow:20px 0 60px #000a}
+.side.open{transform:none}
+.scrim{position:fixed;inset:0;z-index:15;background:#0009}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
+<body>
 
-<body class="h-full w-full flex overflow-hidden font-sans select-none bg-discord-rail text-discord-muted">
-  <div id="mobileBackdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-30 hidden"></div>
-
-  <div class="flex h-full w-full overflow-hidden">
-
-    <!-- SERVER RAIL -->
-    <aside class="w-[72px] bg-discord-rail flex flex-col items-center py-3 gap-2 shrink-0 border-r border-discord-sidebar/40 z-50">
-      <button id="homeServerBtn" class="relative group cursor-pointer" title="SchoolFriends Server">
-        <div id="activeServerPill" class="absolute -left-3 top-2.5 w-1.5 h-7 bg-brand rounded-r-full"></div>
-        <div class="w-12 h-12 rounded-[24px] group-hover:rounded-[16px] bg-discord-sidebar overflow-hidden transition-all duration-200 border border-brand/30 shadow-lg group-hover:shadow-glow-brand flex items-center justify-center">
-          <img src="https://api.dicebear.com/9.x/shapes/svg?seed=SchoolFriends" class="w-full h-full object-cover" alt="SchoolFriends logo">
-        </div>
-      </button>
-
-      <div class="w-8 h-[2px] bg-discord-input/60 rounded-full my-1"></div>
-
-      <button class="w-12 h-12 rounded-[24px] bg-discord-sidebar hover:bg-discord-green hover:rounded-[16px] flex items-center justify-center text-discord-green hover:text-white transition-all group" title="Add Server">
-        <i class="fa-solid fa-plus text-lg group-hover:scale-110"></i>
-      </button>
-
-      <button class="w-12 h-12 rounded-[24px] bg-discord-sidebar hover:bg-brand hover:rounded-[16px] flex items-center justify-center text-discord-subtle hover:text-white transition-all group" title="Explore Community">
-        <i class="fa-solid fa-compass text-lg group-hover:scale-110"></i>
-      </button>
-
-      <div class="mt-auto">
-        <button id="openSettingsBtn" class="w-12 h-12 rounded-[24px] bg-discord-sidebar hover:bg-discord-hover hover:rounded-[16px] flex items-center justify-center text-discord-subtle hover:text-white transition-all" title="Settings">
-          <i class="fa-solid fa-gear"></i>
-        </button>
-      </div>
-    </aside>
-
-    <!-- CHANNEL SIDEBAR -->
-    <aside id="channelSidebar" class="fixed sm:relative inset-y-0 left-[72px] sm:left-0 w-64 bg-discord-sidebar flex flex-col shrink-0 border-r border-discord-rail/80 z-40 transform -translate-x-full sm:translate-x-0 transition-transform duration-300 shadow-2xl sm:shadow-none">
-      <header class="h-12 px-4 flex items-center justify-between border-b border-discord-rail/90 shadow-subtle-bar shrink-0">
-        <h1 class="font-bold text-white text-sm tracking-wide flex items-center gap-2 truncate">
-          <span class="truncate">SchoolFriends</span>
-          <i class="fa-solid fa-circle-check text-xs text-brand"></i>
-        </h1>
-        <i class="fa-solid fa-chevron-down text-xs text-discord-muted"></i>
-      </header>
-
-      <div class="flex-1 overflow-y-auto p-2 space-y-1">
-        <div class="flex items-center justify-between px-2 pt-3 pb-1 text-[11px] font-bold tracking-wider text-discord-subtle uppercase">
-          <span><i class="fa-solid fa-chevron-down text-[9px] mr-1"></i>Text Channels</span>
-          <i class="fa-solid fa-plus cursor-pointer hover:text-white" title="Create Channel"></i>
-        </div>
-
-        <button data-channel="general-chat" class="channel-btn w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-discord-hover text-white font-medium text-xs">
-          <i class="fa-solid fa-hashtag text-sm"></i><span>general-chat</span>
-          <span class="ml-auto w-2 h-2 rounded-full bg-brand hidden" id="badge-general-chat"></span>
-        </button>
-        <button data-channel="announcements" class="channel-btn w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-discord-hover/50 text-discord-muted hover:text-white text-xs">
-          <i class="fa-solid fa-bullhorn text-sm"></i><span>announcements</span>
-        </button>
-        <button data-channel="polls" class="channel-btn w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-discord-hover/50 text-discord-muted hover:text-white text-xs">
-          <i class="fa-solid fa-square-poll-vertical text-sm"></i><span>polls</span>
-        </button>
-        <button data-channel="gaming-zone" class="channel-btn w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-discord-hover/50 text-discord-muted hover:text-white text-xs">
-          <i class="fa-solid fa-gamepad text-sm"></i><span>gaming-zone</span>
-        </button>
-
-        <div class="flex items-center px-2 pt-5 pb-1 text-[11px] font-bold tracking-wider text-discord-subtle uppercase">
-          <span><i class="fa-solid fa-chevron-down text-[9px] mr-1"></i>Voice Channels</span>
-        </div>
-        <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-discord-muted opacity-70 cursor-not-allowed text-xs">
-          <i class="fa-solid fa-volume-high text-sm"></i><span>Lounge Voice</span>
-        </button>
-      </div>
-
-      <footer class="h-14 bg-discord-darkest/90 px-2.5 flex items-center justify-between border-t border-discord-rail/50 shrink-0">
-        <div class="flex items-center gap-2 overflow-hidden flex-1 p-1 rounded-md">
-          <div class="relative shrink-0">
-            <img id="userAvatar" src="https://api.dicebear.com/9.x/avataaars/svg?seed=SchoolFriendsUser" class="w-8 h-8 rounded-full object-cover bg-discord-chat" alt="User Avatar">
-            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-discord-green rounded-full border-2 border-discord-darkest"></div>
-          </div>
-          <div class="flex flex-col truncate leading-tight">
-            <span id="userName" class="text-xs font-bold text-white truncate">Guest</span>
-            <span id="userTag" class="text-[10px] text-discord-subtle truncate">#0001</span>
-          </div>
-        </div>
-        <div class="flex items-center gap-0.5">
-          <button id="micToggleBtn" class="p-1.5 text-discord-subtle hover:text-white rounded hover:bg-discord-hover" title="Mute Mic"><i class="fa-solid fa-microphone text-xs"></i></button>
-          <button id="deafenToggleBtn" class="p-1.5 text-discord-subtle hover:text-white rounded hover:bg-discord-hover" title="Deafen"><i class="fa-solid fa-headphones text-xs"></i></button>
-          <button id="logoutBtn" class="p-1.5 text-discord-subtle hover:text-discord-rose rounded hover:bg-discord-hover" title="Log Out"><i class="fa-solid fa-right-from-bracket text-xs"></i></button>
-        </div>
-      </footer>
-    </aside>
-
-    <!-- CHAT AREA -->
-    <main class="flex-1 flex flex-col bg-discord-chat min-w-0 relative h-full">
-      <header class="h-12 px-4 flex items-center justify-between border-b border-discord-rail bg-discord-chat shrink-0 z-10 shadow-subtle-bar">
-        <div class="flex items-center gap-3 min-w-0">
-          <button id="toggleMenuBtn" class="sm:hidden text-discord-muted hover:text-white"><i class="fa-solid fa-bars text-lg"></i></button>
-          <div class="flex items-center gap-2 min-w-0">
-            <i id="channelIcon" class="fa-solid fa-hashtag text-discord-subtle text-lg"></i>
-            <span id="currentChannelTitle" class="font-bold text-white text-sm truncate">general-chat</span>
-            <span class="hidden md:inline-block w-px h-4 bg-discord-input mx-1"></span>
-            <span id="currentChannelTopic" class="hidden md:inline-block text-xs text-discord-subtle truncate max-w-xs">General conversation for school friends</span>
-          </div>
-        </div>
-        <div class="flex items-center gap-3.5 text-discord-muted text-sm shrink-0">
-          <button title="Notifications" class="hover:text-white"><i class="fa-solid fa-bell"></i></button>
-          <button title="Pinned Messages" class="hover:text-white"><i class="fa-solid fa-thumbtack"></i></button>
-          <button id="toggleMemberListBtn" title="Toggle Member List" class="hover:text-white"><i class="fa-solid fa-users"></i></button>
-          <div class="relative hidden sm:block">
-            <input id="searchInput" type="text" placeholder="Search" class="bg-discord-rail text-xs text-white placeholder-discord-subtle px-2.5 py-1 rounded w-36 focus:w-48 focus:outline-none transition-all">
-            <i class="fa-solid fa-magnifying-glass text-xs text-discord-subtle absolute right-2 top-1.5"></i>
-          </div>
-        </div>
-      </header>
-
-      <div id="chatBox" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
-
-      <div id="imagePreviewBar" class="hidden px-4 py-2 bg-discord-sidebar border-t border-discord-rail items-center justify-between">
-        <div class="flex items-center gap-3">
-          <img id="previewImg" class="w-12 h-12 object-cover rounded-lg border border-discord-input" alt="Upload preview">
-          <div><div class="text-xs font-semibold text-white">Attached Image</div><div id="previewFileName" class="text-[10px] text-discord-subtle"></div></div>
-        </div>
-        <button id="removeImageBtn" class="w-6 h-6 rounded-full bg-discord-rail hover:bg-discord-rose text-white"><i class="fa-solid fa-xmark text-xs"></i></button>
-      </div>
-
-      <div class="p-3 sm:p-4 bg-discord-chat shrink-0">
-        <form id="messageForm" class="relative w-full rounded-xl flex items-center px-3 py-2 gap-2.5 bg-discord-input focus-within:ring-2 focus-within:ring-brand/60">
-          <label class="w-7 h-7 rounded-full bg-[#4e5058] hover:bg-[#6d6f78] flex items-center justify-center cursor-pointer shrink-0" title="Upload Media">
-            <i class="fa-solid fa-plus text-[#dbdee1] text-xs"></i>
-            <input type="file" id="imageInput" accept="image/*" class="hidden">
-          </label>
-          <input type="text" id="messageInput" placeholder="Message #general-chat" class="flex-1 bg-transparent text-[#dbdee1] placeholder-discord-subtle focus:outline-none text-sm py-1" maxlength="1000" autocomplete="off">
-          <button id="emojiBtn" type="button" class="p-1 hover:text-discord-amber text-discord-muted" title="Add Emoji"><i class="fa-regular fa-face-smile"></i></button>
-          <button id="sendBtn" type="submit" class="w-8 h-8 rounded-lg bg-brand hover:bg-brand-hover text-white flex items-center justify-center"><i class="fa-solid fa-paper-plane text-xs"></i></button>
-        </form>
-      </div>
-    </main>
-
-    <!-- MEMBERS SIDEBAR -->
-    <aside id="memberSidebar" class="hidden lg:flex w-60 bg-discord-sidebar flex-col shrink-0 border-l border-discord-rail/80">
-      <div class="p-4 overflow-y-auto space-y-4">
-        <div>
-          <h3 class="text-[11px] font-bold tracking-wider text-discord-subtle uppercase mb-2">Online — <span id="onlineCount">1</span></h3>
-          <div id="onlineMemberList"></div>
-        </div>
-        <div>
-          <h3 class="text-[11px] font-bold tracking-wider text-discord-subtle uppercase mb-2">Offline — 2</h3>
-          <div class="space-y-1">
-            <div class="flex items-center gap-2.5 px-2 py-1.5 rounded opacity-60">
-              <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=Alice" class="w-8 h-8 rounded-full" alt="Alice">
-              <span class="text-xs font-semibold text-discord-muted">Alice</span>
-            </div>
-            <div class="flex items-center gap-2.5 px-2 py-1.5 rounded opacity-60">
-              <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=Sudip" class="w-8 h-8 rounded-full" alt="Sudip">
-              <span class="text-xs font-semibold text-discord-muted">Sudip</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </aside>
+<section id="auth">
+  <div class="card">
+    <div class="mark">SF</div>
+    <h1 id="aTitle">Welcome Back</h1>
+    <p class="sub">Connect with your school network, join groups, and catch up on campus events.</p>
+    <div class="tabs"><button id="tabIn" class="on" type="button">Sign in</button><button id="tabUp" type="button">Create account</button></div>
+    <button id="gBtn" class="gbtn" type="button">
+      <svg width="22" height="22" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.4-4.7 7.1l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 010-9.4l-7.9-6.1a24 24 0 000 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.8 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+      <span>Continue with Google</span>
+    </button>
+    <div class="or">or use your email</div>
+    <form id="authForm" novalidate>
+      <div class="field up hidden"><input id="aName" placeholder="Display name" autocomplete="name" maxlength="32"></div>
+      <div class="field"><input id="aEmail" type="email" placeholder="School email" autocomplete="email"></div>
+      <div class="field"><input id="aPass" type="password" placeholder="Password" autocomplete="current-password"><button type="button" class="eye" id="eye" aria-label="Show password"><i class="fa-regular fa-eye"></i></button></div>
+      <div id="forgotRow" style="text-align:right;margin:-2px 0 10px"><button type="button" id="forgot" class="link">Forgot password?</button></div>
+      <button class="pbtn" id="aSubmit">Sign in</button>
+    </form>
+    <p class="status" id="aStatus" role="status"></p>
+    <p class="terms">By continuing, you agree to the Campus Safety Policies.</p>
   </div>
+</section>
 
-  <!-- Settings Modal -->
-  <div id="settingsModal" class="hidden fixed inset-0 z-[100] bg-black/70 items-center justify-center p-4">
-    <div class="w-full max-w-md bg-discord-sidebar rounded-xl border border-discord-input shadow-2xl p-5">
-      <div class="flex justify-between items-center mb-5">
-        <h2 class="text-white font-bold text-lg">SchoolFriends Settings</h2>
-        <button id="closeSettingsBtn" class="text-discord-muted hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <label class="block text-xs text-discord-subtle mb-2">Display name</label>
-      <input id="displayNameInput" class="w-full bg-discord-input text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-brand" maxlength="32">
-      <button id="saveSettingsBtn" class="mt-4 w-full bg-brand hover:bg-brand-hover text-white rounded-lg py-2 font-semibold">Save</button>
+<div id="app" class="hidden">
+  <aside class="rail">
+    <button class="home" title="SchoolFriends">SF</button>
+    <div class="sep"></div>
+    <div id="rail"></div>
+  </aside>
+  <div class="scrim hidden" id="scrim"></div>
+  <nav class="side" id="side">
+    <div class="sh"><span>Campus Hub</span><span class="chip off" id="conn">Connecting</span></div>
+    <label class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="chSearch" placeholder="Find a channel"></label>
+    <div class="cat">Channels</div>
+    <div id="chList"></div>
+    <div class="me">
+      <button class="av" data-profile aria-label="Edit profile"><img id="meAv" alt=""><span class="dot"></span></button>
+      <div class="who"><b id="meName"></b><small id="meBio"></small></div>
+      <button class="ib" data-profile title="Edit profile"><i class="fa-solid fa-gear"></i></button>
+      <button class="ib" id="out" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+  </nav>
+
+  <main>
+    <header>
+      <button class="ib menu" id="menu" aria-label="Channels"><i class="fa-solid fa-bars"></i></button>
+      <img id="hIcon" alt=""><b id="hTitle"></b><span class="hd" id="hDesc"></span>
+      <span style="flex:1"></span>
+      <button class="tb hidden" id="termBtn"><i class="fa-solid fa-terminal"></i>Terminal</button>
+    </header>
+    <div id="chat"></div>
+    <div class="prev hidden" id="prev"><img id="prevImg" alt=""><span style="flex:1">Image attached</span><button class="ib" id="rmImg" aria-label="Remove image"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="pop hidden" id="emo"><button>😀</button><button>🔥</button><button>🎮</button><button>❤️</button><button>👍</button></div>
+    <div class="bar">
+      <img src="1000588477.png" alt="">
+      <label class="ib" title="Attach image" style="cursor:pointer"><i class="fa-solid fa-plus"></i><input type="file" id="imgIn" accept="image/*" hidden></label>
+      <input id="msg" placeholder="Enter Message.." maxlength="500" autocomplete="off">
+      <button class="ib" id="emoBtn" title="Emoji"><i class="fa-regular fa-face-smile"></i></button>
+      <button class="ib" id="send" title="Send"><i class="fa-solid fa-spa"></i></button>
+      <button class="ib" id="mic" title="Voice note"><i class="fa-solid fa-microphone"></i></button>
+    </div>
+  </main>
+</div>
+
+<div class="modal hidden" id="pm">
+  <div class="sheet">
+    <div class="banner"><button class="ib" id="pClose" aria-label="Close" style="position:absolute;right:12px;top:12px;background:#0006;color:#fff"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="pad">
+      <div class="big"><img id="pAv" alt=""><label class="cam" title="Change photo"><i class="fa-solid fa-camera"></i><input type="file" id="avIn" accept="image/*" hidden></label></div>
+      <form id="pf">
+        <label class="lbl" for="pName">Display name</label>
+        <div class="field"><input id="pName" maxlength="32" required></div>
+        <label class="lbl" for="pBio">About me</label>
+        <div class="field"><input id="pBio" maxlength="80" placeholder="Chilling on campus..."></div>
+        <button class="pbtn" id="pSave">Save changes</button>
+        <p class="status" id="pStat"></p>
+      </form>
     </div>
   </div>
+</div>
 
-  <script type="module" src="./app.js"></script>
+<div class="modal hidden" id="cm">
+  <div class="sheet term">
+    <div style="display:flex;justify-content:space-between;align-items:center;color:var(--ok);font-weight:700;font-size:13px"><span><i class="fa-solid fa-terminal"></i> Admin terminal</span><button class="ib" id="cClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+    <div id="cout">Type /help for available commands.</div>
+    <input id="cin" placeholder="> Enter command" autocomplete="off">
+  </div>
+</div>
+
+<div id="toast" role="status"></div>
+<script type="module" src="app.js"></script>
 </body>
-        </html>
-  
+</html>

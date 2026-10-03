@@ -1,274 +1,387 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot,
+  serverTimestamp, doc, setDoc, getDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// GitHub Pages safety: this app is intentionally a single-page client.
-// Never use window.location for internal UI navigation.
-function safeNavigate() {
-  // UI navigation is handled entirely in the DOM/localStorage.
-  // This prevents GitHub Pages from requesting /chat, /home, etc.
-}
-
-const state = {
-  channel: localStorage.getItem("sf_channel") || "general-chat",
-  name: localStorage.getItem("sf_name") || "Guest",
-  muted: false,
-  deafened: false,
-  attachedImage: null,
-  messages: JSON.parse(localStorage.getItem("sf_messages") || "{}")
+const firebaseConfig = {
+  apiKey: "AIzaSyBkHqLMsR_UR_NeRaaGb-0c5MRrWzy3w6Y",
+  authDomain: "schoolfriends-dev.firebaseapp.com",
+  projectId: "schoolfriends-dev",
+  storageBucket: "schoolfriends-dev.firebasestorage.app",
+  messagingSenderId: "807033346729",
+  appId: "1:807033346729:web:46f85493518ec60608e7b8",
+  measurementId: "G-P1SRDNQ9PE"
 };
 
-const channels = {
-  "general-chat": {
-    topic: "General conversation for school friends",
-    seed: [
-      { name: "SchoolFriends", text: "Welcome to SchoolFriends! 👋", time: "Today" },
-      { name: "SchoolFriends", text: "This is your general chat. Send a message below to get started.", time: "Today" }
-    ]
-  },
-  announcements: {
-    topic: "Important updates and community announcements",
-    seed: [{ name: "SchoolFriends", text: "No announcements yet.", time: "Today" }]
-  },
-  polls: {
-    topic: "Create and discuss school polls",
-    seed: [{ name: "SchoolFriends", text: "Polls channel is ready! 📊", time: "Today" }]
-  },
-  "gaming-zone": {
-    topic: "Games, Minecraft and everything gaming",
-    seed: [{ name: "SchoolFriends", text: "Welcome to Gaming Zone! 🎮", time: "Today" }]
-  }
-};
+// Your Cloudflare Worker, e.g. "https://schoolfriends-api.yourname.workers.dev".
+// Leave empty to run in direct mode (profiles stored in Firestore).
+const WORKER_URL = "";
+const OWNER_EMAILS = ["itsazureaxotv@gmail.com"];
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+const channels = [
+  { id: "general-chat", name: "General Chat", desc: "Main community chatter", icon: "1000588420.png" },
+  { id: "announcements", name: "Announcements", desc: "Server news & updates", icon: "1000588423.png" },
+  { id: "polls", name: "Polls & Voting", desc: "Community questions & votes", icon: "1000588422.png" }
+];
 
 const $ = (id) => document.getElementById(id);
-const escapeHtml = (value) =>
-  String(value).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[c]);
+const dicebear = (seed) => `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed || "user")}`;
 
-function saveMessages() {
-  localStorage.setItem("sf_messages", JSON.stringify(state.messages));
+let currentUser = null, profile = {}, active = "general-chat", unsub = null;
+let msgs = [], img = null, viaWorker = false, pendingName = "", mode = "in", toastTimer;
+const users = {};
+
+function toast(t) {
+  const el = $("toast");
+  el.textContent = t;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
 }
 
-function getMessages(channel) {
-  if (!Array.isArray(state.messages[channel])) {
-    state.messages[channel] = [...channels[channel].seed];
-    saveMessages();
+/* ---------- Cloudflare Worker ---------- */
+async function api(path, opts = {}) {
+  const token = await auth.currentUser.getIdToken();
+  const r = await fetch(WORKER_URL + path, { ...opts, headers: { ...opts.headers, Authorization: `Bearer ${token}` } });
+  if (!r.ok) throw new Error(`Worker returned ${r.status}`);
+  return r.json();
+}
+const json = (method, body) => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+/* ---------- Auth UI ---------- */
+const ERR = {
+  "auth/invalid-credential": "Wrong email or password.",
+  "auth/email-already-in-use": "That email already has an account. Try signing in.",
+  "auth/weak-password": "Use a password with at least 6 characters.",
+  "auth/invalid-email": "Enter a valid email address.",
+  "auth/popup-closed-by-user": "Sign-in was cancelled.",
+  "auth/too-many-requests": "Too many attempts. Wait a minute and try again.",
+  "auth/operation-not-allowed": "This sign-in method isn't enabled in Firebase yet."
+};
+function say(t, ok) {
+  $("aStatus").textContent = t;
+  $("aStatus").style.color = ok ? "var(--ok)" : "#ffc46b";
+}
+async function busy(btn, fn) {
+  btn.disabled = true;
+  try { await fn(); } catch (e) { console.error(e); say(ERR[e.code] || e.message); }
+  btn.disabled = false;
+}
+function setMode(m) {
+  mode = m;
+  const up = m === "up";
+  $("tabIn").classList.toggle("on", !up);
+  $("tabUp").classList.toggle("on", up);
+  $("aTitle").textContent = up ? "Create your account" : "Welcome Back";
+  $("aSubmit").textContent = up ? "Create account" : "Sign in";
+  document.querySelector(".up").classList.toggle("hidden", !up);
+  $("forgotRow").classList.toggle("hidden", up);
+  $("aPass").autocomplete = up ? "new-password" : "current-password";
+  say("");
+}
+$("tabIn").onclick = () => setMode("in");
+$("tabUp").onclick = () => setMode("up");
+$("gBtn").onclick = () => busy($("gBtn"), () => signInWithPopup(auth, provider));
+$("eye").onclick = () => {
+  const p = $("aPass"), show = p.type === "password";
+  p.type = show ? "text" : "password";
+  $("eye").innerHTML = `<i class="fa-regular fa-eye${show ? "-slash" : ""}"></i>`;
+};
+$("authForm").onsubmit = (e) => {
+  e.preventDefault();
+  const email = $("aEmail").value.trim(), pass = $("aPass").value;
+  if (!email || !pass) return say("Enter your email and password.");
+  busy($("aSubmit"), async () => {
+    if (mode === "up") {
+      pendingName = $("aName").value.trim() || email.split("@")[0];
+      const { user } = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(user, { displayName: pendingName });
+    } else {
+      await signInWithEmailAndPassword(auth, email, pass);
+    }
+  });
+};
+$("forgot").onclick = async () => {
+  const email = $("aEmail").value.trim();
+  if (!email) return say("Type your email first, then tap Forgot password.");
+  try { await sendPasswordResetEmail(auth, email); say("Reset link sent. Check your inbox.", true); }
+  catch (e) { say(ERR[e.code] || e.message); }
+};
+$("out").onclick = () => signOut(auth);
+
+/* ---------- Profile ---------- */
+const defaults = (u) => ({
+  displayName: pendingName || u.displayName || (u.email || "Student").split("@")[0],
+  photoURL: u.photoURL || dicebear(u.uid),
+  bio: "Active Campus Member"
+});
+
+async function loadProfile(u) {
+  profile = defaults(u);
+  viaWorker = false;
+  if (WORKER_URL) {
+    try {
+      const d = await api("/api/session", json("POST", profile));
+      profile = { ...profile, ...d.profile };
+      viaWorker = true;
+    } catch (e) { console.warn("Worker unreachable, using Firestore:", e); }
   }
-  return state.messages[channel];
+  if (!viaWorker) {
+    try {
+      const s = await getDoc(doc(db, "users", u.uid));
+      if (s.exists()) profile = { ...profile, ...s.data() };
+      else await setDoc(doc(db, "users", u.uid), { ...profile, email: u.email, uid: u.uid });
+    } catch (e) { console.warn("Profile sync:", e); }
+  }
+  $("conn").textContent = viaWorker ? "Connected" : "Direct mode";
+  $("conn").classList.toggle("off", !viaWorker);
+  paintProfile();
 }
 
-function renderMembers() {
-  $("onlineMemberList").innerHTML = `
-    <div class="flex items-center gap-2.5 px-2 py-1.5 rounded hover:bg-discord-hover/40">
-      <div class="relative shrink-0">
-        <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(state.name)}" class="w-8 h-8 rounded-full bg-discord-chat" alt="User">
-        <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-discord-green rounded-full border-2 border-discord-sidebar"></div>
-      </div>
-      <div class="flex flex-col truncate">
-        <span class="text-xs font-semibold text-white truncate">${escapeHtml(state.name)}</span>
-        <span class="text-[10px] text-discord-subtle">Online</span>
-      </div>
-    </div>`;
-  $("onlineCount").textContent = "1";
+function paintProfile() {
+  users[currentUser.uid] = profile;
+  $("meAv").src = $("pAv").src = profile.photoURL;
+  $("meName").textContent = profile.displayName;
+  $("meBio").textContent = profile.bio;
+  renderMsgs();
 }
 
-function renderMessages() {
-  const box = $("chatBox");
-  const messages = getMessages(state.channel);
-  box.innerHTML = "";
+async function saveProfile(patch) {
+  profile = { ...profile, ...patch };
+  paintProfile();
+  if (viaWorker) await api("/api/profile", json("PUT", patch));
+  else await setDoc(doc(db, "users", currentUser.uid), { ...patch, email: currentUser.email, uid: currentUser.uid, updatedAt: serverTimestamp() }, { merge: true });
+}
 
-  messages.forEach((msg) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "flex gap-3 group animate-msg";
-    const avatarSeed = encodeURIComponent(msg.name);
-    const image = msg.image
-      ? `<img src="${msg.image}" alt="Attached image" class="max-w-xs max-h-64 rounded-lg mt-2 border border-discord-input">`
-      : "";
-    wrapper.innerHTML = `
-      <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=${avatarSeed}" class="w-10 h-10 rounded-full shrink-0" alt="">
-      <div class="min-w-0">
-        <div class="flex items-baseline gap-2">
-          <span class="font-semibold text-sm text-white">${escapeHtml(msg.name)}</span>
-          <span class="text-[10px] text-discord-subtle">${escapeHtml(msg.time || "Now")}</span>
-        </div>
-        <div class="text-sm text-[#dbdee1] whitespace-pre-wrap break-words">${escapeHtml(msg.text || "")}</div>
-        ${image}
-      </div>`;
-    box.appendChild(wrapper);
+function resize(file, max, q, square) {
+  return new Promise((res, rej) => {
+    const im = new Image(), url = URL.createObjectURL(file);
+    im.onload = () => {
+      const c = document.createElement("canvas"), g = c.getContext("2d");
+      if (square) {
+        const s = Math.min(im.width, im.height);
+        c.width = c.height = max;
+        g.drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, 0, 0, max, max);
+      } else {
+        const k = Math.min(1, max / Math.max(im.width, im.height));
+        c.width = im.width * k; c.height = im.height * k;
+        g.drawImage(im, 0, 0, c.width, c.height);
+      }
+      URL.revokeObjectURL(url);
+      c.toBlob((b) => (b ? res(b) : rej(new Error("Could not process image"))), "image/jpeg", q);
+    };
+    im.onerror = () => rej(new Error("That file isn't a valid image"));
+    im.src = url;
   });
+}
+const toDataURL = (b) => new Promise((r) => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
 
-  requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+// Instant profile photo: pick a file, it is cropped, uploaded and shown everywhere.
+$("avIn").onchange = async (e) => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try {
+    toast("Uploading photo...");
+    const blob = await resize(f, 256, 0.88, true);
+    $("pAv").src = URL.createObjectURL(blob);
+    const url = viaWorker
+      ? (await api("/api/avatar", { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob })).url
+      : await toDataURL(blob);
+    await saveProfile({ photoURL: url });
+    toast("Profile photo updated");
+  } catch (err) {
+    console.error(err);
+    toast("Couldn't update photo: " + err.message);
+    paintProfile();
+  }
+};
+
+const openProfile = () => {
+  $("pName").value = profile.displayName;
+  $("pBio").value = profile.bio;
+  $("pAv").src = profile.photoURL;
+  $("pStat").textContent = "";
+  $("pm").classList.remove("hidden");
+};
+document.querySelectorAll("[data-profile]").forEach((b) => (b.onclick = openProfile));
+$("pClose").onclick = () => $("pm").classList.add("hidden");
+$("pf").onsubmit = async (e) => {
+  e.preventDefault();
+  const displayName = $("pName").value.trim();
+  if (!displayName) return;
+  $("pSave").disabled = true;
+  try {
+    await saveProfile({ displayName, bio: $("pBio").value.trim() || "Active Campus Member" });
+    $("pStat").style.color = "var(--ok)";
+    $("pStat").textContent = "Saved";
+    setTimeout(() => $("pm").classList.add("hidden"), 700);
+  } catch (err) {
+    $("pStat").style.color = "var(--bad)";
+    $("pStat").textContent = "Couldn't save: " + err.message;
+  }
+  $("pSave").disabled = false;
+};
+
+/* ---------- Channels ---------- */
+function paintChannels() {
+  const f = $("chSearch").value.toLowerCase();
+  $("rail").innerHTML = channels.map((c) => `<div class="srvw ${c.id === active ? "on" : ""}"><button class="srv ${c.id === active ? "on" : ""}" data-ch="${c.id}" title="${c.name}"><img src="${c.icon}" alt="${c.name}"></button></div>`).join("");
+  $("chList").innerHTML = channels.filter((c) => (c.name + c.desc).toLowerCase().includes(f)).map((c) => `<button class="ch ${c.id === active ? "on" : ""}" data-ch="${c.id}"><img src="${c.icon}" alt=""><span><b>${c.name}</b><small>${c.desc}</small></span></button>`).join("");
+}
+$("chSearch").oninput = paintChannels;
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-ch]");
+  if (b) openChannel(b.dataset.ch);
+});
+
+function openChannel(id) {
+  active = id;
+  const c = channels.find((x) => x.id === id) || channels[0];
+  $("hTitle").textContent = c.name;
+  $("hDesc").textContent = c.desc;
+  $("hIcon").src = c.icon;
+  paintChannels();
+  drawer(false);
+  unsub?.();
+  msgs = [];
+  $("chat").innerHTML = `<div class="empty"><i class="fa-solid fa-circle-notch fa-spin"></i></div>`;
+  unsub = onSnapshot(
+    query(collection(db, "channels", id, "messages"), orderBy("createdAt", "desc"), limit(100)),
+    (snap) => {
+      msgs = snap.docs.map((d) => d.data()).reverse();
+      msgs.forEach((m) => who(m.uid));
+      renderMsgs();
+    },
+    (err) => {
+      console.error(err);
+      $("chat").innerHTML = `<div class="empty">Can't load messages. Check that your Firestore rules allow signed-in reads.</div>`;
+    }
+  );
 }
 
-function selectChannel(channel) {
-  if (!channels[channel]) return;
-  state.channel = channel;
-  localStorage.setItem("sf_channel", channel);
-
-  document.querySelectorAll(".channel-btn").forEach(btn => {
-    const active = btn.dataset.channel === channel;
-    btn.classList.toggle("bg-discord-hover", active);
-    btn.classList.toggle("text-white", active);
-    btn.classList.toggle("text-discord-muted", !active);
-  });
-
-  $("currentChannelTitle").textContent = channel;
-  $("currentChannelTopic").textContent = channels[channel].topic;
-  $("messageInput").placeholder = `Message #${channel}`;
-  renderMessages();
-
-  // Close mobile drawer after choosing a channel.
-  if (window.innerWidth < 640) closeMobileMenu();
+async function who(uid) {
+  if (!uid || users[uid]) return;
+  users[uid] = {};
+  try {
+    const s = await getDoc(doc(db, "users", uid));
+    if (s.exists()) { users[uid] = s.data(); renderMsgs(); }
+  } catch { /* profile doc not readable; message data is used instead */ }
 }
 
-function sendMessage() {
-  const input = $("messageInput");
-  const text = input.value.trim();
-
-  if (!text && !state.attachedImage) return;
-
-  getMessages(state.channel).push({
-    name: state.name,
-    text: text || "",
-    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    image: state.attachedImage
-  });
-
-  saveMessages();
-  input.value = "";
-  clearAttachment();
-  renderMessages();
-}
-
-function clearAttachment() {
-  state.attachedImage = null;
-  $("imageInput").value = "";
-  $("previewImg").src = "";
-  $("previewFileName").textContent = "";
-  $("imagePreviewBar").classList.add("hidden");
-  $("imagePreviewBar").classList.remove("flex");
-}
-
-function handleImage(file) {
-  if (!file || !file.type.startsWith("image/")) return;
-
-  // Limit localStorage usage for this demo.
-  if (file.size > 2 * 1024 * 1024) {
-    alert("Please choose an image smaller than 2 MB.");
+function renderMsgs() {
+  const box = $("chat");
+  if (!currentUser || $("app").classList.contains("hidden") && !msgs.length) return;
+  if (!msgs.length) {
+    const c = channels.find((x) => x.id === active) || channels[0];
+    box.innerHTML = `<div class="empty"><img src="${c.icon}" alt=""><b>Welcome to ${c.name}</b><span>${c.desc}</span></div>`;
     return;
   }
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    state.attachedImage = reader.result;
-    $("previewImg").src = reader.result;
-    $("previewFileName").textContent = file.name;
-    $("imagePreviewBar").classList.remove("hidden");
-    $("imagePreviewBar").classList.add("flex");
-  };
-  reader.readAsDataURL(file);
+  let prev = null;
+  box.innerHTML = msgs.map((m) => {
+    const t = m.createdAt?.toDate?.(), ms = t ? +t : Date.now();
+    const first = !prev || prev.uid !== m.uid || ms - prev.ms > 3e5;
+    prev = { uid: m.uid, ms };
+    const u = users[m.uid] || {};
+    const name = esc(u.displayName || m.userName || "Student");
+    const av = esc(u.photoURL || m.photoURL || dicebear(m.uid));
+    const time = t ? t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Now";
+    const body = (m.image ? `<img class="pic" src="${esc(m.image)}" alt="">` : "") + (m.text ? `<div class="t">${esc(m.text)}</div>` : "");
+    return first
+      ? `<div class="m first"><img class="pf" src="${av}" alt=""><div><div><span class="n">${name}</span><span class="ts">${time}</span></div>${body}</div></div>`
+      : `<div class="m"><span class="gut">${time}</span><div>${body}</div></div>`;
+  }).join("");
+  box.scrollTop = box.scrollHeight;
 }
 
-function openMobileMenu() {
-  $("channelSidebar").classList.remove("-translate-x-full");
-  $("mobileBackdrop").classList.remove("hidden");
+/* ---------- Composer ---------- */
+async function send() {
+  const text = $("msg").value.trim();
+  if ((!text && !img) || !currentUser) return;
+  const m = { uid: currentUser.uid, userName: profile.displayName, text, image: img, createdAt: serverTimestamp() };
+  if (/^https?:/.test(profile.photoURL)) m.photoURL = profile.photoURL;
+  $("msg").value = "";
+  clearImg();
+  $("emo").classList.add("hidden");
+  try { await addDoc(collection(db, "channels", active, "messages"), m); }
+  catch (e) { console.error(e); toast("Message not sent: " + e.message); }
 }
+$("send").onclick = send;
+$("msg").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
+$("emoBtn").onclick = () => $("emo").classList.toggle("hidden");
+$("emo").onclick = (e) => {
+  if (e.target.tagName === "BUTTON") { $("msg").value += e.target.textContent; $("msg").focus(); }
+};
+$("mic").onclick = () => toast("Voice notes are coming soon.");
 
-function closeMobileMenu() {
-  $("channelSidebar").classList.add("-translate-x-full");
-  $("mobileBackdrop").classList.add("hidden");
+$("imgIn").onchange = async (e) => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try {
+    img = await toDataURL(await resize(f, 1280, 0.8, false));
+    $("prevImg").src = img;
+    $("prev").classList.remove("hidden");
+  } catch (err) { toast(err.message); }
+};
+function clearImg() { img = null; $("prev").classList.add("hidden"); $("prevImg").src = ""; }
+$("rmImg").onclick = clearImg;
+
+/* ---------- Drawer, terminal, shortcuts ---------- */
+function drawer(open) {
+  $("side").classList.toggle("open", open);
+  $("scrim").classList.toggle("hidden", !open);
 }
+$("menu").onclick = () => drawer(true);
+$("scrim").onclick = () => drawer(false);
 
-function openSettings() {
-  $("displayNameInput").value = state.name;
-  $("settingsModal").classList.remove("hidden");
-  $("settingsModal").classList.add("flex");
-}
+$("pm").onclick = (e) => { if (e.target.id === "pm") e.target.classList.add("hidden"); };
+$("cm").onclick = (e) => { if (e.target.id === "cm") e.target.classList.add("hidden"); };
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { $("pm").classList.add("hidden"); $("cm").classList.add("hidden"); }
+});
 
-function closeSettings() {
-  $("settingsModal").classList.add("hidden");
-  $("settingsModal").classList.remove("flex");
-}
+$("termBtn").onclick = () => $("cm").classList.remove("hidden");
+$("cClose").onclick = () => $("cm").classList.add("hidden");
+const out = (t) => { $("cout").textContent += "\n" + t; $("cout").scrollTop = $("cout").scrollHeight; };
+$("cin").onkeydown = (e) => {
+  if (e.key !== "Enter") return;
+  const cmd = $("cin").value.trim();
+  $("cin").value = "";
+  if (!cmd) return;
+  out("> " + cmd);
+  if (cmd === "/help") out("/clear  /status  /channel  /worker");
+  else if (cmd === "/clear") $("cout").textContent = "Type /help for available commands.";
+  else if (cmd === "/status") out("Signed in as " + (currentUser?.email || "none"));
+  else if (cmd === "/channel") out("Active channel: " + active);
+  else if (cmd === "/worker") out(viaWorker ? "Worker connected: " + WORKER_URL : "Direct mode (Worker not set or unreachable)");
+  else out("Unknown command. Type /help.");
+};
 
-function saveSettings() {
-  const value = $("displayNameInput").value.trim().slice(0, 32);
-  if (value) {
-    state.name = value;
-    localStorage.setItem("sf_name", value);
+/* ---------- Session ---------- */
+onAuthStateChanged(auth, async (u) => {
+  currentUser = u;
+  if (!u) {
+    unsub?.();
+    $("aPass").value = "";
+    $("auth").classList.remove("hidden");
+    $("app").classList.add("hidden");
+    return;
   }
-  $("userName").textContent = state.name;
-  $("userTag").textContent = "#0001";
-  renderMembers();
-  closeSettings();
-}
-
-function setup() {
-  $("userName").textContent = state.name;
-  $("displayNameInput").value = state.name;
-
-  document.querySelectorAll(".channel-btn").forEach(btn => {
-    btn.addEventListener("click", () => selectChannel(btn.dataset.channel));
-  });
-
-  $("messageForm").addEventListener("submit", e => {
-    e.preventDefault();
-    sendMessage();
-  });
-
-  $("imageInput").addEventListener("change", e => handleImage(e.target.files[0]));
-  $("removeImageBtn").addEventListener("click", clearAttachment);
-
-  $("emojiBtn").addEventListener("click", () => {
-    $("messageInput").value += " 😊";
-    $("messageInput").focus();
-  });
-
-  $("toggleMenuBtn").addEventListener("click", openMobileMenu);
-  $("mobileBackdrop").addEventListener("click", closeMobileMenu);
-
-  $("toggleMemberListBtn").addEventListener("click", () => {
-    $("memberSidebar").classList.toggle("hidden");
-    $("memberSidebar").classList.toggle("lg:flex");
-  });
-
-  $("micToggleBtn").addEventListener("click", () => {
-    state.muted = !state.muted;
-    const icon = $("micToggleBtn").querySelector("i");
-    icon.className = state.muted ? "fa-solid fa-microphone-slash text-xs" : "fa-solid fa-microphone text-xs";
-    $("micToggleBtn").classList.toggle("text-discord-rose", state.muted);
-  });
-
-  $("deafenToggleBtn").addEventListener("click", () => {
-    state.deafened = !state.deafened;
-    const icon = $("deafenToggleBtn").querySelector("i");
-    icon.className = state.deafened ? "fa-solid fa-headphones-simple text-xs" : "fa-solid fa-headphones text-xs";
-    $("deafenToggleBtn").classList.toggle("text-discord-rose", state.deafened);
-  });
-
-  $("logoutBtn").addEventListener("click", () => {
-    localStorage.removeItem("sf_name");
-    state.name = "Guest";
-    $("userName").textContent = state.name;
-    renderMembers();
-  });
-
-  $("openSettingsBtn").addEventListener("click", openSettings);
-  $("closeSettingsBtn").addEventListener("click", closeSettings);
-  $("saveSettingsBtn").addEventListener("click", saveSettings);
-
-  $("settingsModal").addEventListener("click", e => {
-    if (e.target === $("settingsModal")) closeSettings();
-  });
-
-  $("searchInput").addEventListener("input", e => {
-    const query = e.target.value.trim().toLowerCase();
-    document.querySelectorAll("#chatBox > div").forEach(row => {
-      row.classList.toggle("hidden", query && !row.textContent.toLowerCase().includes(query));
-    });
-  });
-
-  selectChannel(state.channel);
-  renderMembers();
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", setup);
-} else {
-  setup();
-}
+  await loadProfile(u);
+  $("auth").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("termBtn").classList.toggle("hidden", !OWNER_EMAILS.includes((u.email || "").toLowerCase()));
+  openChannel(active);
+});
