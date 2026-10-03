@@ -14,7 +14,7 @@ import {
   serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// YOUR FIREBASE CONFIG
+// YOUR FIREBASE CONFIGURATION
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -37,6 +37,9 @@ const userAvatar = document.getElementById("userAvatar");
 const logoutBtn = document.getElementById("logoutBtn");
 const currentChannelTitle = document.getElementById("currentChannelTitle");
 const channelButtons = document.querySelectorAll(".channel-btn");
+const toggleMenuBtn = document.getElementById("toggleMenuBtn");
+const channelSidebar = document.getElementById("channelSidebar");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
 
 let currentUser = null;
 let unsubscribeMessages = null;
@@ -48,7 +51,21 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// Authentication Check
+// Mobile Sidebar Drawer Toggle Logic
+function toggleMobileMenu(open) {
+  if (open) {
+    channelSidebar.classList.remove("-translate-x-full");
+    sidebarOverlay.classList.remove("hidden");
+  } else {
+    channelSidebar.classList.add("-translate-x-full");
+    sidebarOverlay.classList.add("hidden");
+  }
+}
+
+toggleMenuBtn?.addEventListener("click", () => toggleMobileMenu(true));
+sidebarOverlay?.addEventListener("click", () => toggleMobileMenu(false));
+
+// Auth Observer
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUser = user;
@@ -61,15 +78,11 @@ onAuthStateChanged(auth, (user) => {
 });
 
 // Logout Listener
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", () => {
-    signOut(auth).then(() => {
-      window.location.href = "login.html";
-    });
-  });
-}
+logoutBtn?.addEventListener("click", () => {
+  signOut(auth).then(() => window.location.href = "login.html");
+});
 
-// Switch Channels
+// Channel Switching Dynamic Handler
 channelButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     const targetChannel = btn.getAttribute("data-channel");
@@ -80,23 +93,24 @@ channelButtons.forEach((btn) => {
     messageInput.placeholder = `Message #${activeChannel}`;
 
     channelButtons.forEach((b) => {
-      b.classList.remove("bg-[#35373c]", "text-white");
-      b.classList.add("hover:bg-[#35373c]/50", "text-[#949ba4]");
+      b.classList.remove("bg-dark-100/80", "text-white");
+      b.classList.add("hover:bg-dark-100/40", "text-[#949ba4]");
     });
-    btn.classList.add("bg-[#35373c]", "text-white");
-    btn.classList.remove("hover:bg-[#35373c]/50", "text-[#949ba4]");
+    btn.classList.add("bg-dark-100/80", "text-white");
+    btn.classList.remove("hover:bg-dark-100/40", "text-[#949ba4]");
 
+    toggleMobileMenu(false);
     loadChannelMessages(activeChannel);
   });
 });
 
-// Load Channel Messages with Right Alignment
+// Load Channel Messages
 function loadChannelMessages(channelId) {
   if (unsubscribeMessages) unsubscribeMessages();
 
   chatBox.innerHTML = `
     <div class="flex flex-col items-center justify-center h-full text-[#949ba4] text-xs gap-2">
-      <i class="fa-solid fa-circle-notch animate-spin text-lg text-indigo-400"></i>
+      <i class="fa-solid fa-circle-notch animate-spin text-xl text-brand"></i>
       <span>Loading #${channelId}...</span>
     </div>
   `;
@@ -112,8 +126,11 @@ function loadChannelMessages(channelId) {
     if (snapshot.empty) {
       chatBox.innerHTML = `
         <div class="flex flex-col items-center justify-center h-full text-[#949ba4] text-xs text-center p-6 gap-2">
-          <p class="font-bold text-white text-sm">Welcome to #${channelId}!</p>
-          <p class="text-[#80848e] text-xs">This is the start of the #${channelId} channel.</p>
+          <div class="w-12 h-12 rounded-full bg-dark-100 flex items-center justify-center text-brand text-xl mb-1">
+            <i class="fa-solid fa-hashtag"></i>
+          </div>
+          <p class="font-bold text-white text-base">Welcome to #${channelId}!</p>
+          <p class="text-[#80848e] text-xs max-w-xs">This is the start of the #${channelId} channel.</p>
         </div>
       `;
       return;
@@ -125,22 +142,28 @@ function loadChannelMessages(channelId) {
         ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
         : "Just now";
 
+      const isMe = currentUser && msg.uid === currentUser.uid;
       const msgDiv = document.createElement("div");
-      // flex-row-reverse aligns avatar and text container to the right
-      msgDiv.className = "flex gap-3 items-start flex-row-reverse w-full";
+      
+      // Right-aligned for current user, left-aligned for others
+      msgDiv.className = `flex gap-3 items-start w-full ${isMe ? 'flex-row-reverse' : ''}`;
 
       const avatarSrc = msg.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || 'User')}`;
 
       msgDiv.innerHTML = `
-        <img src="${avatarSrc}" class="w-8 h-8 rounded-full object-cover shrink-0 bg-[#2b2d31]" alt="Avatar"/>
-        <div class="flex flex-col items-end max-w-[80%]">
-          <div class="flex items-center gap-2 mb-1 flex-row-reverse">
+        <img src="${avatarSrc}" class="w-8 h-8 rounded-full object-cover shrink-0 bg-dark-300 border border-dark-100" alt="Avatar"/>
+        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]">
+          <div class="flex items-center gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''}">
             <span class="text-xs font-semibold text-white">${escapeHtml(msg.userName || "User")}</span>
-            <span class="text-[10px] text-[#949ba4]">${timeStr}</span>
+            <span class="text-[10px] text-[#949ba4] font-medium">${timeStr}</span>
           </div>
-          ${msg.image ? `<img src="${msg.image}" class="rounded-lg max-h-60 object-cover mb-1 border border-[#1e1f22]" />` : ''}
+          ${msg.image ? `<img src="${msg.image}" class="rounded-xl max-h-60 object-cover mb-1 border border-dark-400 shadow-sm" />` : ''}
           ${msg.text ? `
-            <div class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm leading-relaxed break-words bg-[#5865f2] text-white shadow-sm">
+            <div class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm leading-relaxed break-words shadow-sm ${
+              isMe 
+                ? 'bg-brand text-white rounded-tr-none' 
+                : 'bg-dark-100 text-[#dbdee1] rounded-tl-none'
+            }">
               ${escapeHtml(msg.text)}
             </div>
           ` : ''}
@@ -152,30 +175,28 @@ function loadChannelMessages(channelId) {
 
     chatBox.scrollTop = chatBox.scrollHeight;
   }, (err) => {
-    console.error("Firestore read error:", err);
+    console.error("Firestore Error:", err);
   });
 }
 
 // Send Message Handler
-if (messageForm) {
-  messageForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const text = messageInput.value.trim();
-    if (!text || !currentUser) return;
+messageForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = messageInput.value.trim();
+  if (!text || !currentUser) return;
 
-    messageInput.value = "";
+  messageInput.value = "";
 
-    try {
-      await addDoc(collection(db, "channels", activeChannel, "messages"), {
-        text: text,
-        uid: currentUser.uid,
-        userName: currentUser.displayName || currentUser.email.split("@")[0],
-        photoURL: currentUser.photoURL || "logo10_3_1188.png",
-        createdAt: serverTimestamp()
-      });
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
-  });
-                       }
-      
+  try {
+    await addDoc(collection(db, "channels", activeChannel, "messages"), {
+      text: text,
+      uid: currentUser.uid,
+      userName: currentUser.displayName || currentUser.email.split("@")[0],
+      photoURL: currentUser.photoURL || "logo10_3_1188.png",
+      createdAt: serverTimestamp()
+    });
+  } catch (error) {
+    console.error("Failed to send message:", error);
+  }
+});
+                                             
