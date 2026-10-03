@@ -213,6 +213,26 @@
     </div>
   </div>
 
+
+  <!-- GitHub Pages SPA route guard -->
+  <script>
+    (function () {
+      // GitHub Pages can return to a deep URL after a refresh/navigation.
+      // Keep this client app on the real index document instead of requesting
+      // a non-existent repository file.
+      const path = window.location.pathname;
+      const marker = "/SchoolFriends/";
+      if (path.includes(marker)) {
+        const rest = path.split(marker)[1] || "";
+        const knownFile = /^(index\.html|app\.js|404\.html|README\.md)$/i.test(rest);
+        if (rest && !knownFile && !rest.includes(".")) {
+          const target = marker;
+          window.history.replaceState({}, "", target);
+        }
+      }
+    })();
+  </script>
+
   <script type="module" src="./app.js"></script>
 </body>
 </html>

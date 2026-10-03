@@ -1,3 +1,11 @@
+
+// GitHub Pages safety: this app is intentionally a single-page client.
+// Never use window.location for internal UI navigation.
+function safeNavigate() {
+  // UI navigation is handled entirely in the DOM/localStorage.
+  // This prevents GitHub Pages from requesting /chat, /home, etc.
+}
+
 const state = {
   channel: localStorage.getItem("sf_channel") || "general-chat",
   name: localStorage.getItem("sf_name") || "Guest",
