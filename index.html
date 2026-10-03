@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>SchoolFriends | Campus Chat</title>
+  <title>SchoolFriends | Campus Hub</title>
   
   <!-- Tailwind CSS & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -14,28 +14,24 @@
     
     * { font-family: 'Plus Jakarta Sans', sans-serif; }
     
-    /* Custom Scrollbars */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #1e222d; border-radius: 9999px; }
     ::-webkit-scrollbar-thumb:hover { background: #333a4d; }
 
-    /* Glass Effects & Utility */
-    .glass-card { background: rgba(19, 21, 26, 0.75); backdrop-filter: blur(12px); }
+    .glass-card { background: rgba(18, 20, 28, 0.85); backdrop-filter: blur(16px); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-[#08090c] text-slate-100 h-full w-full overflow-hidden select-none">
+<body class="bg-[#090a0f] text-slate-100 h-full w-full overflow-hidden select-none">
 
   <!-- ================= AUTH OVERLAY ================= -->
-  <section id="authSection" class="fixed inset-0 z-50 bg-[#08090c] flex items-center justify-center p-4">
-    <div class="w-full max-w-sm glass-card rounded-3xl p-7 text-center border border-slate-800/80 shadow-2xl shadow-indigo-950/20 relative overflow-hidden">
-      <!-- Glow effect background -->
+  <section id="authSection" class="fixed inset-0 z-50 bg-[#090a0f] flex items-center justify-center p-4">
+    <div class="w-full max-w-sm glass-card rounded-3xl p-7 text-center border border-slate-800/80 shadow-2xl shadow-indigo-950/30 relative overflow-hidden">
       <div class="absolute -top-12 -left-12 w-32 h-32 bg-indigo-600/20 rounded-full blur-3xl"></div>
       <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-violet-600/20 rounded-full blur-3xl"></div>
 
-      <!-- App Logo -->
       <div class="w-20 h-20 bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 rounded-3xl flex items-center justify-center mx-auto mb-5 text-3xl font-extrabold text-white shadow-xl shadow-indigo-600/30 border border-indigo-400/30">
         SF
       </div>
@@ -55,68 +51,62 @@
   <!-- ================= MAIN APP WRAPPER ================= -->
   <div id="mainAppSection" class="hidden h-full w-full flex overflow-hidden relative">
 
-    <!-- 1. LEFT NAVIGATION RAIL (Fixed 68px) -->
-    <aside class="w-[68px] sm:w-[72px] bg-[#0c0d12] flex flex-col items-center py-3 gap-3 shrink-0 border-r border-slate-800/60 z-30">
-      <button class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center text-lg font-black shadow-lg shadow-indigo-600/20 border border-indigo-400/30 transition-all hover:rounded-xl">
+    <!-- 1. LEFT NAVIGATION RAIL (Server Quick Switches) -->
+    <aside class="w-[68px] bg-[#0d0f16] flex flex-col items-center py-3 gap-3 shrink-0 border-r border-slate-800/60 z-30">
+      <button class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center text-base font-black shadow-lg shadow-indigo-600/20 border border-indigo-400/30 transition-all hover:rounded-xl">
         SF
       </button>
 
       <div class="w-8 h-[2px] bg-slate-800/80 rounded-full my-0.5"></div>
 
-      <!-- Server / Channel List Icons -->
-      <div id="directChatList" class="flex-1 w-full flex flex-col items-center gap-2.5 overflow-y-auto no-scrollbar">
-        <button onclick="switchChannel('general-lounge')" class="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white flex items-center justify-center font-bold transition-all border border-indigo-500/30">
-          #
-        </button>
+      <!-- Server / Category Image Switches -->
+      <div id="serverRailList" class="flex-1 w-full flex flex-col items-center gap-3 overflow-y-auto no-scrollbar">
+        <!-- Rendered dynamically via JS -->
       </div>
 
       <!-- User Profile Trigger -->
-      <button id="openProfileBtn" class="relative group mt-auto cursor-pointer">
-        <img id="userAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" class="w-11 h-11 rounded-full object-cover border-2 border-indigo-500/80 bg-slate-800 shadow-md" alt="Avatar" />
-        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#0c0d12] rounded-full"></span>
+      <button id="openProfileBtn" class="relative group mt-auto cursor-pointer p-0.5">
+        <img id="userAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" class="w-11 h-11 rounded-2xl object-cover border-2 border-indigo-500/80 bg-slate-800 shadow-md" alt="Avatar" />
+        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#0d0f16] rounded-full"></span>
       </button>
     </aside>
 
-    <!-- 2. CHANNELS SIDEBAR (Drawer on Mobile, Static on Desktop) -->
+    <!-- 2. CHANNELS SIDEBAR (Drawer on Mobile) -->
     <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/60 z-20 md:hidden backdrop-blur-xs"></div>
     
-    <div id="channelSidebar" class="fixed md:relative inset-y-0 left-[68px] sm:left-[72px] md:left-0 z-20 w-72 bg-[#12141c] flex flex-col shrink-0 border-r border-slate-800/60 transition-transform duration-300 -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none h-full">
-      
-      <!-- Sidebar Header -->
+    <div id="channelSidebar" class="fixed md:relative inset-y-0 left-[68px] md:left-0 z-20 w-64 bg-[#12141d] flex flex-col shrink-0 border-r border-slate-800/60 transition-transform duration-300 -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none h-full">
       <div class="h-14 px-4 border-b border-slate-800/80 flex items-center justify-between shrink-0">
-        <h2 class="text-sm font-bold text-white tracking-wide uppercase text-slate-300">Campus Spaces</h2>
+        <h2 class="text-xs font-bold text-slate-300 tracking-wider uppercase">Server Channels</h2>
         <span class="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold px-2 py-0.5 rounded-full">Live</span>
       </div>
 
-      <!-- Search Input -->
       <div class="p-3">
         <div class="bg-[#090a0f] rounded-xl px-3 py-2 flex items-center gap-2 border border-slate-800/80">
           <i class="fa-solid fa-magnifying-glass text-slate-500 text-xs"></i>
-          <input type="text" placeholder="Search spaces..." class="bg-transparent text-xs text-slate-200 placeholder-slate-500 focus:outline-none w-full" />
+          <input type="text" placeholder="Search channels..." class="bg-transparent text-xs text-slate-200 placeholder-slate-500 focus:outline-none w-full" />
         </div>
       </div>
 
-      <!-- Dynamic Channels Feed -->
-      <div id="sidebarUserList" class="flex-1 overflow-y-auto px-2 space-y-1"></div>
+      <div id="sidebarChannelList" class="flex-1 overflow-y-auto px-2 space-y-1"></div>
     </div>
 
     <!-- 3. MAIN CHAT VIEWPORT -->
-    <main class="flex-1 flex flex-col h-full bg-[#08090c] min-w-0 relative">
+    <main class="flex-1 flex flex-col h-full bg-[#090a0f] min-w-0 relative">
       
       <!-- Header Bar -->
-      <header class="h-14 px-4 bg-[#0c0d12] border-b border-slate-800/80 flex items-center justify-between shrink-0 z-10">
+      <header class="h-14 px-4 bg-[#0d0f16] border-b border-slate-800/80 flex items-center justify-between shrink-0 z-10">
         <div class="flex items-center gap-3 min-w-0">
           <button id="toggleMenuBtn" class="md:hidden text-slate-400 hover:text-white text-lg p-1">
             <i class="fa-solid fa-bars"></i>
           </button>
-          <div class="flex items-center gap-2 truncate">
-            <span class="text-indigo-400 font-black text-lg">#</span>
-            <span id="activeChannelTitle" class="text-sm font-bold text-white tracking-wide truncate">general-lounge</span>
+          <div class="flex items-center gap-2.5 truncate">
+            <img id="headerChannelIcon" class="w-6 h-6 rounded-lg object-cover border border-indigo-500/30" src="" alt="Icon" />
+            <span id="activeChannelTitle" class="text-sm font-bold text-white tracking-wide truncate">General Chat</span>
           </div>
         </div>
 
         <div class="flex items-center gap-2 text-slate-400 shrink-0">
-          <button id="ownerConsoleBtn" class="text-emerald-400 hover:text-emerald-300 text-xs font-mono bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30 flex items-center gap-1.5 transition">
+          <button id="ownerConsoleBtn" class="hidden text-emerald-400 hover:text-emerald-300 text-xs font-mono bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30 items-center gap-1.5 transition">
             <i class="fa-solid fa-terminal text-[10px]"></i>
             <span class="hidden sm:inline">Terminal</span>
           </button>
@@ -130,12 +120,12 @@
       <div id="chatBox" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
 
       <!-- Image Attachment Preview -->
-      <div id="imagePreviewContainer" class="hidden bg-[#12141c] mx-3 my-1 rounded-2xl p-2.5 flex items-center justify-between border border-indigo-500/30 shrink-0 shadow-lg">
+      <div id="imagePreviewContainer" class="hidden bg-[#12141d] mx-3 my-1 rounded-2xl p-2.5 flex items-center justify-between border border-indigo-500/30 shrink-0 shadow-lg">
         <div class="flex items-center gap-3">
           <img id="imagePreview" class="w-12 h-12 rounded-xl object-cover border border-slate-700" alt="Attachment" />
           <div>
             <span class="text-xs font-semibold text-slate-200 block">Image attached</span>
-            <span class="text-[10px] text-slate-400">Ready to upload</span>
+            <span class="text-[10px] text-slate-400">Ready to send</span>
           </div>
         </div>
         <button id="removeImageBtn" type="button" class="text-slate-400 hover:text-red-400 p-2 text-sm">
@@ -144,9 +134,8 @@
       </div>
 
       <!-- Message Input Bar -->
-      <div class="p-3 bg-[#08090c] shrink-0">
-        <div class="bg-[#12141c] rounded-2xl p-1.5 flex items-center gap-2 shadow-xl border border-slate-800/80 focus-within:border-indigo-500/50 transition">
-          
+      <div class="p-3 bg-[#090a0f] shrink-0">
+        <div class="bg-[#12141d] rounded-2xl p-1.5 flex items-center gap-2 shadow-xl border border-slate-800/80 focus-within:border-indigo-500/50 transition">
           <label class="w-9 h-9 rounded-xl bg-slate-800/60 hover:bg-slate-700 text-slate-300 flex items-center justify-center cursor-pointer transition shrink-0">
             <i class="fa-solid fa-plus text-xs"></i>
             <input type="file" id="imageInput" accept="image/*" class="hidden" />
@@ -170,30 +159,45 @@
   </div>
 
   <!-- ================= USER PROFILE MODAL ================= -->
-  <div id="profileModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="w-full max-w-sm bg-[#12141c] rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
-      <div class="h-24 bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 relative">
+  <div id="profileModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-[#12141d] rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
+      <div class="h-20 bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 relative">
         <button id="closeProfileBtn" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 transition">
           <i class="fa-solid fa-xmark text-xs"></i>
         </button>
       </div>
 
       <div class="px-5 pb-6 relative">
-        <div class="relative -mt-12 mb-3">
-          <img id="modalProfileAvatar" src="https://via.placeholder.com/80" class="w-20 h-20 rounded-full border-4 border-[#12141c] bg-slate-800 object-cover shadow-xl" alt="Profile" />
-          <span class="absolute bottom-1 left-15 w-4 h-4 bg-emerald-500 border-2 border-[#12141c] rounded-full"></span>
-        </div>
-
-        <h3 id="modalProfileName" class="text-lg font-bold text-white">Student Name</h3>
-        <p id="modalProfileTag" class="text-xs text-indigo-400 mb-4 font-mono">@student</p>
-
-        <div class="bg-[#090a0f] rounded-2xl p-3.5 border border-slate-800/80 space-y-2">
-          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Status</span>
-          <div class="flex items-center gap-2 text-xs text-slate-300">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span>Active Campus Member</span>
+        <div class="relative -mt-10 mb-4 flex items-end justify-between">
+          <div class="relative">
+            <img id="modalProfileAvatar" src="https://via.placeholder.com/80" class="w-18 h-18 rounded-2xl border-4 border-[#12141d] bg-slate-800 object-cover shadow-xl" alt="Profile" />
+            <span class="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#12141d] rounded-full"></span>
           </div>
         </div>
+
+        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">Edit Profile</h3>
+
+        <form id="profileForm" class="space-y-3">
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Display Name</label>
+            <input type="text" id="editDisplayName" class="w-full bg-[#090a0f] border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="Your Name" required />
+          </div>
+
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Avatar Image URL</label>
+            <input type="url" id="editPhotoURL" class="w-full bg-[#090a0f] border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="https://..." />
+          </div>
+
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Status / Bio</label>
+            <input type="text" id="editBio" class="w-full bg-[#090a0f] border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="Chilling on campus..." />
+          </div>
+
+          <button type="submit" id="saveProfileBtn" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-xl transition shadow-md shadow-indigo-600/20 active:scale-95 cursor-pointer">
+            Save Changes
+          </button>
+          <p id="profileSaveStatus" class="text-[10px] text-center min-h-[1rem]"></p>
+        </form>
       </div>
     </div>
   </div>
@@ -211,7 +215,7 @@
 
       <div id="consoleOutput" class="flex-1 bg-[#050608] rounded-xl p-3 font-mono text-xs text-emerald-400 overflow-y-auto whitespace-pre-wrap mb-3 border border-slate-900 leading-relaxed">Welcome Admin Terminal! Type /help for available commands.</div>
 
-      <div class="flex items-center gap-2 bg-[#12141c] rounded-xl p-2 border border-slate-800">
+      <div class="flex items-center gap-2 bg-[#12141d] rounded-xl p-2 border border-slate-800">
         <span class="text-emerald-400 font-mono text-xs pl-2">&gt;</span>
         <input type="text" id="consoleInput" placeholder="Enter command..." class="flex-1 bg-transparent text-xs font-mono text-slate-100 focus:outline-none" />
       </div>
@@ -221,4 +225,4 @@
   <script type="module" src="app.js"></script>
 </body>
         </html>
-              
+  
