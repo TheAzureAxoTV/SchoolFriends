@@ -3,45 +3,334 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Discord Clone</title>
-  <link rel="stylesheet" href="style.css" />
-  <!-- Socket.io library for real-time messaging -->
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <title>SchoolFriends - Chat & Profile</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #1e1f22;
+      color: #f2f3f5;
+      font-family: 'gg sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    /* ================= PROFILE CARD UI ================= */
+    .profile-card {
+      width: 320px;
+      background-color: #111214;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+    }
+
+    .profile-banner {
+      height: 105px;
+      background-color: #5c64f4; /* Discord Blurple */
+    }
+
+    .profile-header {
+      position: relative;
+      padding: 0 16px 16px 16px;
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin-top: -40px; 
+      border: 6px solid #111214; 
+      border-radius: 50%;
+      background-color: #2b2d31;
+    }
+
+    .avatar-img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .status-dot {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 20px;
+      height: 20px;
+      background-color: #23a559;
+      border: 4px solid #111214;
+      border-radius: 50%;
+    }
+
+    .profile-text {
+      margin-top: 12px;
+    }
+
+    .profile-text h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .profile-text p {
+      font-size: 13px;
+      color: #b5bac1;
+      margin-top: 2px;
+    }
+
+    /* ================= CHAT WINDOW UI ================= */
+    .chat-container {
+      width: 450px;
+      height: 520px;
+      background-color: #313338;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 16px;
+      background-color: #2b2d31;
+      border-bottom: 1px solid #1f2023;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .messages-list {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message-item {
+      display: flex;
+      flex-direction: column;
+      background-color: #2b2d31;
+      padding: 8px 12px;
+      border-radius: 6px;
+      max-width: 85%;
+      word-wrap: break-word;
+    }
+
+    .message-sender {
+      font-size: 12px;
+      font-weight: bold;
+      color: #00a8fc;
+      margin-bottom: 2px;
+    }
+
+    .message-text {
+      font-size: 14px;
+      color: #dbdee1;
+    }
+
+    .chat-form {
+      display: flex;
+      padding: 12px;
+      background-color: #2b2d31;
+      gap: 8px;
+    }
+
+    .chat-input {
+      flex: 1;
+      background-color: #383a40;
+      border: none;
+      outline: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: #f2f3f5;
+      font-size: 14px;
+    }
+
+    .send-btn {
+      background-color: #5865f2;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    .send-btn:hover {
+      background-color: #4752c4;
+    }
+  </style>
 </head>
 <body>
 
-  <!-- PROFILE CARD UI -->
+  <!-- DISCORD-STYLE PROFILE CARD -->
   <div class="profile-card">
     <div class="profile-banner"></div>
-    
     <div class="profile-header">
       <div class="avatar-wrapper">
         <img 
-          id="avatar-img" 
-          src="https://via.placeholder.com/92" 
+          id="profile-avatar" 
+          src="https://api.dicebear.com/7.x/bottts/svg?seed=SchoolFriends" 
           alt="Avatar"
-          onerror="this.src='https://via.placeholder.com/92'" 
+          class="avatar-img"
         />
-        <div class="status-dot online"></div>
+        <div class="status-dot"></div>
       </div>
-      
       <div class="profile-text">
-        <h2 id="display-name">Display Name</h2>
-        <p id="user-info">username • pronouns</p>
+        <h2 id="profile-display-name">Loading...</h2>
+        <p id="profile-username">@loading</p>
       </div>
     </div>
   </div>
 
-  <!-- CHAT WINDOW UI -->
+  <!-- REAL-TIME CHAT BOX -->
   <div class="chat-container">
-    <div id="messages-list"></div>
+    <div class="chat-header"># general-chat</div>
+    <div id="messages-list" class="messages-list"></div>
     
-    <form id="chat-form">
-      <input type="text" id="chat-input" placeholder="Send a message..." />
-      <button type="submit">Send</button>
+    <form id="chat-form" class="chat-form">
+      <input 
+        type="text" 
+        id="chat-input" 
+        class="chat-input" 
+        placeholder="Message #general-chat..." 
+        autocomplete="off"
+      />
+      <button type="submit" class="send-btn">Send</button>
     </form>
   </div>
 
-  <script src="script.js"></script>
+  <!-- FIREBASE REALTIME MODULES -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // Your actual Firebase project credentials
+    const firebaseConfig = {
+      apiKey: "AIzaSyBkHqLMsR_UR_NeRaaGb-0c5MRrWzy3w6Y",
+      authDomain: "schoolfriends-dev.firebaseapp.com",
+      projectId: "schoolfriends-dev",
+      storageBucket: "schoolfriends-dev.firebasestorage.app",
+      messagingSenderId: "807033346729",
+      appId: "1:807033346729:web:46f85493518ec60608e7b8",
+      measurementId: "G-P1SRDNQ9PE",
+      databaseURL: "https://schoolfriends-dev-default-rtdb.firebaseio.com" // Update if RTDB region differs
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const messagesRef = ref(db, "chat/general");
+
+    // Local state for active user
+    let currentUser = {
+      username: "DevUser",
+      displayName: "Developer",
+      avatarUrl: "https://api.dicebear.com/7.x/bottts/svg?seed=SchoolFriends"
+    };
+
+    // DOM Elements
+    const chatForm = document.getElementById("chat-form");
+    const chatInput = document.getElementById("chat-input");
+    const messagesList = document.getElementById("messages-list");
+    const profileAvatar = document.getElementById("profile-avatar");
+    const profileDisplayName = document.getElementById("profile-display-name");
+    const profileUsername = document.getElementById("profile-username");
+
+    // 1. Fetch User Data from Cloudflare Worker API (D1 Database)
+    async function fetchUserData() {
+      try {
+        const response = await fetch("https://olfriends.pntr.dev/api/user/profile"); // Your Cloudflare Worker endpoint
+        if (response.ok) {
+          const data = await response.json();
+          currentUser = {
+            username: data.username || "DevUser",
+            displayName: data.displayName || "Developer",
+            avatarUrl: data.avatarUrl || currentUser.avatarUrl
+          };
+        }
+      } catch (err) {
+        console.warn("Could not fetch D1 profile, using defaults:", err);
+      } finally {
+        updateProfileUI();
+      }
+    }
+
+    function updateProfileUI() {
+      profileDisplayName.textContent = currentUser.displayName;
+      profileUsername.textContent = `@${currentUser.username}`;
+      profileAvatar.src = currentUser.avatarUrl;
+
+      // Handle Broken Images with Fallback
+      profileAvatar.onerror = () => {
+        profileAvatar.src = "https://api.dicebear.com/7.x/bottts/svg?seed=Fallback";
+      };
+    }
+
+    // 2. Real-Time Chat: Listen for Messages from Firebase
+    onChildAdded(messagesRef, (snapshot) => {
+      const msg = snapshot.val();
+      renderMessage(msg);
+    });
+
+    // 3. Real-Time Chat: Send Message
+    chatForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = chatInput.value.trim();
+
+      if (!text) return;
+
+      // Enforce the 340-character safety limit
+      if (text.length > 340) {
+        alert("Message exceeds the 340 character limit.");
+        return;
+      }
+
+      const msgPayload = {
+        sender: currentUser.displayName,
+        text: text,
+        timestamp: Date.now()
+      };
+
+      // Push to Firebase Realtime Database
+      push(messagesRef, msgPayload);
+
+      chatInput.value = "";
+    });
+
+    function renderMessage(msg) {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = "message-item";
+
+      const senderDiv = document.createElement("div");
+      senderDiv.className = "message-sender";
+      senderDiv.textContent = msg.sender || "Anonymous";
+
+      const textDiv = document.createElement("div");
+      textDiv.className = "message-text";
+      textDiv.textContent = msg.text;
+
+      msgDiv.appendChild(senderDiv);
+      msgDiv.appendChild(textDiv);
+      messagesList.appendChild(msgDiv);
+
+      // Auto-scroll to the latest message
+      messagesList.scrollTop = messagesList.scrollHeight;
+    }
+
+    // Run setup on startup
+    fetchUserData();
+  </script>
 </body>
-</html>
+  </html>
+  
