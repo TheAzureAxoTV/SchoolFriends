@@ -1,307 +1,266 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { 
-  getAuth, 
-  onAuthStateChanged, 
-  signOut 
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  query, 
-  orderBy, 
-  onSnapshot, 
-  serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-// ======================================================
-// 1. FIREBASE CONFIGURATION
-// Replace values below with your Firebase project credentials
-// ======================================================
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+const state = {
+  channel: localStorage.getItem("sf_channel") || "general-chat",
+  name: localStorage.getItem("sf_name") || "Guest",
+  muted: false,
+  deafened: false,
+  attachedImage: null,
+  messages: JSON.parse(localStorage.getItem("sf_messages") || "{}")
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-// ======================================================
-// 2. DOM ELEMENT REFERENCES
-// ======================================================
-const chatBox = document.getElementById("chatBox");
-const messageForm = document.getElementById("messageForm");
-const messageInput = document.getElementById("messageInput");
-const imageInput = document.getElementById("imageInput");
-const imagePreviewBar = document.getElementById("imagePreviewBar");
-const previewImg = document.getElementById("previewImg");
-const previewFileName = document.getElementById("previewFileName");
-const removeImageBtn = document.getElementById("removeImageBtn");
-
-const userName = document.getElementById("userName");
-const userTag = document.getElementById("userTag");
-const userAvatar = document.getElementById("userAvatar");
-const logoutBtn = document.getElementById("logoutBtn");
-
-const memberUserName = document.getElementById("memberUserName");
-const memberUserAvatar = document.getElementById("memberUserAvatar");
-
-const currentChannelTitle = document.getElementById("currentChannelTitle");
-const currentChannelTopic = document.getElementById("currentChannelTopic");
-const channelButtons = document.querySelectorAll(".channel-btn");
-
-const toggleMenuBtn = document.getElementById("toggleMenuBtn");
-const channelSidebar = document.getElementById("channelSidebar");
-const mobileBackdrop = document.getElementById("mobileBackdrop");
-const toggleMemberListBtn = document.getElementById("toggleMemberListBtn");
-const memberSidebar = document.getElementById("memberSidebar");
-
-// ======================================================
-// 3. APPLICATION STATE
-// ======================================================
-let currentUser = null;
-let unsubscribeMessages = null;
-let activeChannel = "general-chat";
-let base64ImageAttachment = null;
-
-const channelTopics = {
-  "general-chat": "General conversation for school friends",
-  "announcements": "Official updates and server news",
-  "polls": "Vote on class decisions and events",
-  "gaming-zone": "LFG, Minecraft clips, and game discussion"
-};
-
-// ======================================================
-// 4. UTILITY FUNCTIONS
-// ======================================================
-function escapeHtml(str) {
-  if (!str) return "";
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-function toggleMobileSidebar(open) {
-  if (open) {
-    channelSidebar.classList.remove("-translate-x-full");
-    mobileBackdrop.classList.remove("hidden");
-  } else {
-    channelSidebar.classList.add("-translate-x-full");
-    mobileBackdrop.classList.add("hidden");
+const channels = {
+  "general-chat": {
+    topic: "General conversation for school friends",
+    seed: [
+      { name: "SchoolFriends", text: "Welcome to SchoolFriends! 👋", time: "Today" },
+      { name: "SchoolFriends", text: "This is your general chat. Send a message below to get started.", time: "Today" }
+    ]
+  },
+  announcements: {
+    topic: "Important updates and community announcements",
+    seed: [{ name: "SchoolFriends", text: "No announcements yet.", time: "Today" }]
+  },
+  polls: {
+    topic: "Create and discuss school polls",
+    seed: [{ name: "SchoolFriends", text: "Polls channel is ready! 📊", time: "Today" }]
+  },
+  "gaming-zone": {
+    topic: "Games, Minecraft and everything gaming",
+    seed: [{ name: "SchoolFriends", text: "Welcome to Gaming Zone! 🎮", time: "Today" }]
   }
+};
+
+const $ = (id) => document.getElementById(id);
+const escapeHtml = (value) =>
+  String(value).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
+
+function saveMessages() {
+  localStorage.setItem("sf_messages", JSON.stringify(state.messages));
 }
 
-// Convert uploaded image file to Base64 data URL
-function handleImageSelect(file) {
+function getMessages(channel) {
+  if (!Array.isArray(state.messages[channel])) {
+    state.messages[channel] = [...channels[channel].seed];
+    saveMessages();
+  }
+  return state.messages[channel];
+}
+
+function renderMembers() {
+  $("onlineMemberList").innerHTML = `
+    <div class="flex items-center gap-2.5 px-2 py-1.5 rounded hover:bg-discord-hover/40">
+      <div class="relative shrink-0">
+        <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(state.name)}" class="w-8 h-8 rounded-full bg-discord-chat" alt="User">
+        <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-discord-green rounded-full border-2 border-discord-sidebar"></div>
+      </div>
+      <div class="flex flex-col truncate">
+        <span class="text-xs font-semibold text-white truncate">${escapeHtml(state.name)}</span>
+        <span class="text-[10px] text-discord-subtle">Online</span>
+      </div>
+    </div>`;
+  $("onlineCount").textContent = "1";
+}
+
+function renderMessages() {
+  const box = $("chatBox");
+  const messages = getMessages(state.channel);
+  box.innerHTML = "";
+
+  messages.forEach((msg) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "flex gap-3 group animate-msg";
+    const avatarSeed = encodeURIComponent(msg.name);
+    const image = msg.image
+      ? `<img src="${msg.image}" alt="Attached image" class="max-w-xs max-h-64 rounded-lg mt-2 border border-discord-input">`
+      : "";
+    wrapper.innerHTML = `
+      <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=${avatarSeed}" class="w-10 h-10 rounded-full shrink-0" alt="">
+      <div class="min-w-0">
+        <div class="flex items-baseline gap-2">
+          <span class="font-semibold text-sm text-white">${escapeHtml(msg.name)}</span>
+          <span class="text-[10px] text-discord-subtle">${escapeHtml(msg.time || "Now")}</span>
+        </div>
+        <div class="text-sm text-[#dbdee1] whitespace-pre-wrap break-words">${escapeHtml(msg.text || "")}</div>
+        ${image}
+      </div>`;
+    box.appendChild(wrapper);
+  });
+
+  requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+}
+
+function selectChannel(channel) {
+  if (!channels[channel]) return;
+  state.channel = channel;
+  localStorage.setItem("sf_channel", channel);
+
+  document.querySelectorAll(".channel-btn").forEach(btn => {
+    const active = btn.dataset.channel === channel;
+    btn.classList.toggle("bg-discord-hover", active);
+    btn.classList.toggle("text-white", active);
+    btn.classList.toggle("text-discord-muted", !active);
+  });
+
+  $("currentChannelTitle").textContent = channel;
+  $("currentChannelTopic").textContent = channels[channel].topic;
+  $("messageInput").placeholder = `Message #${channel}`;
+  renderMessages();
+
+  // Close mobile drawer after choosing a channel.
+  if (window.innerWidth < 640) closeMobileMenu();
+}
+
+function sendMessage() {
+  const input = $("messageInput");
+  const text = input.value.trim();
+
+  if (!text && !state.attachedImage) return;
+
+  getMessages(state.channel).push({
+    name: state.name,
+    text: text || "",
+    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    image: state.attachedImage
+  });
+
+  saveMessages();
+  input.value = "";
+  clearAttachment();
+  renderMessages();
+}
+
+function clearAttachment() {
+  state.attachedImage = null;
+  $("imageInput").value = "";
+  $("previewImg").src = "";
+  $("previewFileName").textContent = "";
+  $("imagePreviewBar").classList.add("hidden");
+  $("imagePreviewBar").classList.remove("flex");
+}
+
+function handleImage(file) {
   if (!file || !file.type.startsWith("image/")) return;
 
+  // Limit localStorage usage for this demo.
+  if (file.size > 2 * 1024 * 1024) {
+    alert("Please choose an image smaller than 2 MB.");
+    return;
+  }
+
   const reader = new FileReader();
-  reader.onload = (e) => {
-    base64ImageAttachment = e.target.result;
-    previewImg.src = base64ImageAttachment;
-    previewFileName.textContent = file.name;
-    imagePreviewBar.classList.remove("hidden");
+  reader.onload = () => {
+    state.attachedImage = reader.result;
+    $("previewImg").src = reader.result;
+    $("previewFileName").textContent = file.name;
+    $("imagePreviewBar").classList.remove("hidden");
+    $("imagePreviewBar").classList.add("flex");
   };
   reader.readAsDataURL(file);
 }
 
-function clearImageAttachment() {
-  base64ImageAttachment = null;
-  imageInput.value = "";
-  previewImg.src = "";
-  imagePreviewBar.classList.add("hidden");
+function openMobileMenu() {
+  $("channelSidebar").classList.remove("-translate-x-full");
+  $("mobileBackdrop").classList.remove("hidden");
 }
 
-// ======================================================
-// 5. EVENT LISTENERS & NAVIGATION
-// ======================================================
-toggleMenuBtn?.addEventListener("click", () => toggleMobileSidebar(true));
-mobileBackdrop?.addEventListener("click", () => toggleMobileSidebar(false));
-
-toggleMemberListBtn?.addEventListener("click", () => {
-  memberSidebar?.classList.toggle("hidden");
-});
-
-imageInput?.addEventListener("change", (e) => {
-  if (e.target.files && e.target.files[0]) {
-    handleImageSelect(e.target.files[0]);
-  }
-});
-
-removeImageBtn?.addEventListener("click", clearImageAttachment);
-
-// Handle Channel Switching
-channelButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const targetChannel = btn.getAttribute("data-channel");
-    if (!targetChannel || targetChannel === activeChannel) return;
-
-    activeChannel = targetChannel;
-    currentChannelTitle.textContent = activeChannel;
-    if (currentChannelTopic) {
-      currentChannelTopic.textContent = channelTopics[activeChannel] || "Discussion channel";
-    }
-    messageInput.placeholder = `Message #${activeChannel}`;
-
-    // Update active UI styles on channels
-    channelButtons.forEach((b) => {
-      b.classList.remove("bg-discord-hover", "text-white");
-      b.classList.add("hover:bg-discord-hover/50", "text-discord-muted");
-    });
-    btn.classList.add("bg-discord-hover", "text-white");
-    btn.classList.remove("hover:bg-discord-hover/50", "text-discord-muted");
-
-    toggleMobileSidebar(false);
-    loadChannelMessages(activeChannel);
-  });
-});
-
-// Auth Observer
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    currentUser = user;
-    const displayName = user.displayName || user.email.split("@")[0];
-    
-    if (userName) userName.textContent = displayName;
-    if (userTag) userTag.textContent = `#${user.uid.substring(0, 4)}`;
-    
-    const avatar = user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`;
-    if (userAvatar) userAvatar.src = avatar;
-
-    if (memberUserName) memberUserName.textContent = displayName;
-    if (memberUserAvatar) memberUserAvatar.src = avatar;
-
-    loadChannelMessages(activeChannel);
-  } else {
-    // If auth state is missing, fallback graceful redirect
-    console.warn("User not authenticated. Redirecting to login.html...");
-    window.location.href = "login.html";
-  }
-});
-
-// Logout Listener
-logoutBtn?.addEventListener("click", () => {
-  signOut(auth).then(() => {
-    window.location.href = "login.html";
-  });
-});
-
-// ======================================================
-// 6. REALTIME CHAT ENGINE (FIRESTORE)
-// ======================================================
-function loadChannelMessages(channelId) {
-  if (unsubscribeMessages) unsubscribeMessages();
-
-  chatBox.innerHTML = `
-    <div class="flex flex-col items-center justify-center h-full text-discord-muted text-xs gap-3">
-      <i class="fa-solid fa-circle-notch animate-spin text-2xl text-brand"></i>
-      <span>Loading #${channelId}...</span>
-    </div>
-  `;
-
-  const q = query(
-    collection(db, "channels", channelId, "messages"),
-    orderBy("createdAt", "asc")
-  );
-
-  unsubscribeMessages = onSnapshot(q, (snapshot) => {
-    chatBox.innerHTML = "";
-
-    if (snapshot.empty) {
-      chatBox.innerHTML = `
-        <div class="flex flex-col items-center justify-center h-full text-discord-muted text-xs text-center p-6 gap-3">
-          <div class="w-14 h-14 rounded-full bg-discord-rail flex items-center justify-center text-brand text-2xl shadow-inner">
-            <i class="fa-solid fa-hashtag"></i>
-          </div>
-          <p class="font-bold text-white text-lg">Welcome to #${channelId}!</p>
-          <p class="text-discord-subtle text-xs max-w-sm">This is the start of the #${channelId} channel.</p>
-        </div>
-      `;
-      return;
-    }
-
-    snapshot.forEach((docSnap) => {
-      const msg = docSnap.data();
-      const timeStr = msg.createdAt?.toDate 
-        ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-        : "Just now";
-
-      const isMe = currentUser && msg.uid === currentUser.uid;
-      const msgDiv = document.createElement("div");
-      
-      // Right-aligned for current user, left-aligned for others
-      msgDiv.className = `flex gap-3 items-start w-full animate-msg ${isMe ? 'flex-row-reverse' : ''}`;
-
-      const avatarSrc = msg.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || 'User')}`;
-
-      msgDiv.innerHTML = `
-        <img src="${avatarSrc}" class="w-9 h-9 rounded-full object-cover shrink-0 bg-discord-sidebar border border-discord-rail shadow-sm" alt="Avatar"/>
-        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%] sm:max-w-[70%]">
-          <div class="flex items-center gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''}">
-            <span class="text-xs font-bold text-white">${escapeHtml(msg.userName || "User")}</span>
-            <span class="text-[10px] text-discord-subtle font-medium">${timeStr}</span>
-          </div>
-          ${msg.image ? `
-            <div class="mb-1.5 overflow-hidden rounded-xl border border-discord-rail shadow-md max-w-sm">
-              <img src="${msg.image}" class="max-h-64 w-full object-cover" alt="Attachment" />
-            </div>
-          ` : ''}
-          ${msg.text ? `
-            <div class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm leading-relaxed break-words shadow-sm ${
-              isMe 
-                ? 'bg-brand text-white rounded-tr-none' 
-                : 'bg-discord-input text-[#dbdee1] rounded-tl-none border border-discord-rail/50'
-            }">
-              ${escapeHtml(msg.text)}
-            </div>
-          ` : ''}
-        </div>
-      `;
-
-      chatBox.appendChild(msgDiv);
-    });
-
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }, (err) => {
-    console.error("Firestore Error:", err);
-    chatBox.innerHTML = `
-      <div class="flex flex-col items-center justify-center h-full text-discord-rose text-xs gap-1">
-        <i class="fa-solid fa-triangle-exclamation text-lg"></i>
-        <span>Failed to load messages. Verify Firebase permissions.</span>
-      </div>
-    `;
-  });
+function closeMobileMenu() {
+  $("channelSidebar").classList.add("-translate-x-full");
+  $("mobileBackdrop").classList.add("hidden");
 }
 
-// Send Message Form Submit
-messageForm?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const text = messageInput.value.trim();
+function openSettings() {
+  $("displayNameInput").value = state.name;
+  $("settingsModal").classList.remove("hidden");
+  $("settingsModal").classList.add("flex");
+}
 
-  if ((!text && !base64ImageAttachment) || !currentUser) return;
+function closeSettings() {
+  $("settingsModal").classList.add("hidden");
+  $("settingsModal").classList.remove("flex");
+}
 
-  const payload = {
-    text: text || "",
-    image: base64ImageAttachment || null,
-    uid: currentUser.uid,
-    userName: currentUser.displayName || currentUser.email.split("@")[0],
-    photoURL: currentUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.uid)}`,
-    createdAt: serverTimestamp()
-  };
-
-  messageInput.value = "";
-  clearImageAttachment();
-
-  try {
-    await addDoc(collection(db, "channels", activeChannel, "messages"), payload);
-  } catch (error) {
-    console.error("Failed to send message:", error);
+function saveSettings() {
+  const value = $("displayNameInput").value.trim().slice(0, 32);
+  if (value) {
+    state.name = value;
+    localStorage.setItem("sf_name", value);
   }
-});
-  
+  $("userName").textContent = state.name;
+  $("userTag").textContent = "#0001";
+  renderMembers();
+  closeSettings();
+}
+
+function setup() {
+  $("userName").textContent = state.name;
+  $("displayNameInput").value = state.name;
+
+  document.querySelectorAll(".channel-btn").forEach(btn => {
+    btn.addEventListener("click", () => selectChannel(btn.dataset.channel));
+  });
+
+  $("messageForm").addEventListener("submit", e => {
+    e.preventDefault();
+    sendMessage();
+  });
+
+  $("imageInput").addEventListener("change", e => handleImage(e.target.files[0]));
+  $("removeImageBtn").addEventListener("click", clearAttachment);
+
+  $("emojiBtn").addEventListener("click", () => {
+    $("messageInput").value += " 😊";
+    $("messageInput").focus();
+  });
+
+  $("toggleMenuBtn").addEventListener("click", openMobileMenu);
+  $("mobileBackdrop").addEventListener("click", closeMobileMenu);
+
+  $("toggleMemberListBtn").addEventListener("click", () => {
+    $("memberSidebar").classList.toggle("hidden");
+    $("memberSidebar").classList.toggle("lg:flex");
+  });
+
+  $("micToggleBtn").addEventListener("click", () => {
+    state.muted = !state.muted;
+    const icon = $("micToggleBtn").querySelector("i");
+    icon.className = state.muted ? "fa-solid fa-microphone-slash text-xs" : "fa-solid fa-microphone text-xs";
+    $("micToggleBtn").classList.toggle("text-discord-rose", state.muted);
+  });
+
+  $("deafenToggleBtn").addEventListener("click", () => {
+    state.deafened = !state.deafened;
+    const icon = $("deafenToggleBtn").querySelector("i");
+    icon.className = state.deafened ? "fa-solid fa-headphones-simple text-xs" : "fa-solid fa-headphones text-xs";
+    $("deafenToggleBtn").classList.toggle("text-discord-rose", state.deafened);
+  });
+
+  $("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("sf_name");
+    state.name = "Guest";
+    $("userName").textContent = state.name;
+    renderMembers();
+  });
+
+  $("openSettingsBtn").addEventListener("click", openSettings);
+  $("closeSettingsBtn").addEventListener("click", closeSettings);
+  $("saveSettingsBtn").addEventListener("click", saveSettings);
+
+  $("settingsModal").addEventListener("click", e => {
+    if (e.target === $("settingsModal")) closeSettings();
+  });
+
+  $("searchInput").addEventListener("input", e => {
+    const query = e.target.value.trim().toLowerCase();
+    document.querySelectorAll("#chatBox > div").forEach(row => {
+      row.classList.toggle("hidden", query && !row.textContent.toLowerCase().includes(query));
+    });
+  });
+
+  selectChannel(state.channel);
+  renderMembers();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setup);
+} else {
+  setup();
+}
