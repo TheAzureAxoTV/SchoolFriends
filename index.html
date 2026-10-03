@@ -34,7 +34,7 @@
       </div>
 
       <h2 class="text-2xl font-bold text-white mb-1">SchoolFriends</h2>
-      <p class="text-xs text-slate-400 mb-6">Sign in with Google to connect with your classmates</p>
+      <p class="text-xs text-slate-400 mb-6">Sign in with Google to access campus chat</p>
       
       <button id="googleSignInBtn" type="button" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-3 transition duration-150 active:scale-95 shadow-lg shadow-indigo-600/25 cursor-pointer">
         <i class="fa-brands fa-google text-lg"></i>
@@ -50,32 +50,30 @@
     
     <!-- 1. LEFT ICON BAR -->
     <aside class="w-[68px] sm:w-[72px] bg-sf-dark flex flex-col items-center py-3 gap-3 shrink-0 border-r border-slate-800/60 z-30">
-      <!-- Main Branding Logo -->
-      <button class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center text-lg font-black shadow-md transition-all hover:rounded-xl active:scale-95 border border-indigo-400/30">
+      <button class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center text-lg font-black shadow-md border border-indigo-400/30">
         SF
       </button>
 
       <div class="w-8 h-[2px] bg-slate-800 rounded-full my-0.5"></div>
 
-      <!-- Server / Direct Chat Icons List -->
       <div id="directChatList" class="flex-1 w-full flex flex-col items-center gap-2 overflow-y-auto no-scrollbar">
-        <button onclick="switchChannel('general-lounge')" class="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white flex items-center justify-center font-black transition-all border border-indigo-500/30">
+        <button onclick="switchChannel('general-lounge')" class="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white flex items-center justify-center font-black transition border border-indigo-500/30">
           #
         </button>
       </div>
 
-      <!-- User Profile Avatar Trigger at Bottom -->
+      <!-- Profile Avatar Button -->
       <button id="openProfileBtn" class="relative group mt-auto cursor-pointer">
         <img id="userAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" class="w-11 h-11 rounded-full object-cover border-2 border-indigo-500 bg-slate-800 shadow" alt="Profile" />
         <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-sf-dark rounded-full"></span>
       </button>
     </aside>
 
-    <!-- 2. MESSAGES / CHANNELS SIDEBAR (RESPONSIVE DRAWER ON MOBILE) -->
+    <!-- 2. MESSAGES / CHANNELS SIDEBAR (MOBILE DRAWER) -->
     <div id="channelSidebar" class="absolute md:relative inset-y-0 left-[68px] sm:left-[72px] md:left-0 z-20 w-72 bg-sf-sidebar flex flex-col shrink-0 border-r border-slate-800/60 transition-transform duration-200 shadow-2xl md:shadow-none">
       <div class="p-4 border-b border-slate-800/80 flex items-center justify-between">
         <h2 class="text-base font-bold text-white tracking-wide">Channels & DMs</h2>
-        <button id="addFriendBtn" class="w-8 h-8 rounded-xl bg-slate-800/80 flex items-center justify-center text-xs text-indigo-400 hover:bg-indigo-600 hover:text-white transition">
+        <button class="w-8 h-8 rounded-xl bg-slate-800/80 flex items-center justify-center text-xs text-indigo-400 hover:bg-indigo-600 hover:text-white transition">
           <i class="fa-solid fa-plus"></i>
         </button>
       </div>
@@ -84,14 +82,12 @@
       <div class="p-3">
         <div class="bg-sf-dark rounded-xl px-3 py-2 flex items-center gap-2 border border-slate-800">
           <i class="fa-solid fa-magnifying-glass text-slate-500 text-xs"></i>
-          <input type="text" id="userSearchInput" placeholder="Search friends & channels..." class="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full" />
+          <input type="text" placeholder="Search friends & channels..." class="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full" />
         </div>
       </div>
 
-      <!-- Dynamic Channels Feed -->
-      <div id="sidebarUserList" class="flex-1 overflow-y-auto chat-scroll px-2 space-y-1">
-        <!-- Rendered by app.js -->
-      </div>
+      <!-- Channels List -->
+      <div id="sidebarUserList" class="flex-1 overflow-y-auto chat-scroll px-2 space-y-1"></div>
     </div>
 
     <!-- 3. MAIN CHAT CONTAINER -->
@@ -122,13 +118,8 @@
         </div>
       </header>
 
-      <!-- Message Area -->
-      <div id="chatBox" class="flex-1 overflow-y-auto chat-scroll p-4 space-y-4">
-        <div class="flex flex-col items-center justify-center h-full text-slate-500 text-xs gap-2">
-          <i class="fa-solid fa-circle-notch animate-spin text-lg text-indigo-400"></i>
-          <span>Loading chat stream...</span>
-        </div>
-      </div>
+      <!-- Message Container -->
+      <div id="chatBox" class="flex-1 overflow-y-auto chat-scroll p-4 space-y-4"></div>
 
       <!-- Image Attachment Preview Box -->
       <div id="imagePreviewContainer" class="hidden bg-sf-channel mx-3 my-1 rounded-xl p-2.5 flex items-center justify-between border border-indigo-500/30 shrink-0">
@@ -191,9 +182,9 @@
         <p id="modalProfileTag" class="text-xs text-indigo-400 mb-3">@student</p>
 
         <div class="bg-sf-dark rounded-xl p-3.5 border border-slate-800/80 space-y-2">
-          <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Account Details</h4>
-          <p id="modalProfileBio" class="text-xs text-slate-300 leading-relaxed">
-            SchoolFriends Campus Member
+          <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Account Status</h4>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            SchoolFriends Active Student Account
           </p>
         </div>
       </div>
@@ -211,9 +202,7 @@
         <button id="closeConsoleBtn" class="text-slate-400 hover:text-white text-sm transition"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <div id="consoleOutput" class="flex-1 bg-slate-900/90 rounded-xl p-3.5 font-mono text-xs text-emerald-400 overflow-y-auto whitespace-pre-wrap mb-3 border border-slate-800/80 leading-relaxed">
-Welcome Owner!
-      </div>
+      <div id="consoleOutput" class="flex-1 bg-slate-900/90 rounded-xl p-3.5 font-mono text-xs text-emerald-400 overflow-y-auto whitespace-pre-wrap mb-3 border border-slate-800/80 leading-relaxed">Welcome Admin!</div>
 
       <div class="flex items-center gap-2 bg-slate-900 rounded-xl p-2.5 border border-slate-800">
         <span class="text-emerald-400 font-mono text-xs pl-2">&gt;</span>
@@ -222,7 +211,7 @@ Welcome Owner!
     </div>
   </div>
 
-  <script type="module" src="app.js?v=20261003-1"></script>
+  <script type="module" src="app.js"></script>
 </body>
-    </html>
-          
+          </html>
+            
