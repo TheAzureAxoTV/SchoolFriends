@@ -3,83 +3,84 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SchoolFriends | Campus Portal</title>
+  <title>SchoolFriends | Campus Chat</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
-    body { background-color: #0d0e12; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #0b0c10; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     
     .chat-scroll::-webkit-scrollbar { width: 4px; }
     .chat-scroll::-webkit-scrollbar-track { background: transparent; }
-    .chat-scroll::-webkit-scrollbar-thumb { background: #23272f; border-radius: 9999px; }
+    .chat-scroll::-webkit-scrollbar-thumb { background: #1f242d; border-radius: 9999px; }
 
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    .bg-sf-dark { background-color: #0d0e12; }
-    .bg-sf-sidebar { background-color: #16181d; }
-    .bg-sf-channel { background-color: #20242c; }
-    .bg-sf-input { background-color: #2a2e37; }
+    .bg-sf-dark { background-color: #0b0c10; }
+    .bg-sf-sidebar { background-color: #13151a; }
+    .bg-sf-channel { background-color: #1a1d24; }
+    .bg-sf-input { background-color: #222630; }
   </style>
 </head>
 <body class="text-slate-200 antialiased h-screen flex flex-col overflow-hidden bg-sf-dark select-none">
 
   <!-- AUTH / LOGIN OVERLAY -->
-  <section id="authSection" class="fixed inset-0 z-50 bg-[#0d0e12] flex flex-col items-center justify-center p-6">
-    <div class="w-full max-w-sm bg-[#16181d] rounded-2xl p-6 text-center shadow-2xl border border-slate-800/80">
+  <section id="authSection" class="fixed inset-0 z-50 bg-[#0b0c10] flex flex-col items-center justify-center p-6">
+    <div class="w-full max-w-sm bg-[#13151a] rounded-3xl p-6 text-center shadow-2xl border border-slate-800/80">
       
-      <!-- SchoolFriends Logo -->
-      <div class="w-16 h-16 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-black text-white shadow-lg shadow-indigo-600/30 tracking-wider">
+      <!-- SchoolFriends Logo Badge -->
+      <div class="w-20 h-20 bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 rounded-3xl flex items-center justify-center mx-auto mb-4 text-3xl font-black text-white shadow-xl shadow-indigo-600/30 tracking-wider border border-indigo-400/30">
         SF
       </div>
 
-      <h2 class="text-xl font-bold text-white mb-1">Welcome to SchoolFriends</h2>
-      <p class="text-xs text-slate-400 mb-6">Sign in with your Google account to access your campus chat</p>
+      <h2 class="text-2xl font-bold text-white mb-1">SchoolFriends</h2>
+      <p class="text-xs text-slate-400 mb-6">Sign in with Google to connect with your classmates</p>
       
-      <button id="googleSignInBtn" type="button" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition duration-150 active:scale-95 shadow-md shadow-indigo-600/20 cursor-pointer">
+      <button id="googleSignInBtn" type="button" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-3 transition duration-150 active:scale-95 shadow-lg shadow-indigo-600/25 cursor-pointer">
         <i class="fa-brands fa-google text-lg"></i>
         <span>Continue with Google</span>
       </button>
       
-      <p id="authStatus" class="mt-4 text-xs text-amber-400 min-h-[1.25rem] font-medium"></p>
+      <p id="authStatus" class="mt-4 text-xs text-amber-400 min-h-[1.25rem] font-medium leading-relaxed px-2"></p>
     </div>
   </section>
 
   <!-- MAIN APP WRAPPER -->
-  <div id="mainAppSection" class="hidden flex-1 flex h-full w-full overflow-hidden">
+  <div id="mainAppSection" class="hidden flex-1 flex h-full w-full overflow-hidden relative">
     
-    <!-- 1. LEFT USER & SERVER SELECTOR BAR -->
-    <aside class="w-[72px] bg-sf-dark flex flex-col items-center py-3 gap-2.5 shrink-0 border-r border-slate-800/60 z-20">
-      <!-- SchoolFriends Main Hub -->
-      <button class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg font-black shadow-md transition-all hover:rounded-xl active:scale-95 relative group">
+    <!-- 1. LEFT ICON BAR -->
+    <aside class="w-[68px] sm:w-[72px] bg-sf-dark flex flex-col items-center py-3 gap-3 shrink-0 border-r border-slate-800/60 z-30">
+      <!-- Main Branding Logo -->
+      <button class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center text-lg font-black shadow-md transition-all hover:rounded-xl active:scale-95 border border-indigo-400/30">
         SF
-        <span class="absolute left-0 w-1 h-8 bg-white rounded-r-full -translate-x-3 group-hover:translate-x-0 transition-all"></span>
       </button>
 
-      <div class="w-8 h-[2px] bg-slate-800/80 rounded-full my-1"></div>
+      <div class="w-8 h-[2px] bg-slate-800 rounded-full my-0.5"></div>
 
-      <!-- Dynamic Active Chats List Container -->
+      <!-- Server / Direct Chat Icons List -->
       <div id="directChatList" class="flex-1 w-full flex flex-col items-center gap-2 overflow-y-auto no-scrollbar">
-        <!-- Rendered dynamically by app.js -->
+        <button onclick="switchChannel('general-lounge')" class="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white flex items-center justify-center font-black transition-all border border-indigo-500/30">
+          #
+        </button>
       </div>
 
-      <!-- User Profile Avatar Trigger -->
+      <!-- User Profile Avatar Trigger at Bottom -->
       <button id="openProfileBtn" class="relative group mt-auto cursor-pointer">
-        <img id="userAvatar" src="https://via.placeholder.com/48" class="w-11 h-11 rounded-full object-cover border-2 border-indigo-500 bg-slate-800" alt="Your Profile" />
+        <img id="userAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" class="w-11 h-11 rounded-full object-cover border-2 border-indigo-500 bg-slate-800 shadow" alt="Profile" />
         <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-sf-dark rounded-full"></span>
       </button>
     </aside>
 
-    <!-- 2. MESSAGES / CHANNELS PANEL -->
-    <div id="channelSidebar" class="w-72 bg-sf-sidebar flex flex-col shrink-0 border-r border-slate-800/60">
+    <!-- 2. MESSAGES / CHANNELS SIDEBAR (RESPONSIVE DRAWER ON MOBILE) -->
+    <div id="channelSidebar" class="absolute md:relative inset-y-0 left-[68px] sm:left-[72px] md:left-0 z-20 w-72 bg-sf-sidebar flex flex-col shrink-0 border-r border-slate-800/60 transition-transform duration-200 shadow-2xl md:shadow-none">
       <div class="p-4 border-b border-slate-800/80 flex items-center justify-between">
-        <h2 class="text-base font-bold text-white tracking-wide">Messages</h2>
+        <h2 class="text-base font-bold text-white tracking-wide">Channels & DMs</h2>
         <button id="addFriendBtn" class="w-8 h-8 rounded-xl bg-slate-800/80 flex items-center justify-center text-xs text-indigo-400 hover:bg-indigo-600 hover:text-white transition">
-          <i class="fa-solid fa-user-plus"></i>
+          <i class="fa-solid fa-plus"></i>
         </button>
       </div>
 
-      <!-- Channel Search Bar -->
+      <!-- Search Bar -->
       <div class="p-3">
         <div class="bg-sf-dark rounded-xl px-3 py-2 flex items-center gap-2 border border-slate-800">
           <i class="fa-solid fa-magnifying-glass text-slate-500 text-xs"></i>
@@ -87,52 +88,52 @@
         </div>
       </div>
 
-      <!-- Dynamic User / Channel Item Feed -->
+      <!-- Dynamic Channels Feed -->
       <div id="sidebarUserList" class="flex-1 overflow-y-auto chat-scroll px-2 space-y-1">
-        <!-- Rendered dynamically by app.js -->
+        <!-- Rendered by app.js -->
       </div>
     </div>
 
-    <!-- 3. MAIN CHAT VIEW AREA -->
+    <!-- 3. MAIN CHAT CONTAINER -->
     <main class="flex-1 flex flex-col h-full bg-sf-dark min-w-0 relative">
       
-      <!-- Top Header -->
+      <!-- Chat Header -->
       <header class="h-14 px-4 bg-sf-dark border-b border-slate-800/80 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-3">
-          <button id="toggleMenuBtn" class="md:hidden text-slate-400 hover:text-white text-lg">
+          <button id="toggleMenuBtn" class="md:hidden text-slate-400 hover:text-white text-lg p-1">
             <i class="fa-solid fa-bars"></i>
           </button>
           <div class="flex items-center gap-2">
             <span class="text-indigo-400 font-bold text-lg">#</span>
             <span id="activeChannelTitle" class="text-sm font-bold text-white tracking-wide">general-lounge</span>
             <span class="inline-flex items-center gap-1 text-[10px] bg-emerald-500/10 text-emerald-400 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/20 ml-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Live
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Live
             </span>
           </div>
         </div>
 
         <div class="flex items-center gap-3 text-slate-400">
           <button id="ownerConsoleBtn" class="hidden text-emerald-400 hover:text-emerald-300 text-xs font-mono bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30">
-            <i class="fa-solid fa-terminal mr-1"></i> Terminal
+            <i class="fa-solid fa-terminal mr-1"></i> Admin
           </button>
-          <button id="signOutBtn" class="hover:text-red-400 transition" title="Sign Out">
+          <button id="signOutBtn" class="hover:text-red-400 transition text-sm p-1" title="Sign Out">
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
       </header>
 
-      <!-- Message Feed -->
+      <!-- Message Area -->
       <div id="chatBox" class="flex-1 overflow-y-auto chat-scroll p-4 space-y-4">
         <div class="flex flex-col items-center justify-center h-full text-slate-500 text-xs gap-2">
           <i class="fa-solid fa-circle-notch animate-spin text-lg text-indigo-400"></i>
-          <span>Loading live conversation...</span>
+          <span>Loading chat stream...</span>
         </div>
       </div>
 
       <!-- Image Attachment Preview Box -->
       <div id="imagePreviewContainer" class="hidden bg-sf-channel mx-3 my-1 rounded-xl p-2.5 flex items-center justify-between border border-indigo-500/30 shrink-0">
         <div class="flex items-center gap-3">
-          <img id="imagePreview" class="w-12 h-12 rounded-lg object-cover border border-slate-700" alt="Attachment Preview" />
+          <img id="imagePreview" class="w-12 h-12 rounded-lg object-cover border border-slate-700" alt="Attachment" />
           <div>
             <span class="text-xs font-medium text-slate-200 block">Image attached</span>
             <span class="text-[10px] text-slate-400">Ready to send</span>
@@ -143,7 +144,7 @@
         </button>
       </div>
 
-      <!-- Chat Input Controls -->
+      <!-- Input Bar -->
       <div class="p-3 bg-sf-dark shrink-0">
         <div class="bg-sf-input rounded-full p-1.5 flex items-center gap-1 shadow-lg border border-slate-800/80">
           
@@ -155,7 +156,7 @@
           <input 
             type="text" 
             id="messageInput" 
-            placeholder="Type a message in #general-lounge..." 
+            placeholder="Type a message..." 
             class="flex-1 bg-transparent text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none px-2"
             maxlength="340"
           />
@@ -169,7 +170,7 @@
     </main>
   </div>
 
-  <!-- 4. PROFILE SLIDE-OVER MODAL -->
+  <!-- 4. PROFILE MODAL -->
   <div id="profileModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="w-full sm:max-w-md bg-sf-sidebar rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl border border-slate-800 transform transition-all">
       <div class="h-28 bg-gradient-to-r from-indigo-600 to-violet-600 relative">
@@ -186,7 +187,7 @@
           </div>
         </div>
 
-        <h3 id="modalProfileName" class="text-lg font-bold text-white leading-tight">User Profile</h3>
+        <h3 id="modalProfileName" class="text-lg font-bold text-white leading-tight">Student Name</h3>
         <p id="modalProfileTag" class="text-xs text-indigo-400 mb-3">@student</p>
 
         <div class="bg-sf-dark rounded-xl p-3.5 border border-slate-800/80 space-y-2">
@@ -205,26 +206,23 @@
       <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold tracking-wider">
           <i class="fa-solid fa-terminal"></i>
-          <span>OWNER ADMIN TERMINAL</span>
+          <span>ADMIN CONSOLE</span>
         </div>
         <button id="closeConsoleBtn" class="text-slate-400 hover:text-white text-sm transition"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div id="consoleOutput" class="flex-1 bg-slate-900/90 rounded-xl p-3.5 font-mono text-xs text-emerald-400 overflow-y-auto whitespace-pre-wrap mb-3 border border-slate-800/80 leading-relaxed">
-Welcome Owner! Type commands below.
-Examples:
-  role <username> ADMIN
-  sql SELECT * FROM users;
+Welcome Owner!
       </div>
 
-      <div class="flex items-center gap-2 bg-slate-900 rounded-xl p-2.5 border border-slate-800 focus-within:border-emerald-500/50 transition">
+      <div class="flex items-center gap-2 bg-slate-900 rounded-xl p-2.5 border border-slate-800">
         <span class="text-emerald-400 font-mono text-xs pl-2">&gt;</span>
         <input type="text" id="consoleInput" placeholder="Enter command..." class="flex-1 bg-transparent text-xs font-mono text-slate-100 focus:outline-none" />
       </div>
     </div>
   </div>
 
-  <script type="module" src="app.js?v=20261002-4"></script>
+  <script type="module" src="app.js?v=20261003-1"></script>
 </body>
-          </html>
-              
+    </html>
+          
