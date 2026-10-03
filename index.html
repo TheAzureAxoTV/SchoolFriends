@@ -1,266 +1,141 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="h-full bg-[#0e1015] text-slate-100">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>SchoolFriends | Campus Hub</title>
-  
-  <!-- Tailwind CSS & FontAwesome -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SchoolFriends Chat</title>
+  <link rel="shortcut icon" href="logo10_3_13369.png" type="image/png" />
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Single+Day&display=swap');
-    
-    * { font-family: 'Plus Jakarta Sans', sans-serif; }
-    .custom-sms-font { font-family: 'Single Day', cursive, sans-serif; }
-    
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #1e222d; border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #333a4d; }
-
-    .glass-card { background: rgba(18, 20, 28, 0.85); backdrop-filter: blur(16px); }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-    /* Handcrafted SMS Bar Backdrop Styling */
-    .custom-sms-container {
-      background: #2a2d36;
-      border: 1px solid #3b3f4d;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="bg-[#090a0f] text-slate-100 h-full w-full overflow-hidden select-none">
+<body class="h-full flex overflow-hidden font-sans antialiased select-none">
 
-  <!-- ================= AUTH OVERLAY ================= -->
-  <section id="authSection" class="fixed inset-0 z-50 bg-[#090a0f] flex items-center justify-center p-4">
-    <div class="w-full max-w-sm glass-card rounded-3xl p-7 text-center border border-slate-800/80 shadow-2xl shadow-indigo-950/30 relative overflow-hidden">
-      <div class="absolute -top-12 -left-12 w-32 h-32 bg-indigo-600/20 rounded-full blur-3xl"></div>
-      <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-violet-600/20 rounded-full blur-3xl"></div>
-
-      <div class="w-20 h-20 bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 rounded-3xl flex items-center justify-center mx-auto mb-5 text-3xl font-extrabold text-white shadow-xl shadow-indigo-600/30 border border-indigo-400/30">
-        SF
-      </div>
-
-      <h1 class="text-2xl font-bold text-white tracking-tight mb-1">SchoolFriends</h1>
-      <p class="text-xs text-slate-400 mb-6 leading-relaxed">Connect, chat, and collaborate with your classmates in real time.</p>
-
-      <button id="googleSignInBtn" type="button" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-indigo-600/25 cursor-pointer">
-        <i class="fa-brands fa-google text-lg"></i>
-        <span>Continue with Google</span>
-      </button>
-
-      <p id="authStatus" class="mt-4 text-xs text-amber-400 min-h-[1.25rem] font-medium leading-relaxed"></p>
+  <!-- LEFT NAVIGATION RAIL (SERVERS/GROUPS) -->
+  <aside class="w-18 bg-[#090a0f] flex flex-col items-center py-4 gap-3 shrink-0 border-r border-slate-800/60 z-20">
+    <div class="relative group cursor-pointer">
+      <div class="absolute -left-3 top-2.5 w-1 h-8 bg-indigo-500 rounded-r-full"></div>
+      <img src="logo10_3_13369.png" class="w-12 h-12 rounded-2xl object-cover hover:rounded-xl transition-all duration-200 border border-indigo-500/30 shadow-lg shadow-indigo-950/50" alt="Server Logo" />
     </div>
-  </section>
-
-  <!-- ================= MAIN APP WRAPPER ================= -->
-  <div id="mainAppSection" class="hidden h-full w-full flex overflow-hidden relative">
-
-    <!-- 1. LEFT NAVIGATION RAIL -->
-    <aside class="w-[68px] bg-[#0d0f16] flex flex-col items-center py-3 gap-3 shrink-0 border-r border-slate-800/60 z-30">
-      <button class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center text-base font-black shadow-lg shadow-indigo-600/20 border border-indigo-400/30 transition-all hover:rounded-xl">
-        SF
-      </button>
-
-      <div class="w-8 h-[2px] bg-slate-800/80 rounded-full my-0.5"></div>
-
-      <!-- Server / Channel Graphic Icon Switches -->
-      <div id="serverRailList" class="flex-1 w-full flex flex-col items-center gap-3 overflow-y-auto no-scrollbar">
-        <!-- Rendered dynamically via JS -->
-      </div>
-
-      <!-- User Profile Trigger -->
-      <button id="openProfileBtn" class="relative group mt-auto cursor-pointer p-0.5">
-        <img id="userAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" class="w-11 h-11 rounded-2xl object-cover border-2 border-indigo-500/80 bg-slate-800 shadow-md" alt="Avatar" />
-        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#0d0f16] rounded-full"></span>
-      </button>
-    </aside>
-
-    <!-- 2. CHANNELS SIDEBAR -->
-    <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/60 z-20 md:hidden backdrop-blur-xs"></div>
     
-    <div id="channelSidebar" class="fixed md:relative inset-y-0 left-[68px] md:left-0 z-20 w-64 bg-[#12141d] flex flex-col shrink-0 border-r border-slate-800/60 transition-transform duration-300 -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none h-full">
-      <div class="h-14 px-4 border-b border-slate-800/80 flex items-center justify-between shrink-0">
-        <h2 class="text-xs font-bold text-slate-300 tracking-wider uppercase">Server Channels</h2>
-        <span class="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold px-2 py-0.5 rounded-full">Live</span>
-      </div>
+    <div class="w-8 h-[2px] bg-slate-800/80 rounded-full my-1"></div>
 
-      <div class="p-3">
-        <div class="bg-[#090a0f] rounded-xl px-3 py-2 flex items-center gap-2 border border-slate-800/80">
-          <i class="fa-solid fa-magnifying-glass text-slate-500 text-xs"></i>
-          <input type="text" placeholder="Search channels..." class="bg-transparent text-xs text-slate-200 placeholder-slate-500 focus:outline-none w-full" />
-        </div>
-      </div>
+    <button class="w-12 h-12 rounded-3xl bg-slate-800/60 hover:bg-indigo-600 hover:rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200 cursor-pointer group">
+      <i class="fa-solid fa-plus text-lg group-hover:scale-110 transition-transform"></i>
+    </button>
+  </aside>
 
-      <div id="sidebarChannelList" class="flex-1 overflow-y-auto px-2 space-y-1"></div>
-    </div>
+  <!-- CHANNELS SIDEBAR -->
+  <aside class="w-60 bg-[#12141d] flex flex-col shrink-0 border-r border-slate-800/40 z-10 hidden sm:flex">
+    <!-- Server Header -->
+    <header class="h-14 px-4 flex items-center justify-between border-b border-slate-800/60 shadow-sm">
+      <h1 class="font-bold text-slate-100 text-sm tracking-wide flex items-center gap-2">
+        <span>SchoolFriends</span>
+        <i class="fa-solid fa-[#6366f1] fa-circle-check text-xs text-indigo-400"></i>
+      </h1>
+      <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+    </header>
 
-    <!-- 3. MAIN CHAT VIEWPORT -->
-    <main class="flex-1 flex flex-col h-full bg-[#090a0f] min-w-0 relative">
+    <!-- Channel List -->
+    <div class="flex-1 overflow-y-auto p-2 space-y-1">
+      <div class="px-2 pt-3 pb-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase">Text Channels</div>
       
-      <!-- Header Bar -->
-      <header class="h-14 px-4 bg-[#0d0f16] border-b border-slate-800/80 flex items-center justify-between shrink-0 z-10">
-        <div class="flex items-center gap-3 min-w-0">
-          <button id="toggleMenuBtn" class="md:hidden text-slate-400 hover:text-white text-lg p-1">
-            <i class="fa-solid fa-bars"></i>
-          </button>
-          <div class="flex items-center gap-2.5 truncate">
-            <img id="headerChannelIcon" class="w-6 h-6 rounded-lg object-cover border border-indigo-500/30" src="" alt="Icon" />
-            <span id="activeChannelTitle" class="text-sm font-bold text-white tracking-wide truncate">General Chat</span>
-          </div>
-        </div>
+      <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-indigo-600/15 text-indigo-300 font-medium text-xs transition">
+        <i class="fa-solid fa-hashtag text-indigo-400 text-sm"></i>
+        <span>general-chat</span>
+      </button>
 
-        <div class="flex items-center gap-2 text-slate-400 shrink-0">
-          <button id="ownerConsoleBtn" class="hidden text-emerald-400 hover:text-emerald-300 text-xs font-mono bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30 items-center gap-1.5 transition">
-            <i class="fa-solid fa-terminal text-[10px]"></i>
-            <span class="hidden sm:inline">Terminal</span>
-          </button>
-          <button id="signOutBtn" class="hover:text-red-400 transition text-sm p-2" title="Sign Out">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </button>
-        </div>
-      </header>
+      <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-slate-800/40 text-slate-400 hover:text-slate-200 font-medium text-xs transition">
+        <i class="fa-solid fa-hashtag text-slate-500 text-sm"></i>
+        <span>announcements</span>
+      </button>
 
-      <!-- Message Feed Area -->
-      <div id="chatBox" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
-
-      <!-- Image Attachment Preview -->
-      <div id="imagePreviewContainer" class="hidden bg-[#12141d] mx-3 my-1 rounded-2xl p-2.5 flex items-center justify-between border border-indigo-500/30 shrink-0 shadow-lg">
-        <div class="flex items-center gap-3">
-          <img id="imagePreview" class="w-12 h-12 rounded-xl object-cover border border-slate-700" alt="Attachment" />
-          <div>
-            <span class="text-xs font-semibold text-slate-200 block">Image attached</span>
-            <span class="text-[10px] text-slate-400">Ready to send</span>
-          </div>
-        </div>
-        <button id="removeImageBtn" type="button" class="text-slate-400 hover:text-red-400 p-2 text-sm">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <!-- Quick Emoji Selector Popup -->
-      <div id="emojiPicker" class="hidden absolute bottom-20 right-6 bg-[#181a24] border border-slate-700 rounded-2xl p-2 shadow-2xl z-30 flex gap-2">
-        <button class="emoji-option text-lg hover:scale-125 transition">😀</button>
-        <button class="emoji-option text-lg hover:scale-125 transition">🔥</button>
-        <button class="emoji-option text-lg hover:scale-125 transition">🎮</button>
-        <button class="emoji-option text-lg hover:scale-125 transition">❤️</button>
-        <button class="emoji-option text-lg hover:scale-125 transition">👍</button>
-      </div>
-
-      <!-- HANDCRAFTED CUSTOM SMS BAR (Using 1000588477.png) -->
-      <div class="p-3 bg-[#090a0f] shrink-0">
-        <div class="custom-sms-container relative w-full h-14 rounded-full flex items-center px-3 gap-2 overflow-hidden">
-          
-          <!-- Asset Background Layer -->
-          <img src="1000588477.png" class="absolute inset-0 w-full h-full object-cover opacity-90 pointer-events-none" alt="Custom SMS Bar" />
-
-          <!-- Left '+' Attachment Button Overlay -->
-          <label class="relative z-10 w-9 h-9 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-95 transition shrink-0" title="Attach Image">
-            <span class="text-sky-200 text-xl font-light">+</span>
-            <input type="file" id="imageInput" accept="image/*" class="hidden" />
-          </label>
-
-          <!-- Middle Custom Text Input Field Overlay -->
-          <input 
-            type="text" 
-            id="messageInput" 
-            placeholder="Enter Message.." 
-            class="relative z-10 flex-1 bg-transparent text-sky-100 placeholder-sky-300/60 focus:outline-none px-2 text-base font-semibold custom-sms-font tracking-wide"
-            maxlength="500"
-          />
-
-          <!-- Right Icon Group: Emoji, Lotus Send, Mic -->
-          <div class="relative z-10 flex items-center gap-2 shrink-0">
-            <!-- Emoji Button -->
-            <button id="emojiBtn" type="button" class="w-8 h-8 rounded-full flex items-center justify-center text-sky-200 hover:text-white hover:bg-white/10 transition cursor-pointer" title="Add Emoji">
-              <i class="fa-regular fa-face-smile text-lg"></i>
-            </button>
-
-            <!-- Lotus Graphic / Send Action Button -->
-            <button id="sendBtn" type="button" class="w-9 h-9 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition cursor-pointer group" title="Send Message">
-              <i class="fa-solid fa-spa text-sky-300 text-lg group-hover:text-cyan-200 transition"></i>
-            </button>
-
-            <!-- Voice / Mic Action Button -->
-            <button id="micBtn" type="button" class="w-8 h-8 rounded-full flex items-center justify-center text-sky-200 hover:text-white hover:bg-white/10 transition cursor-pointer" title="Voice Note">
-              <i class="fa-solid fa-microphone text-base"></i>
-            </button>
-          </div>
-
-        </div>
-      </div>
-
-    </main>
-  </div>
-
-  <!-- ================= USER PROFILE MODAL ================= -->
-  <div id="profileModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="w-full max-w-sm bg-[#12141d] rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
-      <div class="h-20 bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 relative">
-        <button id="closeProfileBtn" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 transition">
-          <i class="fa-solid fa-xmark text-xs"></i>
-        </button>
-      </div>
-
-      <div class="px-5 pb-6 relative">
-        <div class="relative -mt-10 mb-4 flex items-end justify-between">
-          <div class="relative">
-            <img id="modalProfileAvatar" src="https://via.placeholder.com/80" class="w-18 h-18 rounded-2xl border-4 border-[#12141d] bg-slate-800 object-cover shadow-xl" alt="Profile" />
-            <span class="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#12141d] rounded-full"></span>
-          </div>
-        </div>
-
-        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">Edit Profile</h3>
-
-        <form id="profileForm" class="space-y-3">
-          <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Display Name</label>
-            <input type="text" id="editDisplayName" class="w-full bg-[#090a0f] border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="Your Name" required />
-          </div>
-
-          <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Avatar Image URL</label>
-            <input type="url" id="editPhotoURL" class="w-full bg-[#090a0f] border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="https://..." />
-          </div>
-
-          <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Status / Bio</label>
-            <input type="text" id="editBio" class="w-full bg-[#090a0f] border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="Chilling on campus..." />
-          </div>
-
-          <button type="submit" id="saveProfileBtn" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-xl transition shadow-md shadow-indigo-600/20 active:scale-95 cursor-pointer">
-            Save Changes
-          </button>
-          <p id="profileSaveStatus" class="text-[10px] text-center min-h-[1rem]"></p>
-        </form>
-      </div>
+      <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-slate-800/40 text-slate-400 hover:text-slate-200 font-medium text-xs transition">
+        <i class="fa-solid fa-square-poll-vertical text-slate-500 text-sm"></i>
+        <span>polls</span>
+      </button>
     </div>
-  </div>
 
-  <!-- ================= ADMIN TERMINAL MODAL ================= -->
-  <div id="consoleModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="w-full max-w-lg bg-[#0a0c10] border border-slate-800 rounded-2xl p-4 shadow-2xl flex flex-col h-[26rem]">
-      <div class="flex items-center justify-between mb-3 border-b border-slate-800/80 pb-2.5">
-        <div class="flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold">
-          <i class="fa-solid fa-terminal"></i>
-          <span>ADMIN TERMINAL</span>
+    <!-- User Footer -->
+    <footer class="h-14 bg-[#0d0e14] px-3 flex items-center justify-between border-t border-slate-800/60">
+      <div class="flex items-center gap-2.5 overflow-hidden">
+        <div class="relative shrink-0">
+          <img id="userAvatar" src="logo10_3_1188.png" class="w-8 h-8 rounded-lg object-cover border border-slate-700" alt="Profile" />
+          <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#0d0e14]"></div>
         </div>
-        <button id="closeConsoleBtn" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+        <div class="flex flex-col truncate">
+          <span id="userName" class="text-xs font-semibold text-slate-200 truncate">Loading...</span>
+          <span class="text-[10px] text-slate-500 truncate">Online</span>
+        </div>
       </div>
+      <button id="logoutBtn" class="text-slate-400 hover:text-rose-400 p-1.5 transition cursor-pointer" title="Log Out">
+        <i class="fa-solid fa-right-from-bracket text-sm"></i>
+      </button>
+    </footer>
+  </aside>
 
-      <div id="consoleOutput" class="flex-1 bg-[#050608] rounded-xl p-3 font-mono text-xs text-emerald-400 overflow-y-auto whitespace-pre-wrap mb-3 border border-slate-900 leading-relaxed">Welcome Admin Terminal! Type /help for available commands.</div>
-
-      <div class="flex items-center gap-2 bg-[#12141d] rounded-xl p-2 border border-slate-800">
-        <span class="text-emerald-400 font-mono text-xs pl-2">&gt;</span>
-        <input type="text" id="consoleInput" placeholder="Enter command..." class="flex-1 bg-transparent text-xs font-mono text-slate-100 focus:outline-none" />
+  <!-- MAIN CHAT AREA -->
+  <main class="flex-1 flex flex-col bg-[#161824] min-w-0 relative">
+    
+    <!-- Top Channel Header -->
+    <header class="h-14 px-4 flex items-center justify-between border-b border-slate-800/60 bg-[#12141d]/80 backdrop-blur-md shrink-0">
+      <div class="flex items-center gap-2 min-w-0">
+        <i class="fa-solid fa-hashtag text-slate-400 text-base"></i>
+        <span class="font-bold text-slate-200 text-sm truncate">general-chat</span>
+        <span class="hidden md:inline text-slate-600 text-xs">|</span>
+        <span class="hidden md:inline text-slate-400 text-xs truncate">Main group discussion channel</span>
       </div>
+      <div class="flex items-center gap-4 text-slate-400 text-sm">
+        <i class="fa-solid fa-[#6366f1] fa-bell hover:text-slate-200 transition cursor-pointer"></i>
+        <i class="fa-solid fa-users hover:text-slate-200 transition cursor-pointer"></i>
+      </div>
+    </header>
+
+    <!-- Scrollable Messages Container -->
+    <div id="chatBox" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+      <!-- Messages load here dynamically -->
     </div>
-  </div>
 
+    <!-- CUSTOM SMS INPUT BAR -->
+    <div class="p-3 sm:p-4 bg-[#0d0e14] shrink-0 border-t border-slate-800/40">
+      <form id="messageForm" class="relative w-full h-12 sm:h-14 rounded-full flex items-center px-4 gap-2 overflow-hidden bg-[#1e2130] border border-slate-700/60 shadow-lg shadow-black/40">
+        
+        <!-- Attachment Button -->
+        <label class="relative z-10 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-95 transition shrink-0" title="Attach Image">
+          <span class="text-indigo-300 text-xl font-light">+</span>
+          <input type="file" id="imageInput" accept="image/*" class="hidden" />
+        </label>
+
+        <!-- Text Input -->
+        <input 
+          type="text" 
+          id="messageInput" 
+          placeholder="Enter Message.." 
+          class="relative z-10 flex-1 bg-transparent text-slate-100 placeholder-slate-400/70 focus:outline-none px-2 text-sm sm:text-base font-medium tracking-wide"
+          maxlength="500"
+          autocomplete="off"
+        />
+
+        <!-- Right Side Icons -->
+        <div class="relative z-10 flex items-center gap-2 shrink-0">
+          <button id="emojiBtn" type="button" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-300 transition cursor-pointer" title="Add Emoji">
+            <i class="fa-regular fa-face-smile text-lg"></i>
+          </button>
+
+          <button id="sendBtn" type="submit" class="w-8 h-8 rounded-full bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center text-white transition cursor-pointer shadow-md shadow-indigo-950/50" title="Send Message">
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+  </main>
+
+  <!-- Module JS -->
   <script type="module" src="app.js"></script>
 </body>
-      </html>
-                                                        
+        </html>
+            
