@@ -3,11 +3,8 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
-  signInWithRedirect,
-  getRedirectResult,
   signOut, 
-  onAuthStateChanged,
-  updateProfile
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { 
   getFirestore, 
@@ -39,7 +36,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Channels list with images
+// Server Channels Definition using Graphic Assets
 const serverChannels = [
   {
     id: "general-chat",
@@ -67,7 +64,7 @@ let activeChannel = "general-chat";
 let unsubscribeMessages = null;
 let attachedImageData = null;
 
-// DOM elements
+// DOM Elements
 const authSection = document.getElementById("authSection");
 const mainAppSection = document.getElementById("mainAppSection");
 const googleSignInBtn = document.getElementById("googleSignInBtn");
@@ -108,12 +105,7 @@ const closeConsoleBtn = document.getElementById("closeConsoleBtn");
 const consoleInput = document.getElementById("consoleInput");
 const consoleOutput = document.getElementById("consoleOutput");
 
-// Check redirect login status on load
-getRedirectResult(auth).catch((error) => {
-  if (authStatus) authStatus.innerText = `Auth Error: ${error.message}`;
-});
-
-// AUTH STATE LISTENER
+// AUTH OBSERVER & SECURITY SYNC
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
@@ -121,6 +113,7 @@ onAuthStateChanged(auth, async (user) => {
     mainAppSection.classList.remove("hidden");
     authStatus.innerText = "";
 
+    // Restrict Terminal access strictly to owner email
     if (user.email && OWNER_EMAILS.includes(user.email.toLowerCase())) {
       ownerConsoleBtn.classList.remove("hidden");
       ownerConsoleBtn.classList.add("flex");
@@ -141,6 +134,18 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
+googleSignInBtn.addEventListener("click", async () => {
+  authStatus.innerText = "Connecting to Google...";
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (error) {
+    console.error("Auth error:", error);
+    authStatus.innerText = `Sign-in failed: ${error.message}`;
+  }
+});
+
+signOutBtn.addEventListener("click", () => signOut(auth));
+
 async function fetchUserProfile(user) {
   const userRef = doc(db, "users", user.uid);
   try {
@@ -151,22 +156,23 @@ async function fetchUserProfile(user) {
       userCustomProfile = {
         displayName: user.displayName || "Student",
         photoURL: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
-        bio: "Active Member"
+        bio: "Active Campus Member"
       };
       await setDoc(userRef, { ...userCustomProfile, email: user.email, uid: user.uid }, { merge: true });
     }
   } catch (err) {
+    console.warn("Profile sync notice:", err);
     userCustomProfile = {
       displayName: user.displayName || "Student",
       photoURL: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
-      bio: "Active Member"
+      bio: "Active Campus Member"
     };
   }
   updateProfileUI();
 }
 
 function updateProfileUI() {
-  const avatar = userCustomProfile.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.uid)}`;
+  const avatar = userCustomProfile.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser ? currentUser.uid : "user")}`;
   userAvatar.src = avatar;
   modalProfileAvatar.src = avatar;
 
@@ -181,94 +187,72 @@ profileForm.addEventListener("submit", async (e) => {
 
   const newName = editDisplayName.value.trim() || "Student";
   const newPhoto = editPhotoURL.value.trim() || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.uid)}`;
-  const newBio = editBio.value.trim() || "Active Member";
+  const newBio = editBio.value.trim() || "Active Campus Member";
 
-  profileSaveStatus.className = "text-[10px] text-center text-indigo-400 font-medium";
+  profileSaveStatus.className = "text-[10px] text-center text-indigo-400 font-medium min-h-[1rem]";
   profileSaveStatus.innerText = "Saving profile...";
 
+  userCustomProfile = {
+    displayName: newName,
+    photoURL: newPhoto,
+    bio: newBio
+  };
+
   try {
-    await updateProfile(currentUser, { displayName: newName, photoURL: newPhoto });
-    userCustomProfile = { displayName: newName, photoURL: newPhoto, bio: newBio };
-    
     await setDoc(doc(db, "users", currentUser.uid), {
-      uid: currentUser.uid,
+      ...userCustomProfile,
       email: currentUser.email,
-      displayName: newName,
-      photoURL: newPhoto,
-      bio: newBio,
+      uid: currentUser.uid,
       updatedAt: serverTimestamp()
     }, { merge: true });
 
     updateProfileUI();
-    profileSaveStatus.className = "text-[10px] text-center text-emerald-400 font-medium";
-    profileSaveStatus.innerText = "Profile updated!";
-    
+    profileSaveStatus.className = "text-[10px] text-center text-emerald-400 font-medium min-h-[1rem]";
+    profileSaveStatus.innerText = "Profile updated successfully!";
     setTimeout(() => {
       profileSaveStatus.innerText = "";
       profileModal.classList.add("hidden");
     }, 1200);
-
   } catch (err) {
-    profileSaveStatus.className = "text-[10px] text-center text-red-400 font-medium";
-    profileSaveStatus.innerText = `Error: ${err.message}`;
+    console.error("Profile update error:", err);
+    profileSaveStatus.className = "text-[10px] text-center text-red-400 font-medium min-h-[1rem]";
+    profileSaveStatus.innerText = "Failed to save: " + err.message;
   }
 });
 
-// Google Login with Popup + Redirect Fallback for mobile
-googleSignInBtn.addEventListener("click", async () => {
-  authStatus.innerText = "Signing in...";
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (error) {
-    if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
-      authStatus.innerText = "Opening Google Redirect...";
-      await signInWithRedirect(auth, provider);
-    } else {
-      authStatus.innerText = `Sign-in failed: ${error.message}`;
-    }
-  }
-});
-
-signOutBtn.addEventListener("click", () => signOut(auth));
-
-// Render rail icons
+// RENDER NAV RAILS & SIDEBARS
 function renderServerRail() {
   serverRailList.innerHTML = "";
-
   serverChannels.forEach((ch) => {
     const isActive = ch.id === activeChannel;
     const btn = document.createElement("button");
-    btn.className = `w-11 h-11 rounded-2xl overflow-hidden transition-all duration-200 border relative group cursor-pointer ${
-      isActive 
-        ? "border-indigo-400 shadow-lg shadow-indigo-600/30 scale-105" 
-        : "border-slate-800 opacity-70 hover:opacity-100 hover:border-slate-600"
+    btn.className = `w-11 h-11 rounded-2xl p-0.5 transition-all overflow-hidden relative group cursor-pointer border-2 ${
+      isActive ? "border-indigo-500 shadow-md shadow-indigo-600/30 scale-105" : "border-transparent opacity-70 hover:opacity-100 hover:border-slate-700"
     }`;
+    btn.title = ch.name;
     btn.onclick = () => switchChannel(ch.id);
 
     btn.innerHTML = `
-      <img src="${ch.icon}" class="w-full h-full object-cover" alt="${ch.name}" />
-      ${isActive ? '<span class="absolute -left-1 top-3 w-1.5 h-5 bg-indigo-400 rounded-r-full"></span>' : ''}
+      <img src="${ch.icon}" class="w-full h-full object-cover rounded-xl" alt="${ch.name}" />
     `;
     serverRailList.appendChild(btn);
   });
 }
 
-// Render sidebar list
 function renderChannelSidebar() {
   sidebarChannelList.innerHTML = "";
-
   serverChannels.forEach((ch) => {
     const isActive = ch.id === activeChannel;
     const btn = document.createElement("button");
-    btn.className = `w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all ${
+    btn.className = `w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all cursor-pointer ${
       isActive 
         ? "bg-indigo-600/20 text-indigo-300 font-semibold border border-indigo-500/30" 
-        : "text-slate-400 hover:bg-slate-800/40 hover:text-slate-200"
+        : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
     }`;
     btn.onclick = () => switchChannel(ch.id);
 
     btn.innerHTML = `
-      <img src="${ch.icon}" class="w-7 h-7 rounded-lg object-cover shrink-0 border border-slate-700/60" alt="${ch.name}" />
+      <img src="${ch.icon}" class="w-6 h-6 rounded-lg object-cover border border-slate-700 shrink-0" alt="${ch.name}" />
       <div class="flex-1 truncate">
         <p class="text-xs truncate font-medium text-slate-200">${ch.name}</p>
         <p class="text-[10px] text-slate-500 truncate">${ch.desc}</p>
@@ -281,10 +265,10 @@ function renderChannelSidebar() {
 
 window.switchChannel = function(channelId) {
   activeChannel = channelId;
-  const currentCh = serverChannels.find(c => c.id === channelId) || serverChannels[0];
+  const targetChannel = serverChannels.find(c => c.id === channelId) || serverChannels[0];
   
-  activeChannelTitle.innerText = currentCh.name;
-  headerChannelIcon.src = currentCh.icon;
+  activeChannelTitle.innerText = targetChannel.name;
+  headerChannelIcon.src = targetChannel.icon;
 
   renderServerRail();
   renderChannelSidebar();
@@ -292,14 +276,14 @@ window.switchChannel = function(channelId) {
   closeMobileDrawer();
 };
 
-// Firestore Messages
+// REAL-TIME MESSAGING
 function loadChannelMessages(channelId) {
   if (unsubscribeMessages) unsubscribeMessages();
 
   chatBox.innerHTML = `
     <div class="flex flex-col items-center justify-center h-full text-slate-500 text-xs gap-2">
       <i class="fa-solid fa-circle-notch animate-spin text-lg text-indigo-400"></i>
-      <span>Loading ${channelId}...</span>
+      <span>Loading messages...</span>
     </div>
   `;
 
@@ -312,12 +296,12 @@ function loadChannelMessages(channelId) {
     chatBox.innerHTML = "";
 
     if (snapshot.empty) {
-      const currentCh = serverChannels.find(c => c.id === channelId) || serverChannels[0];
+      const targetChannel = serverChannels.find(c => c.id === channelId) || serverChannels[0];
       chatBox.innerHTML = `
         <div class="flex flex-col items-center justify-center h-full text-slate-500 text-xs text-center p-6 gap-2">
-          <img src="${currentCh.icon}" class="w-16 h-16 rounded-2xl object-cover border border-slate-700/80 mb-2 shadow-xl" />
-          <p class="font-bold text-slate-200 text-sm">Welcome to ${currentCh.name}!</p>
-          <p class="text-slate-500">${currentCh.desc}</p>
+          <img src="${targetChannel.icon}" class="w-16 h-16 rounded-2xl object-cover border border-slate-800 shadow-xl mb-1" />
+          <p class="font-bold text-slate-200 text-sm">Welcome to ${targetChannel.name}!</p>
+          <p class="text-slate-400 text-xs">${targetChannel.desc}</p>
         </div>
       `;
       return;
@@ -326,28 +310,29 @@ function loadChannelMessages(channelId) {
     snapshot.forEach((docSnap) => {
       const msg = docSnap.data();
       const isMe = currentUser && msg.uid === currentUser.uid;
+      
       const timeStr = msg.createdAt?.toDate 
         ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
         : "Just now";
 
       const msgDiv = document.createElement("div");
-      msgDiv.className = `flex gap-2.5 items-start ${isMe ? "flex-row-reverse" : ""}`;
+      msgDiv.className = `flex gap-3 items-start ${isMe ? "flex-row-reverse" : ""}`;
 
       const avatarSrc = msg.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || 'User')}`;
 
       msgDiv.innerHTML = `
-        <img src="${avatarSrc}" class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-700/80 bg-slate-800 shadow-sm" alt="Avatar"/>
+        <img src="${avatarSrc}" class="w-8 h-8 rounded-xl object-cover shrink-0 border border-slate-700 bg-slate-800 shadow-sm" alt="Avatar"/>
         <div class="flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[82%] sm:max-w-[70%]">
           <div class="flex items-center gap-2 mb-1 px-1">
-            <span class="text-[11px] font-bold ${isMe ? "text-indigo-300" : "text-slate-300"}">${msg.userName || "Student"}</span>
+            <span class="text-[11px] font-bold text-slate-300">${escapeHtml(msg.userName || "Student")}</span>
             <span class="text-[9px] text-slate-500">${timeStr}</span>
           </div>
-          ${msg.image ? `<img src="${msg.image}" class="rounded-2xl max-h-64 object-cover mb-1.5 border border-slate-800 shadow-lg" />` : ''}
+          ${msg.image ? `<img src="${msg.image}" class="rounded-2xl max-h-60 object-cover mb-1.5 border border-slate-800 shadow-lg" />` : ''}
           ${msg.text ? `
-            <div class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm leading-relaxed ${
+            <div class="px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed break-words ${
               isMe 
-                ? "bg-indigo-600 text-white rounded-tr-xs shadow-md shadow-indigo-950/30" 
-                : "bg-[#131620] text-slate-200 rounded-tl-xs border border-slate-800/80 shadow-sm"
+                ? "bg-indigo-600 text-white rounded-tr-xs shadow-md shadow-indigo-950/40" 
+                : "bg-[#12141d] text-slate-200 rounded-tl-xs border border-slate-800/80"
             }">
               ${escapeHtml(msg.text)}
             </div>
@@ -360,12 +345,17 @@ function loadChannelMessages(channelId) {
 
     chatBox.scrollTop = chatBox.scrollHeight;
   }, (err) => {
-    console.error("Firestore message listener error:", err);
+    console.error("Firestore read notice:", err);
+    chatBox.innerHTML = `
+      <div class="p-4 text-xs text-amber-400 bg-amber-500/10 rounded-xl border border-amber-500/20 text-center">
+        Database connection syncing... Ensure your Firestore security rules permit reads.
+      </div>
+    `;
   });
 }
 
 function escapeHtml(str) {
-  return str.replace(/[&<>"']/g, (m) => ({
+  return (str || "").replace(/[&<>"']/g, (m) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
@@ -374,7 +364,7 @@ function escapeHtml(str) {
   })[m]);
 }
 
-// Send Message
+// SEND MESSAGE HANDLERS
 async function handleSendMessage() {
   const text = messageInput.value.trim();
   if (!text && !attachedImageData) return;
@@ -396,6 +386,7 @@ async function handleSendMessage() {
     await addDoc(collection(db, "channels", activeChannel, "messages"), newMsg);
   } catch (err) {
     console.error("Error sending message:", err);
+    alert("Failed to send message: " + err.message);
   }
 }
 
@@ -407,13 +398,13 @@ messageInput.addEventListener("keydown", (e) => {
   }
 });
 
-// Image Attachments
+// IMAGE ATTACHMENTS
 imageInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   if (file.size > 2 * 1024 * 1024) {
-    alert("Image size should be under 2MB.");
+    alert("Please select an image smaller than 2MB.");
     imageInput.value = "";
     return;
   }
@@ -436,7 +427,14 @@ function clearImageAttachment() {
   imagePreview.src = "";
 }
 
-// Mobile drawer
+// PROFILE MODAL TOGGLES
+openProfileBtn.addEventListener("click", () => profileModal.classList.remove("hidden"));
+closeProfileBtn.addEventListener("click", () => profileModal.classList.add("hidden"));
+profileModal.addEventListener("click", (e) => {
+  if (e.target === profileModal) profileModal.classList.add("hidden");
+});
+
+// MOBILE SIDEBAR DRAWER
 toggleMenuBtn.addEventListener("click", openMobileDrawer);
 sidebarOverlay.addEventListener("click", closeMobileDrawer);
 
@@ -450,10 +448,7 @@ function closeMobileDrawer() {
   sidebarOverlay.classList.add("hidden");
 }
 
-// Modals
-openProfileBtn.addEventListener("click", () => profileModal.classList.remove("hidden"));
-closeProfileBtn.addEventListener("click", () => profileModal.classList.add("hidden"));
-
+// ADMIN TERMINAL
 ownerConsoleBtn.addEventListener("click", () => consoleModal.classList.remove("hidden"));
 closeConsoleBtn.addEventListener("click", () => consoleModal.classList.add("hidden"));
 
@@ -465,15 +460,15 @@ consoleInput.addEventListener("keydown", (e) => {
 
     appendConsole(`> ${cmd}`);
     if (cmd === "/help") {
-      appendConsole("Commands:\n/clear - Clear screen\n/status - Admin status\n/channel - Active space");
+      appendConsole("Commands:\n/clear - Clear output\n/status - Auth info\n/channel - Active channel info");
     } else if (cmd === "/clear") {
       consoleOutput.innerText = "Welcome Admin Terminal!\n";
     } else if (cmd === "/status") {
-      appendConsole(`Admin account verified: ${currentUser ? currentUser.email : "None"}`);
+      appendConsole(`Authenticated user: ${currentUser ? currentUser.email : "None"}`);
     } else if (cmd === "/channel") {
-      appendConsole(`Current space: ${activeChannel}`);
+      appendConsole(`Active channel: ${activeChannel}`);
     } else {
-      appendConsole(`Unknown command: ${cmd}`);
+      appendConsole(`Unknown command: ${cmd}. Type /help for assistance.`);
     }
   }
 });
@@ -481,4 +476,5 @@ consoleInput.addEventListener("keydown", (e) => {
 function appendConsole(msg) {
   consoleOutput.innerText += `\n${msg}`;
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
-}
+  }
+    
