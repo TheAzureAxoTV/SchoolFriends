@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-[#0e1015] text-slate-100">
+<html lang="en" class="h-full bg-[#1e1f22] text-[#dbdee1]">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,119 +13,117 @@
 </head>
 <body class="h-full flex overflow-hidden font-sans antialiased select-none">
 
-  <!-- LEFT NAVIGATION RAIL (SERVERS/GROUPS) -->
-  <aside class="w-18 bg-[#090a0f] flex flex-col items-center py-4 gap-3 shrink-0 border-r border-slate-800/60 z-20">
+  <!-- LEFT SERVER NAVIGATION RAIL -->
+  <aside class="w-[72px] bg-[#1e1f22] flex flex-col items-center py-3 gap-2 shrink-0 border-r border-[#2b2d31] z-20">
     <div class="relative group cursor-pointer">
       <div class="absolute -left-3 top-2.5 w-1 h-8 bg-indigo-500 rounded-r-full"></div>
-      <img src="logo10_3_13369.png" class="w-12 h-12 rounded-2xl object-cover hover:rounded-xl transition-all duration-200 border border-indigo-500/30 shadow-lg shadow-indigo-950/50" alt="Server Logo" />
+      <img src="logo10_3_13369.png" class="w-12 h-12 rounded-[24px] hover:rounded-[16px] object-cover transition-all duration-200 border border-indigo-500/30 shadow-md" alt="Server Logo" />
     </div>
     
-    <div class="w-8 h-[2px] bg-slate-800/80 rounded-full my-1"></div>
+    <div class="w-8 h-[2px] bg-[#35363c] rounded-full my-1"></div>
 
-    <button class="w-12 h-12 rounded-3xl bg-slate-800/60 hover:bg-indigo-600 hover:rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200 cursor-pointer group">
+    <button class="w-12 h-12 rounded-[24px] bg-[#313338] hover:bg-indigo-600 hover:rounded-[16px] flex items-center justify-center text-[#23a55a] hover:text-white transition-all duration-200 cursor-pointer group">
       <i class="fa-solid fa-plus text-lg group-hover:scale-110 transition-transform"></i>
     </button>
   </aside>
 
   <!-- CHANNELS SIDEBAR -->
-  <aside class="w-60 bg-[#12141d] flex flex-col shrink-0 border-r border-slate-800/40 z-10 hidden sm:flex">
+  <aside class="w-60 bg-[#2b2d31] flex flex-col shrink-0 border-r border-[#1e1f22] z-10 hidden sm:flex">
     <!-- Server Header -->
-    <header class="h-14 px-4 flex items-center justify-between border-b border-slate-800/60 shadow-sm">
-      <h1 class="font-bold text-slate-100 text-sm tracking-wide flex items-center gap-2">
+    <header class="h-12 px-4 flex items-center justify-between border-b border-[#1e1f22] shadow-sm">
+      <h1 class="font-bold text-white text-sm tracking-wide flex items-center gap-2">
         <span>SchoolFriends</span>
-        <i class="fa-solid fa-[#6366f1] fa-circle-check text-xs text-indigo-400"></i>
+        <i class="fa-solid fa-circle-check text-xs text-indigo-400"></i>
       </h1>
-      <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+      <i class="fa-solid fa-chevron-down text-xs text-[#949ba4]"></i>
     </header>
 
     <!-- Channel List -->
-    <div class="flex-1 overflow-y-auto p-2 space-y-1">
-      <div class="px-2 pt-3 pb-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase">Text Channels</div>
+    <div class="flex-1 overflow-y-auto p-2 space-y-0.5" id="channelList">
+      <div class="px-2 pt-3 pb-1 text-[11px] font-bold tracking-wider text-[#949ba4] uppercase">Text Channels</div>
       
-      <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-indigo-600/15 text-indigo-300 font-medium text-xs transition">
-        <i class="fa-solid fa-hashtag text-indigo-400 text-sm"></i>
-        <span>general-chat</span>
+      <button data-channel="general-chat" class="channel-btn w-full flex items-center gap-2 px-2 py-1.5 rounded bg-[#35373c] text-white font-medium text-xs transition">
+        <i class="fa-solid fa-hashtag text-[#80848e] text-sm"></i>
+        <span class="truncate">general-chat</span>
       </button>
 
-      <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-slate-800/40 text-slate-400 hover:text-slate-200 font-medium text-xs transition">
-        <i class="fa-solid fa-hashtag text-slate-500 text-sm"></i>
-        <span>announcements</span>
+      <button data-channel="announcements" class="channel-btn w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#35373c]/50 text-[#949ba4] hover:text-[#dbdee1] font-medium text-xs transition">
+        <i class="fa-solid fa-hashtag text-[#80848e] text-sm"></i>
+        <span class="truncate">announcements</span>
       </button>
 
-      <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-slate-800/40 text-slate-400 hover:text-slate-200 font-medium text-xs transition">
-        <i class="fa-solid fa-square-poll-vertical text-slate-500 text-sm"></i>
-        <span>polls</span>
+      <button data-channel="polls" class="channel-btn w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#35373c]/50 text-[#949ba4] hover:text-[#dbdee1] font-medium text-xs transition">
+        <i class="fa-solid fa-square-poll-vertical text-[#80848e] text-sm"></i>
+        <span class="truncate">polls</span>
       </button>
     </div>
 
-    <!-- User Footer -->
-    <footer class="h-14 bg-[#0d0e14] px-3 flex items-center justify-between border-t border-slate-800/60">
-      <div class="flex items-center gap-2.5 overflow-hidden">
+    <!-- User Profile Footer -->
+    <footer class="h-14 bg-[#232428] px-2 flex items-center justify-between">
+      <div class="flex items-center gap-2 overflow-hidden">
         <div class="relative shrink-0">
-          <img id="userAvatar" src="logo10_3_1188.png" class="w-8 h-8 rounded-lg object-cover border border-slate-700" alt="Profile" />
-          <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#0d0e14]"></div>
+          <img id="userAvatar" src="logo10_3_1188.png" class="w-8 h-8 rounded-full object-cover bg-[#313338]" alt="Profile" />
+          <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#23a55a] rounded-full border-2 border-[#232428]"></div>
         </div>
         <div class="flex flex-col truncate">
-          <span id="userName" class="text-xs font-semibold text-slate-200 truncate">Loading...</span>
-          <span class="text-[10px] text-slate-500 truncate">Online</span>
+          <span id="userName" class="text-xs font-semibold text-white truncate">User</span>
+          <span class="text-[10px] text-[#949ba4] truncate">Online</span>
         </div>
       </div>
-      <button id="logoutBtn" class="text-slate-400 hover:text-rose-400 p-1.5 transition cursor-pointer" title="Log Out">
+      <button id="logoutBtn" class="text-[#949ba4] hover:text-rose-400 p-2 transition cursor-pointer" title="Log Out">
         <i class="fa-solid fa-right-from-bracket text-sm"></i>
       </button>
     </footer>
   </aside>
 
   <!-- MAIN CHAT AREA -->
-  <main class="flex-1 flex flex-col bg-[#161824] min-w-0 relative">
+  <main class="flex-1 flex flex-col bg-[#313338] min-w-0 relative">
     
-    <!-- Top Channel Header -->
-    <header class="h-14 px-4 flex items-center justify-between border-b border-slate-800/60 bg-[#12141d]/80 backdrop-blur-md shrink-0">
+    <!-- Channel Header Bar -->
+    <header class="h-12 px-4 flex items-center justify-between border-b border-[#1e1f22] bg-[#313338] shrink-0">
       <div class="flex items-center gap-2 min-w-0">
-        <i class="fa-solid fa-hashtag text-slate-400 text-base"></i>
-        <span class="font-bold text-slate-200 text-sm truncate">general-chat</span>
-        <span class="hidden md:inline text-slate-600 text-xs">|</span>
-        <span class="hidden md:inline text-slate-400 text-xs truncate">Main group discussion channel</span>
+        <i class="fa-solid fa-hashtag text-[#80848e] text-lg"></i>
+        <span id="currentChannelTitle" class="font-bold text-white text-sm truncate">general-chat</span>
       </div>
-      <div class="flex items-center gap-4 text-slate-400 text-sm">
-        <i class="fa-solid fa-[#6366f1] fa-bell hover:text-slate-200 transition cursor-pointer"></i>
-        <i class="fa-solid fa-users hover:text-slate-200 transition cursor-pointer"></i>
+      <div class="flex items-center gap-4 text-[#b5bac1] text-sm">
+        <i class="fa-solid fa-bell hover:text-white transition cursor-pointer"></i>
+        <i class="fa-solid fa-users hover:text-white transition cursor-pointer"></i>
       </div>
     </header>
 
-    <!-- Scrollable Messages Container -->
-    <div id="chatBox" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-      <!-- Messages load here dynamically -->
+    <!-- Scrollable Chat Messages Container -->
+    <div id="chatBox" class="flex-1 overflow-y-auto p-4 space-y-4">
+      <!-- Dynamic Messages Loaded Here -->
     </div>
 
-    <!-- CUSTOM SMS INPUT BAR -->
-    <div class="p-3 sm:p-4 bg-[#0d0e14] shrink-0 border-t border-slate-800/40">
-      <form id="messageForm" class="relative w-full h-12 sm:h-14 rounded-full flex items-center px-4 gap-2 overflow-hidden bg-[#1e2130] border border-slate-700/60 shadow-lg shadow-black/40">
+    <!-- DISCORD SMS BAR -->
+    <div class="p-4 bg-[#313338] shrink-0">
+      <form id="messageForm" class="relative w-full h-11 rounded-lg flex items-center px-3 gap-2 bg-[#383a40]">
         
         <!-- Attachment Button -->
-        <label class="relative z-10 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 active:scale-95 transition shrink-0" title="Attach Image">
-          <span class="text-indigo-300 text-xl font-light">+</span>
+        <label class="w-6 h-6 rounded-full bg-[#4e5058] hover:bg-[#6d6f78] flex items-center justify-center cursor-pointer transition shrink-0" title="Attach Image">
+          <i class="fa-solid fa-plus text-[#dbdee1] text-xs"></i>
           <input type="file" id="imageInput" accept="image/*" class="hidden" />
         </label>
 
-        <!-- Text Input -->
+        <!-- Message Input -->
         <input 
           type="text" 
           id="messageInput" 
-          placeholder="Enter Message.." 
-          class="relative z-10 flex-1 bg-transparent text-slate-100 placeholder-slate-400/70 focus:outline-none px-2 text-sm sm:text-base font-medium tracking-wide"
+          placeholder="Message #general-chat" 
+          class="flex-1 bg-transparent text-[#dbdee1] placeholder-[#80848e] focus:outline-none text-sm font-normal"
           maxlength="500"
           autocomplete="off"
         />
 
-        <!-- Right Side Icons -->
-        <div class="relative z-10 flex items-center gap-2 shrink-0">
-          <button id="emojiBtn" type="button" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-300 transition cursor-pointer" title="Add Emoji">
-            <i class="fa-regular fa-face-smile text-lg"></i>
+        <!-- Action Icons -->
+        <div class="flex items-center gap-3 shrink-0 text-[#b5bac1]">
+          <button id="emojiBtn" type="button" class="hover:text-white transition cursor-pointer" title="Add Emoji">
+            <i class="fa-regular fa-face-smile text-base"></i>
           </button>
 
-          <button id="sendBtn" type="submit" class="w-8 h-8 rounded-full bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center text-white transition cursor-pointer shadow-md shadow-indigo-950/50" title="Send Message">
-            <i class="fa-solid fa-paper-plane text-xs"></i>
+          <button id="sendBtn" type="submit" class="hover:text-indigo-400 transition cursor-pointer" title="Send Message">
+            <i class="fa-solid fa-paper-plane text-base"></i>
           </button>
         </div>
 
@@ -134,8 +132,7 @@
 
   </main>
 
-  <!-- Module JS -->
   <script type="module" src="app.js"></script>
 </body>
-        </html>
-            
+  </html>
+          
