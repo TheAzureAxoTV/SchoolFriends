@@ -4,7 +4,8 @@ import {
   GoogleAuthProvider, 
   signInWithPopup, 
   signOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  updateProfile
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { 
   getFirestore, 
@@ -15,10 +16,10 @@ import {
   onSnapshot, 
   serverTimestamp, 
   doc, 
-  setDoc 
+  setDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Your Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyBkHqLMsR_UR_NeRaaGb-0c5MRrWzy3w6Y",
   authDomain: "schoolfriends-dev.firebaseapp.com",
@@ -29,19 +30,42 @@ const firebaseConfig = {
   measurementId: "G-P1SRDNQ9PE"
 };
 
-// Initialize Firebase App
+const OWNER_EMAILS = ["itsazureaxotv@gmail.com"];
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// App State
+// Server Channels Definition with your Custom Graphic Elements
+const serverChannels = [
+  {
+    id: "general-chat",
+    name: "General Chat",
+    desc: "Main community chatter",
+    icon: "1000588420.png"
+  },
+  {
+    id: "announcements",
+    name: "Announcements",
+    desc: "Server news & updates",
+    icon: "1000588423.png"
+  },
+  {
+    id: "polls",
+    name: "Polls & Voting",
+    desc: "Community questions & votes",
+    icon: "1000588422.png"
+  }
+];
+
 let currentUser = null;
-let activeChannel = "general-lounge";
+let userCustomProfile = { displayName: "", photoURL: "", bio: "" };
+let activeChannel = "general-chat";
 let unsubscribeMessages = null;
 let attachedImageData = null;
 
-// DOM Elements
+// DOM
 const authSection = document.getElementById("authSection");
 const mainAppSection = document.getElementById("mainAppSection");
 const googleSignInBtn = document.getElementById("googleSignInBtn");
@@ -49,7 +73,9 @@ const signOutBtn = document.getElementById("signOutBtn");
 const authStatus = document.getElementById("authStatus");
 
 const activeChannelTitle = document.getElementById("activeChannelTitle");
-const sidebarUserList = document.getElementById("sidebarUserList");
+const headerChannelIcon = document.getElementById("headerChannelIcon");
+const serverRailList = document.getElementById("serverRailList");
+const sidebarChannelList = document.getElementById("sidebarChannelList");
 const chatBox = document.getElementById("chatBox");
 
 const messageInput = document.getElementById("messageInput");
@@ -64,8 +90,11 @@ const closeProfileBtn = document.getElementById("closeProfileBtn");
 const profileModal = document.getElementById("profileModal");
 const userAvatar = document.getElementById("userAvatar");
 const modalProfileAvatar = document.getElementById("modalProfileAvatar");
-const modalProfileName = document.getElementById("modalProfileName");
-const modalProfileTag = document.getElementById("modalProfileTag");
+const profileForm = document.getElementById("profileForm");
+const editDisplayName = document.getElementById("editDisplayName");
+const editPhotoURL = document.getElementById("editPhotoURL");
+const editBio = document.getElementById("editBio");
+const profileSaveStatus = document.getElementById("profileSaveStatus");
 
 const toggleMenuBtn = document.getElementById("toggleMenuBtn");
 const channelSidebar = document.getElementById("channelSidebar");
@@ -77,14 +106,7 @@ const closeConsoleBtn = document.getElementById("closeConsoleBtn");
 const consoleInput = document.getElementById("consoleInput");
 const consoleOutput = document.getElementById("consoleOutput");
 
-const channels = [
-  { id: "general-lounge", name: "general-lounge", desc: "Main campus talk" },
-  { id: "announcements", name: "announcements", desc: "Official updates" },
-  { id: "gaming-room", name: "gaming-room", desc: "Games & hangouts" },
-  { id: "homework-help", name: "homework-help", desc: "Study & questions" }
-];
-
-// --- AUTH STATE OBSERVER ---
+// AUTH STATE
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
@@ -92,26 +114,18 @@ onAuthStateChanged(auth, async (user) => {
     mainAppSection.classList.remove("hidden");
     authStatus.innerText = "";
 
-    const avatarUrl = user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.displayName || 'Student')}`;
-    userAvatar.src = avatarUrl;
-    modalProfileAvatar.src = avatarUrl;
-    modalProfileName.innerText = user.displayName || "School Student";
-    modalProfileTag.innerText = `@${(user.email || "student").split("@")[0]}`;
-
-    try {
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        displayName: user.displayName || "Student",
-        email: user.email,
-        photoURL: avatarUrl,
-        lastSeen: serverTimestamp()
-      }, { merge: true });
-    } catch (err) {
-      console.warn("User sync notice:", err.message);
+    if (user.email && OWNER_EMAILS.includes(user.email.toLowerCase())) {
+      ownerConsoleBtn.classList.remove("hidden");
+      ownerConsoleBtn.classList.add("flex");
+    } else {
+      ownerConsoleBtn.classList.add("hidden");
+      ownerConsoleBtn.classList.remove("flex");
     }
 
-    renderChannels();
-    loadChannelMessages(activeChannel);
+    await fetchUserProfile(user);
+    renderServerRail();
+    renderChannelSidebar();
+    switchChannel(activeChannel);
   } else {
     currentUser = null;
     authSection.classList.remove("hidden");
@@ -120,25 +134,119 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// Google Sign-In Action
+async function fetchUserProfile(user) {
+  const userRef = doc(db, "users", user.uid);
+  try {
+    const docSnap = await getDoc(userRef);
+    if (docSnap.exists()) {
+      userCustomProfile = docSnap.data();
+    } else {
+      userCustomProfile = {
+        displayName: user.displayName || "Student",
+        photoURL: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
+        bio: "Active Member"
+      };
+      await setDoc(userRef, { ...userCustomProfile, email: user.email, uid: user.uid }, { merge: true });
+    }
+  } catch (err) {
+    console.warn("Profile sync note:", err);
+    userCustomProfile = {
+      displayName: user.displayName || "Student",
+      photoURL: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
+      bio: "Active Member"
+    };
+  }
+  updateProfileUI();
+}
+
+function updateProfileUI() {
+  const avatar = userCustomProfile.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.uid)}`;
+  userAvatar.src = avatar;
+  modalProfileAvatar.src = avatar;
+
+  editDisplayName.value = userCustomProfile.displayName || "";
+  editPhotoURL.value = userCustomProfile.photoURL || "";
+  editBio.value = userCustomProfile.bio || "";
+}
+
+profileForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!currentUser) return;
+
+  const newName = editDisplayName.value.trim() || "Student";
+  const newPhoto = editPhotoURL.value.trim() || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.uid)}`;
+  const newBio = editBio.value.trim() || "Active Member";
+
+  profileSaveStatus.className = "text-[10px] text-center text-indigo-400 font-medium";
+  profileSaveStatus.innerText = "Saving profile...";
+
+  try {
+    await updateProfile(currentUser, { displayName: newName, photoURL: newPhoto });
+    userCustomProfile = { displayName: newName, photoURL: newPhoto, bio: newBio };
+    
+    await setDoc(doc(db, "users", currentUser.uid), {
+      uid: currentUser.uid,
+      email: currentUser.email,
+      displayName: newName,
+      photoURL: newPhoto,
+      bio: newBio,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    updateProfileUI();
+    profileSaveStatus.className = "text-[10px] text-center text-emerald-400 font-medium";
+    profileSaveStatus.innerText = "Profile updated!";
+    
+    setTimeout(() => {
+      profileSaveStatus.innerText = "";
+      profileModal.classList.add("hidden");
+    }, 1200);
+
+  } catch (err) {
+    console.error("Profile update error:", err);
+    profileSaveStatus.className = "text-[10px] text-center text-red-400 font-medium";
+    profileSaveStatus.innerText = `Error: ${err.message}`;
+  }
+});
+
 googleSignInBtn.addEventListener("click", async () => {
   authStatus.innerText = "Connecting to Google Auth...";
   try {
     await signInWithPopup(auth, provider);
   } catch (error) {
-    console.error("Auth error:", error);
     authStatus.innerText = `Sign-in failed: ${error.message}`;
   }
 });
 
-// Sign Out Action
 signOutBtn.addEventListener("click", () => signOut(auth));
 
-// --- RENDER SIDEBAR CHANNELS ---
-function renderChannels() {
-  sidebarUserList.innerHTML = "";
+// RENDER LEFT RAIL ICONS (Image Badges)
+function renderServerRail() {
+  serverRailList.innerHTML = "";
 
-  channels.forEach((ch) => {
+  serverChannels.forEach((ch) => {
+    const isActive = ch.id === activeChannel;
+    const btn = document.createElement("button");
+    btn.className = `w-11 h-11 rounded-2xl overflow-hidden transition-all duration-200 border relative group cursor-pointer ${
+      isActive 
+        ? "border-indigo-400 shadow-lg shadow-indigo-600/30 scale-105" 
+        : "border-slate-800 opacity-70 hover:opacity-100 hover:border-slate-600"
+    }`;
+    btn.onclick = () => switchChannel(ch.id);
+
+    btn.innerHTML = `
+      <img src="${ch.icon}" class="w-full h-full object-cover" alt="${ch.name}" />
+      ${isActive ? '<span class="absolute -left-1 top-3 w-1.5 h-5 bg-indigo-400 rounded-r-full"></span>' : ''}
+    `;
+    serverRailList.appendChild(btn);
+  });
+}
+
+// RENDER SIDEBAR CHANNEL LIST
+function renderChannelSidebar() {
+  sidebarChannelList.innerHTML = "";
+
+  serverChannels.forEach((ch) => {
     const isActive = ch.id === activeChannel;
     const btn = document.createElement("button");
     btn.className = `w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all ${
@@ -149,33 +257,38 @@ function renderChannels() {
     btn.onclick = () => switchChannel(ch.id);
 
     btn.innerHTML = `
-      <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0">#</div>
+      <img src="${ch.icon}" class="w-7 h-7 rounded-lg object-cover shrink-0 border border-slate-700/60" alt="${ch.name}" />
       <div class="flex-1 truncate">
         <p class="text-xs truncate font-medium text-slate-200">${ch.name}</p>
         <p class="text-[10px] text-slate-500 truncate">${ch.desc}</p>
       </div>
       ${isActive ? '<div class="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0"></div>' : ''}
     `;
-    sidebarUserList.appendChild(btn);
+    sidebarChannelList.appendChild(btn);
   });
 }
 
 window.switchChannel = function(channelId) {
   activeChannel = channelId;
-  activeChannelTitle.innerText = channelId;
-  renderChannels();
+  const currentCh = serverChannels.find(c => c.id === channelId) || serverChannels[0];
+  
+  activeChannelTitle.innerText = currentCh.name;
+  headerChannelIcon.src = currentCh.icon;
+
+  renderServerRail();
+  renderChannelSidebar();
   loadChannelMessages(channelId);
   closeMobileDrawer();
 };
 
-// --- REAL-TIME FIRESTORE MESSAGING ---
+// FIRESTORE MESSAGING
 function loadChannelMessages(channelId) {
   if (unsubscribeMessages) unsubscribeMessages();
 
   chatBox.innerHTML = `
     <div class="flex flex-col items-center justify-center h-full text-slate-500 text-xs gap-2">
       <i class="fa-solid fa-circle-notch animate-spin text-lg text-indigo-400"></i>
-      <span>Loading #${channelId}...</span>
+      <span>Loading ${channelId}...</span>
     </div>
   `;
 
@@ -188,11 +301,12 @@ function loadChannelMessages(channelId) {
     chatBox.innerHTML = "";
 
     if (snapshot.empty) {
+      const currentCh = serverChannels.find(c => c.id === channelId) || serverChannels[0];
       chatBox.innerHTML = `
         <div class="flex flex-col items-center justify-center h-full text-slate-500 text-xs text-center p-6 gap-2">
-          <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-xl border border-indigo-500/20 mb-1">#</div>
-          <p class="font-bold text-slate-300 text-sm">Welcome to #${channelId}!</p>
-          <p class="text-slate-500">Be the first to leave a message in this channel.</p>
+          <img src="${currentCh.icon}" class="w-16 h-16 rounded-2xl object-cover border border-slate-700/80 mb-2 shadow-xl" />
+          <p class="font-bold text-slate-200 text-sm">Welcome to ${currentCh.name}!</p>
+          <p class="text-slate-500">${currentCh.desc}</p>
         </div>
       `;
       return;
@@ -206,23 +320,23 @@ function loadChannelMessages(channelId) {
         : "Just now";
 
       const msgDiv = document.createElement("div");
-      msgDiv.className = `flex gap-3 items-start ${isMe ? "flex-row-reverse" : ""}`;
+      msgDiv.className = `flex gap-2.5 items-start ${isMe ? "flex-row-reverse" : ""}`;
 
       const avatarSrc = msg.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || 'User')}`;
 
       msgDiv.innerHTML = `
-        <img src="${avatarSrc}" class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-700 bg-slate-800" alt="Avatar"/>
-        <div class="flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[80%] sm:max-w-[70%]">
-          <div class="flex items-center gap-2 mb-1 px-0.5">
-            <span class="text-[11px] font-bold text-slate-300">${msg.userName || "Student"}</span>
+        <img src="${avatarSrc}" class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-700/80 bg-slate-800 shadow-sm" alt="Avatar"/>
+        <div class="flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[82%] sm:max-w-[70%]">
+          <div class="flex items-center gap-2 mb-1 px-1">
+            <span class="text-[11px] font-bold ${isMe ? "text-indigo-300" : "text-slate-300"}">${msg.userName || "Student"}</span>
             <span class="text-[9px] text-slate-500">${timeStr}</span>
           </div>
-          ${msg.image ? `<img src="${msg.image}" class="rounded-2xl max-h-60 object-cover mb-1 border border-slate-700 shadow-md" />` : ''}
+          ${msg.image ? `<img src="${msg.image}" class="rounded-2xl max-h-64 object-cover mb-1.5 border border-slate-800 shadow-lg" />` : ''}
           ${msg.text ? `
             <div class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm leading-relaxed ${
               isMe 
-                ? "bg-indigo-600 text-white rounded-tr-xs shadow-md" 
-                : "bg-[#12141c] text-slate-200 rounded-tl-xs border border-slate-800/80"
+                ? "bg-indigo-600 text-white rounded-tr-xs shadow-md shadow-indigo-950/30" 
+                : "bg-[#131620] text-slate-200 rounded-tl-xs border border-slate-800/80 shadow-sm"
             }">
               ${escapeHtml(msg.text)}
             </div>
@@ -249,7 +363,7 @@ function escapeHtml(str) {
   })[m]);
 }
 
-// --- SEND MESSAGE ---
+// SEND MESSAGE
 async function handleSendMessage() {
   const text = messageInput.value.trim();
   if (!text && !attachedImageData) return;
@@ -257,8 +371,8 @@ async function handleSendMessage() {
 
   const newMsg = {
     uid: currentUser.uid,
-    userName: currentUser.displayName || "Student",
-    photoURL: currentUser.photoURL || "",
+    userName: userCustomProfile.displayName || currentUser.displayName || "Student",
+    photoURL: userCustomProfile.photoURL || currentUser.photoURL || "",
     text: text,
     image: attachedImageData || null,
     createdAt: serverTimestamp()
@@ -282,7 +396,7 @@ messageInput.addEventListener("keydown", (e) => {
   }
 });
 
-// --- IMAGE ATTACHMENT ---
+// IMAGE ATTACHMENT
 imageInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -311,7 +425,7 @@ function clearImageAttachment() {
   imagePreview.src = "";
 }
 
-// --- MOBILE DRAWER TOGGLE ---
+// MOBILE DRAWER
 toggleMenuBtn.addEventListener("click", openMobileDrawer);
 sidebarOverlay.addEventListener("click", closeMobileDrawer);
 
@@ -325,7 +439,7 @@ function closeMobileDrawer() {
   sidebarOverlay.classList.add("hidden");
 }
 
-// --- PROFILE & CONSOLE MODALS ---
+// MODALS
 openProfileBtn.addEventListener("click", () => profileModal.classList.remove("hidden"));
 closeProfileBtn.addEventListener("click", () => profileModal.classList.add("hidden"));
 
@@ -340,13 +454,13 @@ consoleInput.addEventListener("keydown", (e) => {
 
     appendConsole(`> ${cmd}`);
     if (cmd === "/help") {
-      appendConsole("Available commands:\n/clear - Clear screen\n/status - User details\n/channel - Current space");
+      appendConsole("Commands:\n/clear - Clear screen\n/status - Admin status\n/channel - Active space");
     } else if (cmd === "/clear") {
       consoleOutput.innerText = "Welcome Admin Terminal!\n";
     } else if (cmd === "/status") {
-      appendConsole(`Authenticated user: ${currentUser ? currentUser.email : "Guest"}`);
+      appendConsole(`Admin account verified: ${currentUser ? currentUser.email : "None"}`);
     } else if (cmd === "/channel") {
-      appendConsole(`Active channel: #${activeChannel}`);
+      appendConsole(`Current space: ${activeChannel}`);
     } else {
       appendConsole(`Unknown command: ${cmd}`);
     }
@@ -356,5 +470,5 @@ consoleInput.addEventListener("keydown", (e) => {
 function appendConsole(msg) {
   consoleOutput.innerText += `\n${msg}`;
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
-  }
-   
+    }
+  
