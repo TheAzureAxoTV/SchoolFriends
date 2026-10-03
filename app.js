@@ -3,6 +3,8 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   signOut, 
   onAuthStateChanged,
   updateProfile
@@ -37,7 +39,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Server Channels Definition with your Custom Graphic Elements
+// Channels list with images
 const serverChannels = [
   {
     id: "general-chat",
@@ -65,7 +67,7 @@ let activeChannel = "general-chat";
 let unsubscribeMessages = null;
 let attachedImageData = null;
 
-// DOM
+// DOM elements
 const authSection = document.getElementById("authSection");
 const mainAppSection = document.getElementById("mainAppSection");
 const googleSignInBtn = document.getElementById("googleSignInBtn");
@@ -106,7 +108,12 @@ const closeConsoleBtn = document.getElementById("closeConsoleBtn");
 const consoleInput = document.getElementById("consoleInput");
 const consoleOutput = document.getElementById("consoleOutput");
 
-// AUTH STATE
+// Check redirect login status on load
+getRedirectResult(auth).catch((error) => {
+  if (authStatus) authStatus.innerText = `Auth Error: ${error.message}`;
+});
+
+// AUTH STATE LISTENER
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
@@ -149,7 +156,6 @@ async function fetchUserProfile(user) {
       await setDoc(userRef, { ...userCustomProfile, email: user.email, uid: user.uid }, { merge: true });
     }
   } catch (err) {
-    console.warn("Profile sync note:", err);
     userCustomProfile = {
       displayName: user.displayName || "Student",
       photoURL: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`,
@@ -203,24 +209,29 @@ profileForm.addEventListener("submit", async (e) => {
     }, 1200);
 
   } catch (err) {
-    console.error("Profile update error:", err);
     profileSaveStatus.className = "text-[10px] text-center text-red-400 font-medium";
     profileSaveStatus.innerText = `Error: ${err.message}`;
   }
 });
 
+// Google Login with Popup + Redirect Fallback for mobile
 googleSignInBtn.addEventListener("click", async () => {
-  authStatus.innerText = "Connecting to Google Auth...";
+  authStatus.innerText = "Signing in...";
   try {
     await signInWithPopup(auth, provider);
   } catch (error) {
-    authStatus.innerText = `Sign-in failed: ${error.message}`;
+    if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+      authStatus.innerText = "Opening Google Redirect...";
+      await signInWithRedirect(auth, provider);
+    } else {
+      authStatus.innerText = `Sign-in failed: ${error.message}`;
+    }
   }
 });
 
 signOutBtn.addEventListener("click", () => signOut(auth));
 
-// RENDER LEFT RAIL ICONS (Image Badges)
+// Render rail icons
 function renderServerRail() {
   serverRailList.innerHTML = "";
 
@@ -242,7 +253,7 @@ function renderServerRail() {
   });
 }
 
-// RENDER SIDEBAR CHANNEL LIST
+// Render sidebar list
 function renderChannelSidebar() {
   sidebarChannelList.innerHTML = "";
 
@@ -281,7 +292,7 @@ window.switchChannel = function(channelId) {
   closeMobileDrawer();
 };
 
-// FIRESTORE MESSAGING
+// Firestore Messages
 function loadChannelMessages(channelId) {
   if (unsubscribeMessages) unsubscribeMessages();
 
@@ -363,7 +374,7 @@ function escapeHtml(str) {
   })[m]);
 }
 
-// SEND MESSAGE
+// Send Message
 async function handleSendMessage() {
   const text = messageInput.value.trim();
   if (!text && !attachedImageData) return;
@@ -396,7 +407,7 @@ messageInput.addEventListener("keydown", (e) => {
   }
 });
 
-// IMAGE ATTACHMENT
+// Image Attachments
 imageInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -425,7 +436,7 @@ function clearImageAttachment() {
   imagePreview.src = "";
 }
 
-// MOBILE DRAWER
+// Mobile drawer
 toggleMenuBtn.addEventListener("click", openMobileDrawer);
 sidebarOverlay.addEventListener("click", closeMobileDrawer);
 
@@ -439,7 +450,7 @@ function closeMobileDrawer() {
   sidebarOverlay.classList.add("hidden");
 }
 
-// MODALS
+// Modals
 openProfileBtn.addEventListener("click", () => profileModal.classList.remove("hidden"));
 closeProfileBtn.addEventListener("click", () => profileModal.classList.add("hidden"));
 
@@ -470,5 +481,4 @@ consoleInput.addEventListener("keydown", (e) => {
 function appendConsole(msg) {
   consoleOutput.innerText += `\n${msg}`;
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
-    }
-  
+}
