@@ -79,6 +79,10 @@ const chatBox = document.getElementById("chatBox");
 
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
+const emojiBtn = document.getElementById("emojiBtn");
+const emojiPicker = document.getElementById("emojiPicker");
+const micBtn = document.getElementById("micBtn");
+
 const imageInput = document.getElementById("imageInput");
 const imagePreviewContainer = document.getElementById("imagePreviewContainer");
 const imagePreview = document.getElementById("imagePreview");
@@ -381,6 +385,7 @@ async function handleSendMessage() {
 
   messageInput.value = "";
   clearImageAttachment();
+  emojiPicker.classList.add("hidden");
 
   try {
     await addDoc(collection(db, "channels", activeChannel, "messages"), newMsg);
@@ -396,6 +401,22 @@ messageInput.addEventListener("keydown", (e) => {
     e.preventDefault();
     handleSendMessage();
   }
+});
+
+// EMOJI & MIC INTERACTIONS
+emojiBtn.addEventListener("click", () => {
+  emojiPicker.classList.toggle("hidden");
+});
+
+document.querySelectorAll(".emoji-option").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    messageInput.value += e.target.innerText;
+    messageInput.focus();
+  });
+});
+
+micBtn.addEventListener("click", () => {
+  alert("Voice Note Feature: Click 'Allow' on your microphone prompt to record.");
 });
 
 // IMAGE ATTACHMENTS
@@ -476,5 +497,4 @@ consoleInput.addEventListener("keydown", (e) => {
 function appendConsole(msg) {
   consoleOutput.innerText += `\n${msg}`;
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
-  }
-    
+}
