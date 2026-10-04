@@ -1,134 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SchoolFriends | Campus Hub</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Single+Day&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>SchoolFriends</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Single+Day&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <style>
-:root{--bg:#0a0e1c;--panel:#0f1530;--raise:#161d3d;--line:#232c52;--text:#eef1ff;--mute:#8f9ac4;--acc:#7b8cff;--ok:#3ddc97;--bad:#ff6b81}
-*{box-sizing:border-box;margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
-html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden}
-button,input{font:inherit;color:inherit;border:0;background:none;outline:0}
-button{cursor:pointer}
-.hidden{display:none!important}
+:root{--bg0:#0a0f1c;--bg1:#0f1523;--bg2:#131a2b;--bg3:#19223a;--line:#222c46;--tx:#e9edf7;--mut:#8a94ad;--acc:#6c7bff;--ok:#3ddc97;--err:#ff6b7a}
+*{box-sizing:border-box;margin:0;font-family:Inter,system-ui,sans-serif}
+html,body{height:100%;background:var(--bg1);color:var(--tx);overflow:hidden}
+button{background:none;border:0;color:inherit;cursor:pointer;font:inherit}
+input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.hidden{display:none!important}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
-.ib{width:34px;height:34px;border-radius:10px;color:var(--mute);display:grid;place-items:center;transition:.15s;flex:none}
-.ib:hover{background:#ffffff12;color:#fff}
-.menu{display:none}
-
-/* Auth */
-#auth{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px;overflow-y:auto;background:radial-gradient(60% 50% at 12% 8%,#2a3a9a66,transparent),radial-gradient(50% 45% at 92% 96%,#6b3fd166,transparent),var(--bg)}
-.card{width:100%;max-width:400px;padding:34px 28px 26px;border-radius:28px;background:#111835d9;backdrop-filter:blur(18px);border:1px solid var(--line);box-shadow:0 30px 80px #0009,inset 0 1px #ffffff14;text-align:center;animation:rise .6s cubic-bezier(.2,.8,.2,1)}
-@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.98)}}
-.mark{width:56px;height:56px;border-radius:18px;margin:0 auto 18px;display:grid;place-items:center;font-weight:800;font-size:20px;background:linear-gradient(135deg,#6272ff,#9b7bff);box-shadow:0 10px 30px #6272ff66}
-h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
-.sub{color:var(--mute);font-size:14px;line-height:1.55;margin:8px 0 22px}
-.tabs{display:grid;grid-template-columns:1fr 1fr;padding:4px;border-radius:14px;background:var(--bg);margin-bottom:14px}
-.tabs button{padding:9px;border-radius:10px;font-size:13px;font-weight:600;color:var(--mute);transition:.2s}
-.tabs .on{background:var(--raise);color:var(--text);box-shadow:0 2px 8px #0006}
-.gbtn{width:100%;height:54px;border-radius:16px;background:#f1f4fa;color:#0b1020;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:12px;transition:transform .15s,box-shadow .2s}
-.gbtn:hover{box-shadow:0 8px 28px #7b8cff44}.gbtn:active{transform:scale(.98)}.gbtn:disabled{opacity:.6}
-.or{display:flex;align-items:center;gap:12px;color:var(--mute);font-size:12px;margin:18px 0}
-.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
-.field{position:relative;margin-bottom:10px;text-align:left}
-.field input{width:100%;height:48px;padding:0 44px 0 14px;border-radius:13px;background:var(--bg);border:1px solid var(--line);font-size:14px;transition:.2s}
-.field input:focus{border-color:var(--acc);box-shadow:0 0 0 3px #7b8cff26}
-.field .eye{position:absolute;right:4px;top:4px;width:40px;height:40px;color:var(--mute)}
-.pbtn{width:100%;height:48px;border-radius:13px;font-weight:700;font-size:14px;background:linear-gradient(135deg,#6272ff,#8b6bff);color:#fff;box-shadow:0 8px 24px #6272ff55;margin-top:4px;transition:.15s}
-.pbtn:active{transform:scale(.98)}.pbtn:disabled{opacity:.6}
-.link{color:var(--acc);font-size:12px;font-weight:600}
-.status{min-height:18px;font-size:12px;margin-top:12px;color:#ffc46b;line-height:1.4}
-.terms{margin-top:12px;font-size:12px;color:#6a769f;line-height:1.5}
-
-/* Shell */
-#app{display:flex;height:100dvh}
-.rail{width:72px;flex:none;background:#080b17;display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:10px;border-right:1px solid #ffffff08}
-.home{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#6272ff,#9b7bff);font-weight:800;color:#fff}
-.sep{width:30px;height:2px;border-radius:2px;background:var(--line)}
-#rail{display:flex;flex-direction:column;gap:10px;flex:1;width:100%;overflow-y:auto;scrollbar-width:none}
-.srvw{position:relative;display:flex;justify-content:center}
-.srvw.on:before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:0 4px 4px 0;background:#fff}
-.srv{width:48px;height:48px;border-radius:24px;overflow:hidden;opacity:.75;transition:border-radius .2s,opacity .2s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+/* sign-in */
+#auth{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:24px;background:radial-gradient(900px 500px at 50% -10%,#1b2650,transparent 70%),var(--bg1)}
+.auth-card{width:100%;max-width:420px;text-align:center;animation:rise .6s cubic-bezier(.2,.8,.2,1)}
+.mark{width:56px;height:56px;margin:0 auto 22px;border-radius:18px;display:grid;place-items:center;font-weight:800;background:linear-gradient(140deg,#7d8bff,#5a49e8);box-shadow:0 10px 30px #5a49e855}
+.auth-card h1{font-size:40px;font-weight:800;letter-spacing:-.02em}
+.sub{margin:14px auto 28px;color:#9aa6c2;font-size:17px;line-height:1.5;max-width:340px}
+.chip{display:flex;align-items:center;gap:10px;justify-content:center;margin:0 0 18px;color:var(--mut);font-size:14px}
+.chip img{width:28px;height:28px;border-radius:50%}
+.gbtn{width:100%;height:64px;border-radius:22px;background:#eef2f9;color:#0f1523;font-weight:600;font-size:20px;display:flex;align-items:center;justify-content:center;gap:16px;box-shadow:0 10px 30px #0006;transition:transform .15s,opacity .2s}
+.gbtn:hover{transform:translateY(-1px)}.gbtn:active{transform:scale(.985)}.gbtn:disabled{opacity:.6;cursor:progress}
+.sw{display:inline-flex;gap:10px;align-items:center;margin-top:18px;font-size:14px;color:var(--mut);cursor:pointer}
+.sw input{accent-color:var(--acc);width:16px;height:16px}
+#authMsg{min-height:20px;margin-top:14px;color:var(--err);font-size:14px;line-height:1.4}
+.legal{margin-top:18px;color:#6b7690;font-size:15px;line-height:1.5}.legal a{color:#9aa6c2}
+/* app shell */
+#app{display:flex;height:100%}
+.rail{width:72px;background:var(--bg0);display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0;flex-shrink:0}
+.rail .mark{width:48px;height:48px;margin:0;border-radius:16px;font-size:15px}
+.rail hr{width:32px;border:0;height:2px;background:var(--line)}
+#rail{display:flex;flex-direction:column;gap:10px}
+.srv{width:48px;height:48px;border-radius:50%;overflow:hidden;opacity:.7;transition:border-radius .2s,opacity .2s}
 .srv img{width:100%;height:100%;object-fit:cover}
-.srv:hover,.srv.on{border-radius:16px;opacity:1}
-.side{width:264px;flex:none;background:var(--panel);display:flex;flex-direction:column;border-right:1px solid var(--line)}
-.sh{height:56px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);font-weight:700;font-size:15px}
-.chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:#3ddc9718;color:var(--ok)}
-.chip.off{background:#ffc46b18;color:#ffc46b}
-.search{margin:12px;padding:0 12px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;gap:8px;color:var(--mute);font-size:13px}
-.search input{flex:1;min-width:0}
-.cat{padding:6px 16px;font-size:12px;font-weight:700;color:var(--mute)}
-#chList{flex:1;overflow-y:auto;padding:0 8px}
-.ch{width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;color:var(--mute);text-align:left;transition:.15s;margin-bottom:2px}
-.ch:hover{background:#ffffff0a;color:var(--text)}
-.ch.on{background:#7b8cff22;color:#fff}
-.ch img{width:30px;height:30px;border-radius:9px;object-fit:cover;flex:none}
-.ch b{display:block;font-size:14px;font-weight:600}.ch small{font-size:11px;opacity:.7}
-.me{display:flex;align-items:center;gap:8px;padding:10px;margin:8px;border-radius:16px;background:var(--raise);border:1px solid var(--line)}
-.av{position:relative;flex:none;border-radius:50%}
-.av img{width:38px;height:38px;border-radius:50%;object-fit:cover;background:var(--bg);display:block}
-.dot{position:absolute;right:-2px;bottom:-2px;width:14px;height:14px;border-radius:50%;background:var(--ok);border:3px solid var(--raise)}
-.who{flex:1;min-width:0;text-align:left}
-.who b,.who small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.who b{font-size:13px}.who small{font-size:11px;color:var(--mute)}
-
-/* Chat */
-main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
-header{height:56px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
-header img{width:26px;height:26px;border-radius:8px;object-fit:cover}
+.srv:hover{opacity:1;border-radius:16px}.srv.on{opacity:1;border-radius:16px;box-shadow:0 0 0 2px var(--bg0),0 0 0 4px var(--acc)}
+.side{width:264px;background:var(--bg2);display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid var(--line)}
+.side h2{height:56px;padding:0 18px;display:flex;align-items:center;font-size:15px;font-weight:700;border-bottom:1px solid var(--line)}
+.chs{flex:1;overflow:auto;padding:10px}
+.ch{width:100%;display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:10px;text-align:left;color:var(--mut);margin-bottom:2px}
+.ch img{width:32px;height:32px;border-radius:9px;object-fit:cover}
+.ch b{display:block;font-size:14px;font-weight:600;color:var(--tx)}.ch small{font-size:12px}
+.ch:hover{background:#1a2338}.ch.on{background:#222c4d}
+.me{display:flex;align-items:center;gap:8px;padding:10px;margin:8px;border-radius:14px;background:var(--bg0)}
+.av{position:relative;width:40px;height:40px;flex-shrink:0;border-radius:50%}
+.av img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:var(--bg3)}
+.cam{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;background:#000a;opacity:0;transition:opacity .15s;font-size:13px}
+.av:hover .cam,.av:focus-visible .cam{opacity:1}
+.dot{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;background:var(--ok);border:3px solid var(--bg0)}
+.nm{flex:1;min-width:0}
+.nm input{width:100%;background:transparent;border:1px solid transparent;border-radius:6px;padding:1px 4px;margin-left:-5px;font-weight:600;font-size:14px;text-overflow:ellipsis}
+.nm input:hover{border-color:var(--line)}.nm input:focus{outline:0;border-color:var(--acc);background:var(--bg2)}
+.nm small{display:block;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{width:32px;height:32px;border-radius:8px;color:var(--mut);display:grid;place-items:center;flex-shrink:0}.ib:hover{background:var(--bg3);color:var(--tx)}
+main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg3);position:relative}
+header{height:56px;display:flex;align-items:center;gap:12px;padding:0 14px 0 18px;border-bottom:1px solid var(--line);flex-shrink:0}
+header img{width:24px;height:24px;border-radius:8px;object-fit:cover}
 header b{font-size:15px;white-space:nowrap}
-.hd{color:var(--mute);font-size:13px;padding-left:10px;border-left:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tb{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:10px;background:#3ddc9718;color:var(--ok);font-size:12px;font-weight:700}
-#chat{flex:1;overflow-y:auto;padding:12px 0}
-.m{display:flex;gap:14px;padding:2px 20px}
-.m:hover{background:#ffffff06}
-.m.first{margin-top:16px}
-.m>div{min-width:0}
-.pf{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:none;background:var(--panel)}
-.gut{width:40px;flex:none;font-size:9px;color:var(--mute);opacity:0;text-align:center;padding-top:5px}
-.m:hover .gut{opacity:1}
-.n{font-weight:700;font-size:15px}.ts{font-size:11px;color:var(--mute);margin-left:8px}
-.t{font-size:15px;line-height:1.5;color:#dfe4ff;overflow-wrap:anywhere}
-.pic{display:block;max-width:min(360px,100%);max-height:300px;border-radius:14px;margin:6px 0;border:1px solid var(--line)}
-.empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--mute);font-size:13px;text-align:center;padding:24px}
-.empty img{width:72px;height:72px;border-radius:22px;object-fit:cover;margin-bottom:6px}
-.empty b{color:var(--text);font-size:18px}
-.prev{margin:0 14px 8px;padding:8px;border-radius:14px;background:var(--raise);border:1px solid var(--line);display:flex;align-items:center;gap:10px;font-size:12px}
-.prev img{width:44px;height:44px;border-radius:10px;object-fit:cover}
-.pop{position:absolute;bottom:84px;right:20px;display:flex;gap:4px;padding:8px;border-radius:16px;background:var(--raise);border:1px solid var(--line);box-shadow:0 16px 40px #0009;z-index:5}
-.pop button{font-size:20px;width:38px;height:38px;border-radius:10px}.pop button:hover{background:#ffffff14}
-.bar{margin:0 14px max(14px,env(safe-area-inset-bottom));position:relative;height:56px;border-radius:99px;display:flex;align-items:center;padding:0 12px;gap:6px;overflow:hidden;background:#2a2d36;border:1px solid #3b3f4d;box-shadow:0 8px 24px #0006;flex:none}
-.bar>*{position:relative}
+#chDesc{color:var(--mut);font-size:13px;padding-left:12px;border-left:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+#menuBtn{display:none}
+.term{font:600 12px ui-monospace,monospace;color:var(--ok);padding:6px 10px;border-radius:8px;border:1px solid #3ddc9744;background:#3ddc9712}
+#feed{flex:1;overflow:auto;padding:12px 0}
+.m{display:flex;gap:14px;padding:2px 20px 2px 18px}.m:hover{background:#ffffff08}.m.first{margin-top:14px}
+.m>img{width:40px;height:40px;border-radius:50%;object-fit:cover;margin-top:2px;flex-shrink:0}
+.sp{width:40px;flex-shrink:0;font-size:10px;color:transparent;text-align:right;padding-top:5px}.m:hover .sp{color:var(--mut)}
+.m>div{min-width:0}.h b{font-size:15px;font-weight:600}.h time{font-size:12px;color:var(--mut);margin-left:8px}
+.m p{font-size:15px;line-height:1.45;word-break:break-word;color:#d5dbea;white-space:pre-wrap}
+.pic{max-width:min(380px,100%);max-height:300px;border-radius:12px;margin-top:6px;display:block;border:1px solid var(--line)}
+.empty{height:100%;display:grid;place-content:center;justify-items:center;text-align:center;gap:8px;color:var(--mut);padding:24px;font-size:14px}
+.empty img{width:64px;height:64px;border-radius:18px;object-fit:cover}.empty b{color:var(--tx);font-size:18px}
+.prev{margin:0 16px 8px;padding:8px;display:flex;align-items:center;gap:12px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);font-size:13px}
+.prev img{width:44px;height:44px;border-radius:10px;object-fit:cover}.prev span{flex:1}
+.pop{position:absolute;bottom:84px;right:20px;display:flex;gap:4px;padding:8px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);font-size:22px;z-index:5}
+.pop button{width:38px;height:38px;border-radius:10px}.pop button:hover{background:var(--bg3)}
+.bar{margin:0 16px 16px;position:relative;height:56px;border-radius:28px;overflow:hidden;display:flex;align-items:center;gap:4px;padding:0 10px;background:#2a2d36;border:1px solid #3b3f4d;box-shadow:0 10px 28px #0006;flex-shrink:0}
 .bar>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.9;pointer-events:none}
-.bar .ib{color:#bae6fd}
-#msg{flex:1;min-width:0;font-family:'Single Day',cursive;font-size:17px;font-weight:600;color:#e0f2fe;padding:0 6px}
-#msg::placeholder{color:#7dd3fc99}
-
-/* Modals, toast */
-.modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:#050810cc;backdrop-filter:blur(8px)}
-.sheet{width:100%;max-width:400px;border-radius:24px;background:var(--panel);border:1px solid var(--line);overflow:hidden;box-shadow:0 30px 80px #000a;animation:rise .35s cubic-bezier(.2,.8,.2,1)}
-.banner{height:96px;background:linear-gradient(120deg,#4453d6,#8b6bff 60%,#c58bff);position:relative}
-.pad{padding:0 20px 22px}
-.big{position:relative;width:96px;height:96px;margin-top:-48px}
-.big img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:6px solid var(--panel);background:var(--bg)}
-.cam{position:absolute;right:-2px;bottom:2px;width:34px;height:34px;border-radius:50%;background:var(--acc);color:#0a0e1c;display:grid;place-items:center;border:3px solid var(--panel);cursor:pointer;transition:transform .15s}
-.cam:hover{transform:scale(1.12)}
-.lbl{font-size:12px;font-weight:700;color:var(--mute);margin:14px 0 6px;display:block}
-.term{max-width:520px;height:420px;display:flex;flex-direction:column;padding:16px;background:#070a12;gap:10px}
-#cout{flex:1;overflow-y:auto;white-space:pre-wrap;font:12px/1.6 ui-monospace,monospace;color:var(--ok);background:#04060b;border-radius:12px;padding:12px}
-#cin{font-family:ui-monospace,monospace;font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
-#toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);opacity:0;padding:10px 16px;border-radius:12px;background:var(--raise);border:1px solid var(--line);font-size:13px;transition:.25s;z-index:99;pointer-events:none;max-width:90vw}
-#toast.show{opacity:1;transform:translate(-50%,0)}
-
-@media(max-width:767px){
-.menu{display:grid}.hd{display:none}
-.side{position:fixed;left:72px;top:0;bottom:0;z-index:20;transform:translateX(-130%);transition:transform .3s;box-shadow:20px 0 60px #000a}
-.side.open{transform:none}
-.scrim{position:fixed;inset:0;z-index:15;background:#0009}
+.bar>:not(img){position:relative;z-index:1}
+.bar #msg{flex:1;min-width:0;background:transparent;border:0;outline:0;padding:0 6px;color:#e0f2ff;font:600 17px 'Single Day',cursive}
+.bar #msg::placeholder{color:#7dd3fc99}
+.bar button,.bar label{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:#bae6fd;cursor:pointer;font-size:17px}
+.bar button:hover,.bar label:hover{background:#ffffff1a}
+.modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:#050810cc;backdrop-filter:blur(6px)}
+.card{width:100%;max-width:400px;border-radius:20px;overflow:hidden;background:var(--bg2);border:1px solid var(--line);box-shadow:0 30px 80px #000a;animation:rise .25s ease}
+.ban{height:96px;background:linear-gradient(120deg,#5a49e8,#6c7bff 60%,#46b6ff);position:relative}
+.ban .ib{position:absolute;top:10px;right:10px;background:#0006;color:#fff}
+.body{padding:0 22px 22px}
+.av.big{width:88px;height:88px;margin-top:-44px}.av.big img{border:5px solid var(--bg2)}
+.body label{display:block;margin:16px 0 6px;font-size:13px;font-weight:600;color:var(--mut)}
+.fld{width:100%;height:42px;padding:0 12px;border-radius:10px;background:var(--bg0);border:1px solid var(--line)}.fld:focus{outline:0;border-color:var(--acc)}
+.pri{width:100%;height:44px;margin-top:20px;border-radius:12px;background:var(--acc);font-weight:700;color:#fff}.pri:hover{filter:brightness(1.1)}
+.tcard{max-width:520px;height:26rem;padding:16px;display:flex;flex-direction:column;gap:10px;background:#0a0c10}
+.tcard pre{flex:1;overflow:auto;white-space:pre-wrap;font:12px/1.6 ui-monospace,monospace;color:var(--ok);background:#050608;border-radius:10px;padding:12px}
+.tcard input{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:12px ui-monospace,monospace}.tcard input:focus{outline:0;border-color:var(--ok)}
+#toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);max-width:90vw;padding:11px 18px;border-radius:12px;background:var(--bg2);border:1px solid var(--line);font-size:14px;box-shadow:0 12px 40px #000a;opacity:0;pointer-events:none;transition:opacity .2s;z-index:90}
+#toast.show{opacity:1}#toast.bad{border-color:var(--err)}
+#scrim{position:fixed;inset:0;background:#0009;z-index:19}
+@media(max-width:768px){
+.side{position:fixed;left:72px;top:0;bottom:0;z-index:20;transform:translateX(-130%);transition:transform .25s}.side.open{transform:none}
+#menuBtn{display:grid}#chDesc{display:none}.rail{width:64px}.side{left:64px}header b{flex:1}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -136,91 +110,85 @@ header b{font-size:15px;white-space:nowrap}
 <body>
 
 <section id="auth">
-  <div class="card">
+  <div class="auth-card">
     <div class="mark">SF</div>
-    <h1 id="aTitle">Welcome Back</h1>
+    <div id="lastChip" class="chip hidden"></div>
+    <h1>Welcome Back</h1>
     <p class="sub">Connect with your school network, join groups, and catch up on campus events.</p>
-    <div class="tabs"><button id="tabIn" class="on" type="button">Sign in</button><button id="tabUp" type="button">Create account</button></div>
     <button id="gBtn" class="gbtn" type="button">
-      <svg width="22" height="22" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.4-4.7 7.1l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 010-9.4l-7.9-6.1a24 24 0 000 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.8 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
-      <span>Continue with Google</span>
+      <svg width="28" height="28" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <span id="gLabel">Continue with Google</span>
     </button>
-    <div class="or">or use your email</div>
-    <form id="authForm" novalidate>
-      <div class="field up hidden"><input id="aName" placeholder="Display name" autocomplete="name" maxlength="32"></div>
-      <div class="field"><input id="aEmail" type="email" placeholder="School email" autocomplete="email"></div>
-      <div class="field"><input id="aPass" type="password" placeholder="Password" autocomplete="current-password"><button type="button" class="eye" id="eye" aria-label="Show password"><i class="fa-regular fa-eye"></i></button></div>
-      <div id="forgotRow" style="text-align:right;margin:-2px 0 10px"><button type="button" id="forgot" class="link">Forgot password?</button></div>
-      <button class="pbtn" id="aSubmit">Sign in</button>
-    </form>
-    <p class="status" id="aStatus" role="status"></p>
-    <p class="terms">By continuing, you agree to the Campus Safety Policies.</p>
+    <label class="sw"><input type="checkbox" id="keep" checked/>Stay signed in on this device</label>
+    <p id="authMsg" role="alert"></p>
+    <p class="legal">By continuing, you agree to the <a href="#">Campus Safety Policies</a>.</p>
   </div>
 </section>
 
 <div id="app" class="hidden">
-  <aside class="rail">
-    <button class="home" title="SchoolFriends">SF</button>
-    <div class="sep"></div>
-    <div id="rail"></div>
-  </aside>
-  <div class="scrim hidden" id="scrim"></div>
-  <nav class="side" id="side">
-    <div class="sh"><span>Campus Hub</span><span class="chip off" id="conn">Connecting</span></div>
-    <label class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="chSearch" placeholder="Find a channel"></label>
-    <div class="cat">Channels</div>
-    <div id="chList"></div>
+  <nav class="rail"><div class="mark">SF</div><hr/><div id="rail"></div></nav>
+  <div id="scrim" class="hidden"></div>
+  <aside class="side" id="side">
+    <h2>SchoolFriends</h2>
+    <div class="chs" id="chs"></div>
     <div class="me">
-      <button class="av" data-profile aria-label="Edit profile"><img id="meAv" alt=""><span class="dot"></span></button>
-      <div class="who"><b id="meName"></b><small id="meBio"></small></div>
-      <button class="ib" data-profile title="Edit profile"><i class="fa-solid fa-gear"></i></button>
-      <button class="ib" id="out" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i></button>
+      <button class="av" id="avBtn" title="Change profile picture" aria-label="Change profile picture"><img id="meImg" alt=""/><span class="cam"><i class="fa-solid fa-camera"></i></span><i class="dot"></i></button>
+      <div class="nm"><input id="meName" maxlength="32" aria-label="Display name" title="Click to edit your name"/><small id="meBio"></small></div>
+      <button class="ib" id="profBtn" title="Edit profile" aria-label="Edit profile"><i class="fa-solid fa-gear"></i></button>
+      <button class="ib" id="outBtn" title="Sign out" aria-label="Sign out"><i class="fa-solid fa-right-from-bracket"></i></button>
     </div>
-  </nav>
+  </aside>
 
   <main>
     <header>
-      <button class="ib menu" id="menu" aria-label="Channels"><i class="fa-solid fa-bars"></i></button>
-      <img id="hIcon" alt=""><b id="hTitle"></b><span class="hd" id="hDesc"></span>
-      <span style="flex:1"></span>
-      <button class="tb hidden" id="termBtn"><i class="fa-solid fa-terminal"></i>Terminal</button>
+      <button class="ib" id="menuBtn" aria-label="Open channels"><i class="fa-solid fa-bars"></i></button>
+      <img id="chIcon" alt=""/><b id="chTitle"></b><span id="chDesc"></span>
+      <button id="termBtn" class="term hidden"><i class="fa-solid fa-terminal"></i> Terminal</button>
     </header>
-    <div id="chat"></div>
-    <div class="prev hidden" id="prev"><img id="prevImg" alt=""><span style="flex:1">Image attached</span><button class="ib" id="rmImg" aria-label="Remove image"><i class="fa-solid fa-xmark"></i></button></div>
-    <div class="pop hidden" id="emo"><button>😀</button><button>🔥</button><button>🎮</button><button>❤️</button><button>👍</button></div>
+
+    <div id="feed"></div>
+
+    <div class="prev hidden" id="prev">
+      <img id="prevImg" alt="Attachment"/><span>Image ready to send</span>
+      <button class="ib" id="rmImg" aria-label="Remove image"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="pop hidden" id="pop">
+      <button data-e="😀">😀</button><button data-e="🔥">🔥</button><button data-e="🎮">🎮</button><button data-e="❤️">❤️</button><button data-e="👍">👍</button>
+    </div>
+
     <div class="bar">
-      <img src="1000588477.png" alt="">
-      <label class="ib" title="Attach image" style="cursor:pointer"><i class="fa-solid fa-plus"></i><input type="file" id="imgIn" accept="image/*" hidden></label>
-      <input id="msg" placeholder="Enter Message.." maxlength="500" autocomplete="off">
-      <button class="ib" id="emoBtn" title="Emoji"><i class="fa-regular fa-face-smile"></i></button>
-      <button class="ib" id="send" title="Send"><i class="fa-solid fa-spa"></i></button>
-      <button class="ib" id="mic" title="Voice note"><i class="fa-solid fa-microphone"></i></button>
+      <img src="1000588477.png" alt=""/>
+      <label title="Attach image" aria-label="Attach image"><i class="fa-solid fa-plus"></i><input type="file" id="imgIn" accept="image/*" class="hidden"/></label>
+      <input type="text" id="msg" placeholder="Enter Message.." maxlength="500" autocomplete="off"/>
+      <button id="emojiBtn" type="button" aria-label="Emoji"><i class="fa-regular fa-face-smile"></i></button>
+      <button id="sendBtn" type="button" aria-label="Send message"><i class="fa-solid fa-spa"></i></button>
+      <button id="micBtn" type="button" aria-label="Voice note"><i class="fa-solid fa-microphone"></i></button>
     </div>
   </main>
 </div>
 
-<div class="modal hidden" id="pm">
-  <div class="sheet">
-    <div class="banner"><button class="ib" id="pClose" aria-label="Close" style="position:absolute;right:12px;top:12px;background:#0006;color:#fff"><i class="fa-solid fa-xmark"></i></button></div>
-    <div class="pad">
-      <div class="big"><img id="pAv" alt=""><label class="cam" title="Change photo"><i class="fa-solid fa-camera"></i><input type="file" id="avIn" accept="image/*" hidden></label></div>
-      <form id="pf">
-        <label class="lbl" for="pName">Display name</label>
-        <div class="field"><input id="pName" maxlength="32" required></div>
-        <label class="lbl" for="pBio">About me</label>
-        <div class="field"><input id="pBio" maxlength="80" placeholder="Chilling on campus..."></div>
-        <button class="pbtn" id="pSave">Save changes</button>
-        <p class="status" id="pStat"></p>
-      </form>
-    </div>
+<input type="file" id="avFile" accept="image/*" class="hidden"/>
+
+<div id="profModal" class="modal hidden">
+  <div class="card">
+    <div class="ban"><button class="ib" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+    <form class="body" id="profForm">
+      <button type="button" class="av big" id="bigAv" aria-label="Change profile picture"><img id="bigImg" alt=""/><span class="cam"><i class="fa-solid fa-camera"></i></span></button>
+      <label for="fName">Display name</label>
+      <input class="fld" id="fName" maxlength="32" required/>
+      <label for="fBio">Status</label>
+      <input class="fld" id="fBio" maxlength="80" placeholder="What are you up to?"/>
+      <button class="pri" type="submit">Save changes</button>
+    </form>
   </div>
 </div>
 
-<div class="modal hidden" id="cm">
-  <div class="sheet term">
-    <div style="display:flex;justify-content:space-between;align-items:center;color:var(--ok);font-weight:700;font-size:13px"><span><i class="fa-solid fa-terminal"></i> Admin terminal</span><button class="ib" id="cClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
-    <div id="cout">Type /help for available commands.</div>
-    <input id="cin" placeholder="> Enter command" autocomplete="off">
+<div id="termModal" class="modal hidden">
+  <div class="card tcard">
+    <div style="display:flex;justify-content:space-between;color:var(--ok);font:700 12px ui-monospace,monospace"><span>ADMIN TERMINAL</span><button data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+    <pre id="termOut">Type /help for commands.</pre>
+    <input id="termIn" placeholder="> command" autocomplete="off"/>
   </div>
 </div>
 

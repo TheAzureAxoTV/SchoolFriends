@@ -1,12 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import {
-  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import {
-  getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot,
-  serverTimestamp, doc, setDoc, getDoc
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, orderBy, limitToLast, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+/* ---------- CONFIG ---------- */
+const WORKER_URL = "https://schoolfriends-api.YOUR-SUBDOMAIN.workers.dev"; // your Cloudflare Worker
+const ALLOWED_DOMAIN = "";                                                   // e.g. "myschool.edu" to only allow school accounts
+const OWNER_EMAILS = ["itsazureaxotv@gmail.com"];
 
 const firebaseConfig = {
   apiKey: "AIzaSyBkHqLMsR_UR_NeRaaGb-0c5MRrWzy3w6Y",
@@ -18,370 +17,294 @@ const firebaseConfig = {
   measurementId: "G-P1SRDNQ9PE"
 };
 
-// Your Cloudflare Worker, e.g. "https://schoolfriends-api.yourname.workers.dev".
-// Leave empty to run in direct mode (profiles stored in Firestore).
-const WORKER_URL = "";
-const OWNER_EMAILS = ["itsazureaxotv@gmail.com"];
+const CHANNELS = [
+  { id: "general-chat", name: "General Chat", desc: "Main community chatter", icon: "1000588420.png" },
+  { id: "announcements", name: "Announcements", desc: "Server news and updates", icon: "1000588423.png" },
+  { id: "polls", name: "Polls & Voting", desc: "Community questions and votes", icon: "1000588422.png" }
+];
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: "select_account", ...(ALLOWED_DOMAIN && { hd: ALLOWED_DOMAIN }) });
 
-const channels = [
-  { id: "general-chat", name: "General Chat", desc: "Main community chatter", icon: "1000588420.png" },
-  { id: "announcements", name: "Announcements", desc: "Server news & updates", icon: "1000588423.png" },
-  { id: "polls", name: "Polls & Voting", desc: "Community questions & votes", icon: "1000588422.png" }
-];
-
+/* ---------- HELPERS ---------- */
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[c]);
-const dicebear = (seed) => `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed || "user")}`;
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+const safe = (u) => (/^(https:\/\/|data:image\/)/i.test(u || "") ? esc(u) : "");
+const fallbackAvatar = (seed) => `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
-let currentUser = null, profile = {}, active = "general-chat", unsub = null;
-let msgs = [], img = null, viaWorker = false, pendingName = "", mode = "in", toastTimer;
-const users = {};
+let user = null, me = {}, active = "general-chat", unsub = null, attach = null, toastTimer;
 
-function toast(t) {
-  const el = $("toast");
-  el.textContent = t;
-  el.classList.add("show");
+function toast(msg, bad) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "show" + (bad ? " bad" : "");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
 }
 
-/* ---------- Cloudflare Worker ---------- */
+/* ---------- CLOUDFLARE WORKER API ---------- */
+// Routes expected: GET/PUT /api/me (D1 profile), POST /api/upload?kind=avatar|image (R2)
 async function api(path, opts = {}) {
-  const token = await auth.currentUser.getIdToken();
-  const r = await fetch(WORKER_URL + path, { ...opts, headers: { ...opts.headers, Authorization: `Bearer ${token}` } });
-  if (!r.ok) throw new Error(`Worker returned ${r.status}`);
-  return r.json();
+  const token = await user.getIdToken();
+  const res = await fetch(WORKER_URL + path, { ...opts, headers: { Authorization: `Bearer ${token}`, ...(opts.headers || {}) } });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Server error (${res.status})`);
+  return res.json();
 }
-const json = (method, body) => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
-/* ---------- Auth UI ---------- */
-const ERR = {
-  "auth/invalid-credential": "Wrong email or password.",
-  "auth/email-already-in-use": "That email already has an account. Try signing in.",
-  "auth/weak-password": "Use a password with at least 6 characters.",
-  "auth/invalid-email": "Enter a valid email address.",
-  "auth/popup-closed-by-user": "Sign-in was cancelled.",
-  "auth/too-many-requests": "Too many attempts. Wait a minute and try again.",
-  "auth/operation-not-allowed": "This sign-in method isn't enabled in Firebase yet."
-};
-function say(t, ok) {
-  $("aStatus").textContent = t;
-  $("aStatus").style.color = ok ? "var(--ok)" : "#ffc46b";
-}
-async function busy(btn, fn) {
-  btn.disabled = true;
-  try { await fn(); } catch (e) { console.error(e); say(ERR[e.code] || e.message); }
-  btn.disabled = false;
-}
-function setMode(m) {
-  mode = m;
-  const up = m === "up";
-  $("tabIn").classList.toggle("on", !up);
-  $("tabUp").classList.toggle("on", up);
-  $("aTitle").textContent = up ? "Create your account" : "Welcome Back";
-  $("aSubmit").textContent = up ? "Create account" : "Sign in";
-  document.querySelector(".up").classList.toggle("hidden", !up);
-  $("forgotRow").classList.toggle("hidden", up);
-  $("aPass").autocomplete = up ? "new-password" : "current-password";
-  say("");
-}
-$("tabIn").onclick = () => setMode("in");
-$("tabUp").onclick = () => setMode("up");
-$("gBtn").onclick = () => busy($("gBtn"), () => signInWithPopup(auth, provider));
-$("eye").onclick = () => {
-  const p = $("aPass"), show = p.type === "password";
-  p.type = show ? "text" : "password";
-  $("eye").innerHTML = `<i class="fa-regular fa-eye${show ? "-slash" : ""}"></i>`;
-};
-$("authForm").onsubmit = (e) => {
-  e.preventDefault();
-  const email = $("aEmail").value.trim(), pass = $("aPass").value;
-  if (!email || !pass) return say("Enter your email and password.");
-  busy($("aSubmit"), async () => {
-    if (mode === "up") {
-      pendingName = $("aName").value.trim() || email.split("@")[0];
-      const { user } = await createUserWithEmailAndPassword(auth, email, pass);
-      await updateProfile(user, { displayName: pendingName });
-    } else {
-      await signInWithEmailAndPassword(auth, email, pass);
-    }
+function shrink(file, max) {
+  return new Promise((ok, no) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const r = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement("canvas");
+      c.width = Math.round(img.width * r);
+      c.height = Math.round(img.height * r);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob((b) => (b ? ok(b) : no(new Error("Could not process that image"))), "image/webp", 0.88);
+    };
+    img.onerror = () => no(new Error("That file isn't a valid image"));
+    img.src = url;
   });
-};
-$("forgot").onclick = async () => {
-  const email = $("aEmail").value.trim();
-  if (!email) return say("Type your email first, then tap Forgot password.");
-  try { await sendPasswordResetEmail(auth, email); say("Reset link sent. Check your inbox.", true); }
-  catch (e) { say(ERR[e.code] || e.message); }
-};
-$("out").onclick = () => signOut(auth);
+}
 
-/* ---------- Profile ---------- */
-const defaults = (u) => ({
-  displayName: pendingName || u.displayName || (u.email || "Student").split("@")[0],
-  photoURL: u.photoURL || dicebear(u.uid),
-  bio: "Active Campus Member"
+async function upload(file, kind) {
+  const blob = await shrink(file, kind === "avatar" ? 320 : 1400);
+  const { url } = await api(`/api/upload?kind=${kind}`, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+  return url;
+}
+
+/* ---------- SIGN-IN ---------- */
+const AUTH_ERRORS = {
+  "auth/popup-closed-by-user": "Sign-in was cancelled. Try again when you're ready.",
+  "auth/cancelled-popup-request": "Sign-in was cancelled. Try again when you're ready.",
+  "auth/popup-blocked": "Your browser blocked the Google window. Allow pop-ups for this site and try again.",
+  "auth/network-request-failed": "No connection. Check your internet and try again.",
+  "auth/unauthorized-domain": "This site isn't authorised in Firebase. Add it under Authentication > Settings > Authorised domains."
+};
+
+const last = (() => { try { return JSON.parse(localStorage.getItem("sf_last")); } catch { return null; } })();
+if (last) {
+  $("lastChip").innerHTML = `${safe(last.photo) ? `<img src="${safe(last.photo)}" alt=""/>` : ""}<span>Last signed in as ${esc(last.name)}</span>`;
+  $("lastChip").classList.remove("hidden");
+}
+
+$("gBtn").onclick = async () => {
+  const btn = $("gBtn");
+  btn.disabled = true;
+  $("authMsg").textContent = "";
+  $("gLabel").textContent = "Opening Google…";
+  try {
+    await setPersistence(auth, $("keep").checked ? browserLocalPersistence : browserSessionPersistence);
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    $("authMsg").textContent = AUTH_ERRORS[e.code] || e.message;
+  }
+  btn.disabled = false;
+  $("gLabel").textContent = "Continue with Google";
+};
+
+$("outBtn").onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, async (u) => {
+  if (u && ALLOWED_DOMAIN && !(u.email || "").toLowerCase().endsWith("@" + ALLOWED_DOMAIN)) {
+    $("authMsg").textContent = `Use your @${ALLOWED_DOMAIN} school account to continue.`;
+    return signOut(auth);
+  }
+  user = u;
+  $("auth").classList.toggle("hidden", !!u);
+  $("app").classList.toggle("hidden", !u);
+  if (!u) { unsub?.(); return; }
+  try { localStorage.setItem("sf_last", JSON.stringify({ name: u.displayName || "Student", photo: u.photoURL || "" })); } catch {}
+  $("termBtn").classList.toggle("hidden", !OWNER_EMAILS.includes((u.email || "").toLowerCase()));
+  await loadProfile();
+  openChannel(active);
 });
 
-async function loadProfile(u) {
-  profile = defaults(u);
-  viaWorker = false;
-  if (WORKER_URL) {
-    try {
-      const d = await api("/api/session", json("POST", profile));
-      profile = { ...profile, ...d.profile };
-      viaWorker = true;
-    } catch (e) { console.warn("Worker unreachable, using Firestore:", e); }
+/* ---------- PROFILE ---------- */
+async function loadProfile() {
+  const base = { displayName: user.displayName || "Student", photoURL: user.photoURL || fallbackAvatar(user.uid), bio: "Active campus member" };
+  try {
+    const d = await api("/api/me");
+    me = { displayName: d.displayName || base.displayName, photoURL: d.photoURL || base.photoURL, bio: d.bio || base.bio };
+  } catch (e) {
+    me = base;
+    toast("Profile server unreachable. Showing your Google profile for now.", true);
   }
-  if (!viaWorker) {
-    try {
-      const s = await getDoc(doc(db, "users", u.uid));
-      if (s.exists()) profile = { ...profile, ...s.data() };
-      else await setDoc(doc(db, "users", u.uid), { ...profile, email: u.email, uid: u.uid });
-    } catch (e) { console.warn("Profile sync:", e); }
+  paintMe();
+}
+
+function paintMe() {
+  $("meImg").src = $("bigImg").src = me.photoURL;
+  $("meName").value = $("fName").value = me.displayName;
+  $("meBio").textContent = me.bio;
+  $("fBio").value = me.bio;
+}
+
+async function saveProfile(patch, okMsg) {
+  const prev = me;
+  me = { ...me, ...patch };
+  paintMe();
+  try {
+    await api("/api/me", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(me) });
+    toast(okMsg);
+  } catch (e) {
+    me = prev;
+    paintMe();
+    toast(e.message, true);
   }
-  $("conn").textContent = viaWorker ? "Connected" : "Direct mode";
-  $("conn").classList.toggle("off", !viaWorker);
-  paintProfile();
 }
 
-function paintProfile() {
-  users[currentUser.uid] = profile;
-  $("meAv").src = $("pAv").src = profile.photoURL;
-  $("meName").textContent = profile.displayName;
-  $("meBio").textContent = profile.bio;
-  renderMsgs();
-}
-
-async function saveProfile(patch) {
-  profile = { ...profile, ...patch };
-  paintProfile();
-  if (viaWorker) await api("/api/profile", json("PUT", patch));
-  else await setDoc(doc(db, "users", currentUser.uid), { ...patch, email: currentUser.email, uid: currentUser.uid, updatedAt: serverTimestamp() }, { merge: true });
-}
-
-function resize(file, max, q, square) {
-  return new Promise((res, rej) => {
-    const im = new Image(), url = URL.createObjectURL(file);
-    im.onload = () => {
-      const c = document.createElement("canvas"), g = c.getContext("2d");
-      if (square) {
-        const s = Math.min(im.width, im.height);
-        c.width = c.height = max;
-        g.drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, 0, 0, max, max);
-      } else {
-        const k = Math.min(1, max / Math.max(im.width, im.height));
-        c.width = im.width * k; c.height = im.height * k;
-        g.drawImage(im, 0, 0, c.width, c.height);
-      }
-      URL.revokeObjectURL(url);
-      c.toBlob((b) => (b ? res(b) : rej(new Error("Could not process image"))), "image/jpeg", q);
-    };
-    im.onerror = () => rej(new Error("That file isn't a valid image"));
-    im.src = url;
-  });
-}
-const toDataURL = (b) => new Promise((r) => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
-
-// Instant profile photo: pick a file, it is cropped, uploaded and shown everywhere.
-$("avIn").onchange = async (e) => {
+// Instant avatar: tap the picture, pick a photo, it shows immediately and uploads in the background
+$("avBtn").onclick = $("bigAv").onclick = () => $("avFile").click();
+$("avFile").onchange = async (e) => {
   const f = e.target.files[0];
   e.target.value = "";
   if (!f) return;
+  $("meImg").src = $("bigImg").src = URL.createObjectURL(f);
   try {
-    toast("Uploading photo...");
-    const blob = await resize(f, 256, 0.88, true);
-    $("pAv").src = URL.createObjectURL(blob);
-    const url = viaWorker
-      ? (await api("/api/avatar", { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob })).url
-      : await toDataURL(blob);
-    await saveProfile({ photoURL: url });
-    toast("Profile photo updated");
+    await saveProfile({ photoURL: await upload(f, "avatar") }, "Profile picture updated");
   } catch (err) {
-    console.error(err);
-    toast("Couldn't update photo: " + err.message);
-    paintProfile();
+    paintMe();
+    toast(err.message, true);
   }
 };
 
-const openProfile = () => {
-  $("pName").value = profile.displayName;
-  $("pBio").value = profile.bio;
-  $("pAv").src = profile.photoURL;
-  $("pStat").textContent = "";
-  $("pm").classList.remove("hidden");
+// Instant name edit: click the name in the user panel, type, press Enter
+const commitName = () => {
+  const v = $("meName").value.trim();
+  if (!v) return paintMe();
+  if (v !== me.displayName) saveProfile({ displayName: v }, "Name updated");
 };
-document.querySelectorAll("[data-profile]").forEach((b) => (b.onclick = openProfile));
-$("pClose").onclick = () => $("pm").classList.add("hidden");
-$("pf").onsubmit = async (e) => {
+$("meName").onblur = commitName;
+$("meName").onkeydown = (e) => {
+  if (e.key === "Enter") e.target.blur();
+  if (e.key === "Escape") { paintMe(); e.target.blur(); }
+};
+
+$("profBtn").onclick = () => $("profModal").classList.remove("hidden");
+$("profForm").onsubmit = (e) => {
   e.preventDefault();
-  const displayName = $("pName").value.trim();
-  if (!displayName) return;
-  $("pSave").disabled = true;
-  try {
-    await saveProfile({ displayName, bio: $("pBio").value.trim() || "Active Campus Member" });
-    $("pStat").style.color = "var(--ok)";
-    $("pStat").textContent = "Saved";
-    setTimeout(() => $("pm").classList.add("hidden"), 700);
-  } catch (err) {
-    $("pStat").style.color = "var(--bad)";
-    $("pStat").textContent = "Couldn't save: " + err.message;
-  }
-  $("pSave").disabled = false;
+  saveProfile({ displayName: $("fName").value.trim() || me.displayName, bio: $("fBio").value.trim() || me.bio }, "Profile saved");
+  $("profModal").classList.add("hidden");
 };
 
-/* ---------- Channels ---------- */
-function paintChannels() {
-  const f = $("chSearch").value.toLowerCase();
-  $("rail").innerHTML = channels.map((c) => `<div class="srvw ${c.id === active ? "on" : ""}"><button class="srv ${c.id === active ? "on" : ""}" data-ch="${c.id}" title="${c.name}"><img src="${c.icon}" alt="${c.name}"></button></div>`).join("");
-  $("chList").innerHTML = channels.filter((c) => (c.name + c.desc).toLowerCase().includes(f)).map((c) => `<button class="ch ${c.id === active ? "on" : ""}" data-ch="${c.id}"><img src="${c.icon}" alt=""><span><b>${c.name}</b><small>${c.desc}</small></span></button>`).join("");
+document.querySelectorAll(".modal").forEach((m) =>
+  m.addEventListener("click", (e) => { if (e.target === m || e.target.closest("[data-close]")) m.classList.add("hidden"); })
+);
+
+/* ---------- CHANNELS ---------- */
+function renderNav() {
+  $("rail").innerHTML = CHANNELS.map((c) => `<button class="srv ${c.id === active ? "on" : ""}" data-ch="${c.id}" title="${c.name}"><img src="${c.icon}" alt="${c.name}"/></button>`).join("");
+  $("chs").innerHTML = CHANNELS.map((c) => `<button class="ch ${c.id === active ? "on" : ""}" data-ch="${c.id}"><img src="${c.icon}" alt=""/><span><b>${c.name}</b><small>${c.desc}</small></span></button>`).join("");
 }
-$("chSearch").oninput = paintChannels;
 document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-ch]");
   if (b) openChannel(b.dataset.ch);
 });
 
+const openDrawer = () => { $("side").classList.add("open"); $("scrim").classList.remove("hidden"); };
+const closeDrawer = () => { $("side").classList.remove("open"); $("scrim").classList.add("hidden"); };
+$("menuBtn").onclick = openDrawer;
+$("scrim").onclick = closeDrawer;
+
+/* ---------- MESSAGES (Firebase) ---------- */
 function openChannel(id) {
   active = id;
-  const c = channels.find((x) => x.id === id) || channels[0];
-  $("hTitle").textContent = c.name;
-  $("hDesc").textContent = c.desc;
-  $("hIcon").src = c.icon;
-  paintChannels();
-  drawer(false);
+  const c = CHANNELS.find((x) => x.id === id) || CHANNELS[0];
+  $("chTitle").textContent = c.name;
+  $("chDesc").textContent = c.desc;
+  $("chIcon").src = c.icon;
+  renderNav();
+  closeDrawer();
   unsub?.();
-  msgs = [];
-  $("chat").innerHTML = `<div class="empty"><i class="fa-solid fa-circle-notch fa-spin"></i></div>`;
+  $("feed").innerHTML = `<div class="empty"><i class="fa-solid fa-circle-notch fa-spin"></i></div>`;
+
+  let first = true;
   unsub = onSnapshot(
-    query(collection(db, "channels", id, "messages"), orderBy("createdAt", "desc"), limit(100)),
+    query(collection(db, "channels", c.id, "messages"), orderBy("createdAt", "asc"), limitToLast(150)),
     (snap) => {
-      msgs = snap.docs.map((d) => d.data()).reverse();
-      msgs.forEach((m) => who(m.uid));
-      renderMsgs();
+      const feed = $("feed");
+      if (snap.empty) {
+        feed.innerHTML = `<div class="empty"><img src="${c.icon}" alt=""/><b>Welcome to ${c.name}</b><span>${c.desc}. Send the first message.</span></div>`;
+        return;
+      }
+      const stick = first || feed.scrollHeight - feed.scrollTop - feed.clientHeight < 200;
+      let prev = null, html = "";
+      snap.forEach((d) => {
+        const m = d.data(), t = m.createdAt?.toDate?.() || null;
+        const time = t ? t.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "Sending…";
+        const grouped = prev && prev.uid === m.uid && t && prev.t && t - prev.t < 3e5;
+        const name = esc(m.userName || "Student");
+        const img = safe(m.image);
+        const body = (m.text ? `<p>${esc(m.text)}</p>` : "") + (img ? `<img class="pic" src="${img}" alt="Attachment" loading="lazy"/>` : "");
+        html += grouped
+          ? `<div class="m"><span class="sp">${time}</span><div>${body}</div></div>`
+          : `<div class="m first"><img src="${safe(m.photoURL) || fallbackAvatar(m.uid || name)}" alt=""/><div><div class="h"><b>${name}</b><time>${time}</time></div>${body}</div></div>`;
+        prev = { uid: m.uid, t };
+      });
+      feed.innerHTML = html;
+      if (stick) feed.scrollTop = feed.scrollHeight;
+      first = false;
     },
-    (err) => {
-      console.error(err);
-      $("chat").innerHTML = `<div class="empty">Can't load messages. Check that your Firestore rules allow signed-in reads.</div>`;
-    }
+    () => { $("feed").innerHTML = `<div class="empty"><b>Can't load messages</b><span>Check your Firestore security rules allow signed-in reads.</span></div>`; }
   );
 }
 
-async function who(uid) {
-  if (!uid || users[uid]) return;
-  users[uid] = {};
-  try {
-    const s = await getDoc(doc(db, "users", uid));
-    if (s.exists()) { users[uid] = s.data(); renderMsgs(); }
-  } catch { /* profile doc not readable; message data is used instead */ }
-}
-
-function renderMsgs() {
-  const box = $("chat");
-  if (!currentUser || $("app").classList.contains("hidden") && !msgs.length) return;
-  if (!msgs.length) {
-    const c = channels.find((x) => x.id === active) || channels[0];
-    box.innerHTML = `<div class="empty"><img src="${c.icon}" alt=""><b>Welcome to ${c.name}</b><span>${c.desc}</span></div>`;
-    return;
-  }
-  let prev = null;
-  box.innerHTML = msgs.map((m) => {
-    const t = m.createdAt?.toDate?.(), ms = t ? +t : Date.now();
-    const first = !prev || prev.uid !== m.uid || ms - prev.ms > 3e5;
-    prev = { uid: m.uid, ms };
-    const u = users[m.uid] || {};
-    const name = esc(u.displayName || m.userName || "Student");
-    const av = esc(u.photoURL || m.photoURL || dicebear(m.uid));
-    const time = t ? t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Now";
-    const body = (m.image ? `<img class="pic" src="${esc(m.image)}" alt="">` : "") + (m.text ? `<div class="t">${esc(m.text)}</div>` : "");
-    return first
-      ? `<div class="m first"><img class="pf" src="${av}" alt=""><div><div><span class="n">${name}</span><span class="ts">${time}</span></div>${body}</div></div>`
-      : `<div class="m"><span class="gut">${time}</span><div>${body}</div></div>`;
-  }).join("");
-  box.scrollTop = box.scrollHeight;
-}
-
-/* ---------- Composer ---------- */
 async function send() {
   const text = $("msg").value.trim();
-  if ((!text && !img) || !currentUser) return;
-  const m = { uid: currentUser.uid, userName: profile.displayName, text, image: img, createdAt: serverTimestamp() };
-  if (/^https?:/.test(profile.photoURL)) m.photoURL = profile.photoURL;
-  $("msg").value = "";
-  clearImg();
-  $("emo").classList.add("hidden");
-  try { await addDoc(collection(db, "channels", active, "messages"), m); }
-  catch (e) { console.error(e); toast("Message not sent: " + e.message); }
-}
-$("send").onclick = send;
-$("msg").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
-$("emoBtn").onclick = () => $("emo").classList.toggle("hidden");
-$("emo").onclick = (e) => {
-  if (e.target.tagName === "BUTTON") { $("msg").value += e.target.textContent; $("msg").focus(); }
-};
-$("mic").onclick = () => toast("Voice notes are coming soon.");
-
-$("imgIn").onchange = async (e) => {
-  const f = e.target.files[0];
-  e.target.value = "";
-  if (!f) return;
+  if ((!text && !attach) || !user) return;
+  $("sendBtn").disabled = true;
   try {
-    img = await toDataURL(await resize(f, 1280, 0.8, false));
-    $("prevImg").src = img;
-    $("prev").classList.remove("hidden");
-  } catch (err) { toast(err.message); }
-};
-function clearImg() { img = null; $("prev").classList.add("hidden"); $("prevImg").src = ""; }
-$("rmImg").onclick = clearImg;
-
-/* ---------- Drawer, terminal, shortcuts ---------- */
-function drawer(open) {
-  $("side").classList.toggle("open", open);
-  $("scrim").classList.toggle("hidden", !open);
-}
-$("menu").onclick = () => drawer(true);
-$("scrim").onclick = () => drawer(false);
-
-$("pm").onclick = (e) => { if (e.target.id === "pm") e.target.classList.add("hidden"); };
-$("cm").onclick = (e) => { if (e.target.id === "cm") e.target.classList.add("hidden"); };
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { $("pm").classList.add("hidden"); $("cm").classList.add("hidden"); }
-});
-
-$("termBtn").onclick = () => $("cm").classList.remove("hidden");
-$("cClose").onclick = () => $("cm").classList.add("hidden");
-const out = (t) => { $("cout").textContent += "\n" + t; $("cout").scrollTop = $("cout").scrollHeight; };
-$("cin").onkeydown = (e) => {
-  if (e.key !== "Enter") return;
-  const cmd = $("cin").value.trim();
-  $("cin").value = "";
-  if (!cmd) return;
-  out("> " + cmd);
-  if (cmd === "/help") out("/clear  /status  /channel  /worker");
-  else if (cmd === "/clear") $("cout").textContent = "Type /help for available commands.";
-  else if (cmd === "/status") out("Signed in as " + (currentUser?.email || "none"));
-  else if (cmd === "/channel") out("Active channel: " + active);
-  else if (cmd === "/worker") out(viaWorker ? "Worker connected: " + WORKER_URL : "Direct mode (Worker not set or unreachable)");
-  else out("Unknown command. Type /help.");
-};
-
-/* ---------- Session ---------- */
-onAuthStateChanged(auth, async (u) => {
-  currentUser = u;
-  if (!u) {
-    unsub?.();
-    $("aPass").value = "";
-    $("auth").classList.remove("hidden");
-    $("app").classList.add("hidden");
-    return;
+    const image = attach ? await upload(attach, "image") : null;
+    await addDoc(collection(db, "channels", active, "messages"), {
+      uid: user.uid, userName: me.displayName, photoURL: me.photoURL, text, image, createdAt: serverTimestamp()
+    });
+    $("msg").value = "";
+    clearAttach();
+    $("pop").classList.add("hidden");
+  } catch (e) {
+    toast(e.message || "Message failed to send", true);
   }
-  await loadProfile(u);
-  $("auth").classList.add("hidden");
-  $("app").classList.remove("hidden");
-  $("termBtn").classList.toggle("hidden", !OWNER_EMAILS.includes((u.email || "").toLowerCase()));
-  openChannel(active);
-});
+  $("sendBtn").disabled = false;
+}
+$("sendBtn").onclick = send;
+$("msg").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
+
+$("imgIn").onchange = (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  if (f.size > 15e6) { e.target.value = ""; return toast("Choose an image under 15 MB.", true); }
+  attach = f;
+  $("prevImg").src = URL.createObjectURL(f);
+  $("prev").classList.remove("hidden");
+};
+function clearAttach() { attach = null; $("imgIn").value = ""; $("prev").classList.add("hidden"); }
+$("rmImg").onclick = clearAttach;
+
+$("emojiBtn").onclick = () => $("pop").classList.toggle("hidden");
+$("pop").onclick = (e) => { const em = e.target.closest("[data-e]"); if (em) { $("msg").value += em.dataset.e; $("msg").focus(); } };
+$("micBtn").onclick = () => toast("Voice notes are coming soon.");
+
+/* ---------- ADMIN TERMINAL ---------- */
+const out = $("termOut");
+const say = (s) => { out.textContent += "\n" + s; out.scrollTop = out.scrollHeight; };
+$("termBtn").onclick = () => $("termModal").classList.remove("hidden");
+$("termIn").onkeydown = async (e) => {
+  if (e.key !== "Enter") return;
+  const c = e.target.value.trim();
+  e.target.value = "";
+  if (!c) return;
+  say("> " + c);
+  if (c === "/help") say("/clear  /status  /channel  /ping");
+  else if (c === "/clear") out.textContent = "";
+  else if (c === "/status") say(`Signed in as ${user.email}`);
+  else if (c === "/channel") say(`Active channel: ${active}`);
+  else if (c === "/ping") {
+    const t = performance.now();
+    try { await api("/api/me"); say(`Worker OK in ${Math.round(performance.now() - t)} ms`); }
+    catch (err) { say("Worker error: " + err.message); }
+  } else say(`Unknown command: ${c}. Type /help.`);
+};
