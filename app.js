@@ -2,6 +2,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, query, orderBy, limitToLast, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+window.__sfReady = true;
+
 /* ---------- CONFIG ---------- */
 const WORKER_URL = "https://schoolfriends-api.mukhopadhyaysudip3.workers.dev"; // your Cloudflare Worker
 const ALLOWED_DOMAIN = "";                                                   // e.g. "myschool.edu" to only allow school accounts
@@ -94,16 +96,20 @@ if (last) {
   $("lastChip").classList.remove("hidden");
 }
 
+const applyPersistence = () => setPersistence(auth, $("keep").checked ? browserLocalPersistence : browserSessionPersistence).catch(() => {});
+applyPersistence();
+$("keep").onchange = applyPersistence;
+
 $("gBtn").onclick = async () => {
   const btn = $("gBtn");
   btn.disabled = true;
   $("authMsg").textContent = "";
   $("gLabel").textContent = "Opening Google…";
   try {
-    await setPersistence(auth, $("keep").checked ? browserLocalPersistence : browserSessionPersistence);
-    await signInWithPopup(auth, provider);
+    await signInWithPopup(auth, provider); // must open straight from the tap
   } catch (e) {
-    $("authMsg").textContent = AUTH_ERRORS[e.code] || e.message;
+    console.error("Sign-in failed", e);
+    $("authMsg").textContent = AUTH_ERRORS[e.code] || `Sign-in failed (${e.code || e.message}). Please try again.`;
   }
   btn.disabled = false;
   $("gLabel").textContent = "Continue with Google";
@@ -347,4 +353,4 @@ $("termIn").onkeydown = async (e) => {
     catch (err) { say("Worker error: " + err.message); }
   } else say(`Unknown command: ${c}. Type /help.`);
 };
-    
+   
