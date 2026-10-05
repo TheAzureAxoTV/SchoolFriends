@@ -133,6 +133,41 @@ header b{font-size:15px;white-space:nowrap}
 .bar #sendBtn:hover:not(:disabled){background:linear-gradient(135deg,#6c7bff,#46b6ff);transform:rotate(-14deg) scale(1.1);filter:brightness(1.1)}
 .bar #sendBtn:disabled{filter:grayscale(1);opacity:.5}
 .fld:focus{box-shadow:0 0 0 3px #6c7bff33}
+/* ---- modern glass look ---- */
+body{background:radial-gradient(900px 600px at 8% -10%,#4a35d055,transparent 60%),radial-gradient(800px 600px at 98% 8%,#1b8fd44d,transparent 55%),radial-gradient(700px 500px at 50% 115%,#0fb98a33,transparent 60%),#080b16}
+#auth{background:radial-gradient(900px 600px at 20% -10%,#4a35d066,transparent 60%),radial-gradient(800px 600px at 90% 10%,#1b8fd44d,transparent 55%),#090d1a}
+.auth-card h1{background:linear-gradient(180deg,#fff,#a9b4d6);-webkit-background-clip:text;background-clip:text;color:transparent}
+#app{padding:10px;gap:10px}
+.rail,.side,main{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:26px;box-shadow:0 20px 50px #0005;overflow:hidden}
+.rail{width:68px;padding:14px 0}
+.rail .mark{box-shadow:0 8px 24px #6c7bff66}
+.side{width:260px}.side h2,header{border-color:rgba(255,255,255,.07)}
+.side h2{font-size:16px;letter-spacing:-.01em}
+.ch{border-radius:16px;padding:10px 12px}.ch:hover{background:rgba(255,255,255,.06)}
+.ch.on{background:linear-gradient(135deg,#6c7bff33,#46b6ff1f);box-shadow:inset 0 0 0 1px #6c7bff55}
+.me{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:18px}
+header{height:66px}header b{font-size:17px;font-weight:700;letter-spacing:-.01em}header img{width:30px;height:30px;border-radius:10px}
+#feed{padding:18px 0 8px}
+.m{gap:10px;padding:2px 18px}.m:hover{background:none}.m.first{margin-top:16px}
+.m>img{width:38px;height:38px;box-shadow:0 0 0 2px #ffffff14}
+.m>div:not(.tb){align-self:flex-start;max-width:min(80%,540px);padding:9px 14px 10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);border-radius:6px 20px 20px 20px}
+.m.mine{flex-direction:row-reverse}
+.m.mine>div:not(.tb){background:linear-gradient(135deg,#6c7bff,#5a49e8);border-color:transparent;border-radius:20px 6px 20px 20px;box-shadow:0 8px 24px #5a49e84d}
+.m.mine .h b,.m.mine .h .role{display:none}.m.mine .h time{margin:0;color:#ffffffb3}
+.m.mine p{color:#fff}.m.mine .rq{color:#ffffffcc;border-color:#fff9}.m.mine .rq b{color:#fff}.m.mine .tb{right:auto;left:16px}
+.sp{font-size:0}.m.mine>img,.m.mine .sp{display:none}
+.bar{margin:0 14px 14px;height:60px;border-radius:30px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);box-shadow:0 18px 40px #0006;transition:border-color .2s,box-shadow .2s}
+.bar:focus-within{border-color:#6c7bff88;box-shadow:0 0 0 4px #6c7bff22,0 18px 40px #0006}
+.bar #msg{font:500 16px Inter,sans-serif;color:var(--tx)}.bar #msg::placeholder{color:var(--mut)}
+.bar button,.bar label{color:var(--mut)}.bar button:hover,.bar label:hover{color:#fff}
+.bar #sendBtn{color:#fff;width:42px;height:42px}
+.card{border-radius:26px}
+@media(max-width:768px){
+#app{padding:8px;gap:8px}.rail{width:58px;border-radius:22px}.rail .mark{width:42px;height:42px}.srv{width:42px;height:42px}
+.side{left:74px;top:8px;bottom:8px;background:#10152b;border-radius:24px}
+.m>div:not(.tb){max-width:86%}header{height:60px}
+.term{font-size:0;padding:7px 9px}.term i{font-size:14px}
+}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -188,41 +223,4 @@ header b{font-size:15px;white-space:nowrap}
     </div>
 
     <div class="bar">
-      <label title="Attach image" aria-label="Attach image"><i class="fa-solid fa-plus"></i><input type="file" id="imgIn" accept="image/*" class="hidden"/></label>
-      <input type="text" id="msg" placeholder="Message" maxlength="340" autocomplete="off"/>
-      <button id="emojiBtn" type="button" aria-label="Emoji"><i class="fa-regular fa-face-smile"></i></button>
-      <button id="sendBtn" type="button" aria-label="Send message"><i class="fa-solid fa-spa"></i></button>
-      <button id="micBtn" type="button" aria-label="Voice note"><i class="fa-solid fa-microphone"></i></button>
-    </div>
-  </main>
-</div>
-
-<input type="file" id="avFile" accept="image/*" class="hidden"/>
-
-<div id="profModal" class="modal hidden">
-  <div class="card">
-    <div class="ban"><button class="ib" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
-    <form class="body" id="profForm">
-      <button type="button" class="av big" id="bigAv" aria-label="Change profile picture"><img id="bigImg" alt=""/><span class="cam"><i class="fa-solid fa-camera"></i></span></button>
-      <label for="fName">Display name</label>
-      <input class="fld" id="fName" maxlength="32" required/>
-      <label for="fBio">Status</label>
-      <input class="fld" id="fBio" maxlength="80" placeholder="What are you up to?"/>
-      <button class="pri" type="submit">Save changes</button>
-    </form>
-  </div>
-</div>
-
-<div id="termModal" class="modal hidden">
-  <div class="card tcard">
-    <div style="display:flex;justify-content:space-between;color:var(--ok);font:700 12px ui-monospace,monospace"><span>ADMIN TERMINAL</span><button data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
-    <pre id="termOut">Type /help for commands.</pre>
-    <input id="termIn" placeholder="> command" autocomplete="off"/>
-  </div>
-</div>
-
-<div id="toast" role="status"></div>
-<script type="module" src="app.js"></script>
-</body>
-                                                                                                                                                                                 </html>
-  
+      <label 
