@@ -16,10 +16,11 @@ const firebaseConfig = {
   measurementId: "G-P1SRDNQ9PE"
 };
 
+const tile = (c1, c2, g) => "data:image/svg+xml," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/></linearGradient></defs><rect width='64' height='64' fill='url(#g)'/><text x='32' y='45' font-size='36' font-weight='700' text-anchor='middle' fill='white' font-family='Arial,sans-serif'>${g}</text></svg>`);
 const CHANNELS = [
-  { id: "general-chat", name: "General Chat", desc: "Main community chatter", icon: "1000588420.png" },
-  { id: "announcements", name: "Announcements", desc: "Server news and updates", icon: "1000588423.png" },
-  { id: "polls", name: "Polls & Voting", desc: "Community questions and votes", icon: "1000588422.png" }
+  { id: "general-chat", name: "General Chat", desc: "Main community chatter", icon: tile("#6c7bff", "#4b3fd6", "#") },
+  { id: "announcements", name: "Announcements", desc: "Server news and updates", icon: tile("#ff8a5c", "#e0455f", "!") },
+  { id: "polls", name: "Polls & Voting", desc: "Community questions and votes", icon: tile("#2fd6a0", "#1b9ac4", "✓") }
 ];
 
 const app = initializeApp(firebaseConfig);
@@ -200,7 +201,7 @@ document.querySelectorAll(".modal").forEach((m) =>
 
 /* ---------- CHANNELS ---------- */
 function renderNav() {
-  $("rail").innerHTML = CHANNELS.map((c) => `<button class="srv ${c.id === active ? "on" : ""}" data-ch="${c.id}" title="${c.name}"><img src="${c.icon}" alt="${c.name}"/></button>`).join("");
+  $("rail").innerHTML = CHANNELS.map((c) => `<button class="srv ${c.id === active ? "on" : ""}" data-ch="${c.id}" data-tip="${c.name}" aria-label="${c.name}"><img src="${c.icon}" alt=""/></button>`).join("");
   $("chs").innerHTML = CHANNELS.map((c) => `<button class="ch ${c.id === active ? "on" : ""}" data-ch="${c.id}"><img src="${c.icon}" alt=""/><span><b>${c.name}</b><small>${c.desc}</small></span></button>`).join("");
 }
 document.addEventListener("click", (e) => {
@@ -224,7 +225,7 @@ function openChannel(id) {
   closeDrawer();
   unsub?.();
   cancelBar();
-  $("feed").innerHTML = `<div class="empty"><i class="fa-solid fa-circle-notch fa-spin"></i></div>`;
+  $("feed").innerHTML = `<div class="empty"><div class="dots"><i></i><i></i><i></i></div></div>`;
 
   let first = true;
   unsub = onSnapshot(
