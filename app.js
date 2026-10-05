@@ -1,11 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, orderBy, limitToLast, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, limitToLast, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 /* ---------- CONFIG ---------- */
-const WORKER_URL = "https://schoolfriends-api.YOUR-SUBDOMAIN.workers.dev"; // your Cloudflare Worker
+const WORKER_URL = "https://schoolfriends-api.mukhopadhyaysudip3.workers.dev"; // your Cloudflare Worker
 const ALLOWED_DOMAIN = "";                                                   // e.g. "myschool.edu" to only allow school accounts
-const OWNER_EMAILS = ["itsazureaxotv@gmail.com"];
 
 const firebaseConfig = {
   apiKey: "AIzaSyBkHqLMsR_UR_NeRaaGb-0c5MRrWzy3w6Y",
@@ -30,12 +29,14 @@ const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: "select_account", ...(ALLOWED_DOMAIN && { hd: ALLOWED_DOMAIN }) });
 
 /* ---------- HELPERS ---------- */
+const RANK = { student: 0, mod: 1, admin: 2, owner: 3 };
+const j = (method, body) => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
 const safe = (u) => (/^(https:\/\/|data:image\/)/i.test(u || "") ? esc(u) : "");
 const fallbackAvatar = (seed) => `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
-let user = null, me = {}, active = "general-chat", unsub = null, attach = null, toastTimer;
+let user = null, me = {}, active = "general-chat", unsub = null, attach = null, toastTimer, replyTo = null, editId = null, selId = null, msgs = {};
 
 function toast(msg, bad) {
   const t = $("toast");
@@ -63,7 +64,8 @@ function shrink(file, max) {
       c.height = Math.round(img.height * r);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
       URL.revokeObjectURL(url);
-      c.toBlob((b) => (b ? ok(b) : no(new Error("Could not process that image"))), "image/webp", 0.88);
+      const enc = (q) => c.toBlob((b) => (!b ? no(new Error("Could not process that image")) : b.size > 450e3 && q > 0.3 ? enc(q - 0.15) : ok(b)), "image/webp", q);
+      enc(0.8);
     };
     img.onerror = () => no(new Error("That file isn't a valid image"));
     img.src = url;
@@ -71,7 +73,7 @@ function shrink(file, max) {
 }
 
 async function upload(file, kind) {
-  const blob = await shrink(file, kind === "avatar" ? 320 : 1400);
+  const blob = await shrink(file, kind === "avatar" ? 320 : 1280);
   const { url } = await api(`/api/upload?kind=${kind}`, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
   return url;
 }
@@ -118,17 +120,17 @@ onAuthStateChanged(auth, async (u) => {
   $("app").classList.toggle("hidden", !u);
   if (!u) { unsub?.(); return; }
   try { localStorage.setItem("sf_last", JSON.stringify({ name: u.displayName || "Student", photo: u.photoURL || "" })); } catch {}
-  $("termBtn").classList.toggle("hidden", !OWNER_EMAILS.includes((u.email || "").toLowerCase()));
   await loadProfile();
+  $("termBtn").classList.toggle("hidden", RANK[me.role] < 2);
   openChannel(active);
 });
 
 /* ---------- PROFILE ---------- */
 async function loadProfile() {
-  const base = { displayName: user.displayName || "Student", photoURL: user.photoURL || fallbackAvatar(user.uid), bio: "Active campus member" };
+  const base = { displayName: user.displayName || "Student", photoURL: user.photoURL || fallbackAvatar(user.uid), bio: "Active campus member", role: "student" };
   try {
     const d = await api("/api/me");
-    me = { displayName: d.displayName || base.displayName, photoURL: d.photoURL || base.photoURL, bio: d.bio || base.bio };
+    me = { displayName: d.displayName || base.displayName, photoURL: d.photoURL || base.photoURL, bio: d.bio || base.bio, role: d.role || "student" };
   } catch (e) {
     me = base;
     toast("Profile server unreachable. Showing your Google profile for now.", true);
@@ -163,6 +165,7 @@ $("avFile").onchange = async (e) => {
   const f = e.target.files[0];
   e.target.value = "";
   if (!f) return;
+  if (f.size > 5e6) return toast("Profile pictures can be up to 5 MB.", true);
   $("meImg").src = $("bigImg").src = URL.createObjectURL(f);
   try {
     await saveProfile({ photoURL: await upload(f, "avatar") }, "Profile picture updated");
@@ -220,6 +223,7 @@ function openChannel(id) {
   renderNav();
   closeDrawer();
   unsub?.();
+  cancelBar();
   $("feed").innerHTML = `<div class="empty"><i class="fa-solid fa-circle-notch fa-spin"></i></div>`;
 
   let first = true;
@@ -232,17 +236,22 @@ function openChannel(id) {
         return;
       }
       const stick = first || feed.scrollHeight - feed.scrollTop - feed.clientHeight < 200;
-      let prev = null, html = "";
+      let prev = null, html = ""; msgs = {};
       snap.forEach((d) => {
-        const m = d.data(), t = m.createdAt?.toDate?.() || null;
+        const m = d.data(), t = m.createdAt?.toDate?.() || null; msgs[d.id] = m;
         const time = t ? t.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "Sending…";
         const grouped = prev && prev.uid === m.uid && t && prev.t && t - prev.t < 3e5;
         const name = esc(m.userName || "Student");
         const img = safe(m.image);
-        const body = (m.text ? `<p>${esc(m.text)}</p>` : "") + (img ? `<img class="pic" src="${img}" alt="Attachment" loading="lazy"/>` : "");
+        const mine = m.uid === user.uid, can = mine || (RANK[me.role] >= 1 && RANK[me.role] >= (RANK[m.role] || 0));
+        const rp = m.replyTo ? `<div class="rp"><i class="fa-solid fa-reply"></i><b>${esc(m.replyTo.name)}</b> ${esc(m.replyTo.text)}</div>` : "";
+        const body = rp + (m.text ? `<p>${esc(m.text)}${m.edited ? ` <small class="ed">(edited)</small>` : ""}</p>` : "") + (img ? `<img class="pic" src="${img}" alt="Attachment" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('i'),{textContent:'Image removed'}))"/>` : "");
+        const tb = `<div class="tb"><button data-act="reply" title="Reply" aria-label="Reply"><i class="fa-solid fa-reply"></i></button>${mine && m.text ? `<button data-act="edit" title="Edit" aria-label="Edit"><i class="fa-solid fa-pen"></i></button>` : ""}${can ? `<button data-act="del" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>` : ""}</div>`;
+        const badge = m.role && m.role !== "student" ? `<em class="rb ${esc(m.role)}">${esc(m.role)}</em>` : "";
+        const cls = "m" + (grouped ? "" : " first") + (selId === d.id ? " sel" : "");
         html += grouped
-          ? `<div class="m"><span class="sp">${time}</span><div>${body}</div></div>`
-          : `<div class="m first"><img src="${safe(m.photoURL) || fallbackAvatar(m.uid || name)}" alt=""/><div><div class="h"><b>${name}</b><time>${time}</time></div>${body}</div></div>`;
+          ? `<div class="${cls}" data-id="${d.id}"><span class="sp">${time}</span><div>${body}</div>${tb}</div>`
+          : `<div class="${cls}" data-id="${d.id}"><img src="${safe(m.photoURL) || fallbackAvatar(m.uid || name)}" alt=""/><div><div class="h"><b>${name}</b>${badge}<time>${time}</time></div>${body}</div>${tb}</div>`;
         prev = { uid: m.uid, t };
       });
       feed.innerHTML = html;
@@ -258,11 +267,13 @@ async function send() {
   if ((!text && !attach) || !user) return;
   $("sendBtn").disabled = true;
   try {
-    const image = attach ? await upload(attach, "image") : null;
-    await addDoc(collection(db, "channels", active, "messages"), {
-      uid: user.uid, userName: me.displayName, photoURL: me.photoURL, text, image, createdAt: serverTimestamp()
-    });
+    if (editId) await api("/api/messages", j("PUT", { channel: active, id: editId, text }));
+    else {
+      const image = attach ? await upload(attach, "image") : null;
+      await api("/api/messages", j("POST", { channel: active, text, image, replyTo: replyTo?.id }));
+    }
     $("msg").value = "";
+    clearBar();
     clearAttach();
     $("pop").classList.add("hidden");
   } catch (e) {
@@ -276,13 +287,36 @@ $("msg").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventD
 $("imgIn").onchange = (e) => {
   const f = e.target.files[0];
   if (!f) return;
-  if (f.size > 15e6) { e.target.value = ""; return toast("Choose an image under 15 MB.", true); }
+  if (f.size > 10e6) { e.target.value = ""; return toast("Choose an image under 10 MB.", true); }
   attach = f;
   $("prevImg").src = URL.createObjectURL(f);
   $("prev").classList.remove("hidden");
 };
 function clearAttach() { attach = null; $("imgIn").value = ""; $("prev").classList.add("hidden"); }
 $("rmImg").onclick = clearAttach;
+
+/* ---------- REPLY / EDIT / DELETE ---------- */
+function showBar(t) { $("rtxt").textContent = t; $("rbar").classList.remove("hidden"); }
+function clearBar() { replyTo = editId = null; $("rbar").classList.add("hidden"); }
+function cancelBar() { if (editId) $("msg").value = ""; clearBar(); }
+$("rmReply").onclick = cancelBar;
+$("feed").onclick = async (e) => {
+  const row = e.target.closest(".m");
+  if (!row) return;
+  const id = row.dataset.id, m = msgs[id], act = e.target.closest("[data-act]")?.dataset.act;
+  if (!m) return;
+  if (!act) {
+    selId = selId === id ? null : id;
+    document.querySelectorAll(".m.sel").forEach((x) => x.classList.remove("sel"));
+    if (selId) row.classList.add("sel");
+  } else if (act === "reply") {
+    editId = null; replyTo = { id }; showBar(`Replying to ${m.userName || "Student"}`); $("msg").focus();
+  } else if (act === "edit") {
+    replyTo = null; editId = id; $("msg").value = m.text; showBar("Editing message"); $("msg").focus();
+  } else if (act === "del" && confirm("Delete this message?")) {
+    try { await api("/api/messages", j("DELETE", { channel: active, id })); } catch (err) { toast(err.message, true); }
+  }
+};
 
 $("emojiBtn").onclick = () => $("pop").classList.toggle("hidden");
 $("pop").onclick = (e) => { const em = e.target.closest("[data-e]"); if (em) { $("msg").value += em.dataset.e; $("msg").focus(); } };
@@ -298,13 +332,18 @@ $("termIn").onkeydown = async (e) => {
   e.target.value = "";
   if (!c) return;
   say("> " + c);
-  if (c === "/help") say("/clear  /status  /channel  /ping");
+  if (c === "/help") say("/clear  /status  /channel  /ping\n/role <email> <admin|mod|student>");
   else if (c === "/clear") out.textContent = "";
   else if (c === "/status") say(`Signed in as ${user.email}`);
   else if (c === "/channel") say(`Active channel: ${active}`);
+  else if (c.startsWith("/role ")) {
+    const [, email, role] = c.split(/\s+/);
+    try { await api("/api/role", j("POST", { email, role })); say(`${email} is now ${role}.`); } catch (err) { say("Error: " + err.message); }
+  }
   else if (c === "/ping") {
     const t = performance.now();
     try { await api("/api/me"); say(`Worker OK in ${Math.round(performance.now() - t)} ms`); }
     catch (err) { say("Worker error: " + err.message); }
   } else say(`Unknown command: ${c}. Type /help.`);
 };
+  
