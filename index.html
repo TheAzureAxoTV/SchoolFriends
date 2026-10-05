@@ -80,7 +80,7 @@
     .aurora-blob {
       position: absolute;
       border-radius: 50%;
-      filter: blur(90px);
+      
       opacity: 0.85;
       animation: floatAurora 18s ease-in-out infinite alternate;
     }
@@ -122,14 +122,10 @@
     /* Common Glass Utilities */
     .glass {
       background: var(--bg-panel);
-      backdrop-filter: var(--blur-glass);
-      -webkit-backdrop-filter: var(--blur-glass);
       border: 1px solid var(--border-subtle);
     }
     .glass-card {
       background: var(--bg-card);
-      backdrop-filter: var(--blur-glass);
-      -webkit-backdrop-filter: var(--blur-glass);
       border: 1px solid var(--border-subtle);
     }
 
@@ -161,8 +157,6 @@
       border-radius: var(--radius-lg);
       background: rgba(13, 20, 36, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.2);
       text-align: center;
       z-index: 1;
@@ -339,8 +333,6 @@
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
       z-index: 40;
       opacity: 0;
       pointer-events: none;
@@ -649,8 +641,6 @@
       padding: 0 16px;
       border-bottom: 1px solid var(--border-subtle);
       background: rgba(11, 17, 30, 0.7);
-      backdrop-filter: var(--blur-glass);
-      -webkit-backdrop-filter: var(--blur-glass);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -800,4 +790,20 @@
       box-shadow: var(--shadow-sm);
     }
 
-    /* Others'
+    /* Others' bubbles: Dark Glass on Left */
+    .m:not(.mine) .tb {
+      background: rgba(23, 32, 54, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-top-left-radius: 4px;
+      color: var(--txt-primary);
+    }
+
+    /* Mine bubbles: Gradient on Right */
+    .m.mine .tb {
+      background: var(--accent-bubble);
+      color: #ffffff;
+      border-top-right-radius: 4px;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+    }
+
+    /* Rep
