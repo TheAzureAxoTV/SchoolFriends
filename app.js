@@ -249,7 +249,7 @@ function openChannel(id) {
         const body = rp + (m.text ? `<p>${esc(m.text)}${m.edited ? ` <small class="ed">(edited)</small>` : ""}</p>` : "") + (img ? `<img class="pic" src="${img}" alt="Attachment" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('i'),{textContent:'Image removed'}))"/>` : "");
         const tb = `<div class="tb"><button data-act="reply" title="Reply" aria-label="Reply"><i class="fa-solid fa-reply"></i></button>${mine && m.text ? `<button data-act="edit" title="Edit" aria-label="Edit"><i class="fa-solid fa-pen"></i></button>` : ""}${can ? `<button data-act="del" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>` : ""}</div>`;
         const badge = m.role && m.role !== "student" ? `<em class="rb ${esc(m.role)}">${esc(m.role)}</em>` : "";
-        const cls = "m" + (grouped ? "" : " first") + (selId === d.id ? " sel" : "");
+        const cls = "m" + (grouped ? "" : " first") + (selId === d.id ? " sel" : "") + (mine ? " mine" : "");
         html += grouped
           ? `<div class="${cls}" data-id="${d.id}"><span class="sp">${time}</span><div>${body}</div>${tb}</div>`
           : `<div class="${cls}" data-id="${d.id}"><img src="${safe(m.photoURL) || fallbackAvatar(m.uid || name)}" alt=""/><div><div class="h"><b>${name}</b>${badge}<time>${time}</time></div>${body}</div>${tb}</div>`;
@@ -347,4 +347,4 @@ $("termIn").onkeydown = async (e) => {
     catch (err) { say("Worker error: " + err.message); }
   } else say(`Unknown command: ${c}. Type /help.`);
 };
-  
+    
