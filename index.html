@@ -74,6 +74,13 @@ header b{font-size:15px;white-space:nowrap}
 .pic{max-width:min(380px,100%);max-height:300px;border-radius:12px;margin-top:6px;display:block;border:1px solid var(--line)}
 .empty{height:100%;display:grid;place-content:center;justify-items:center;text-align:center;gap:8px;color:var(--mut);padding:24px;font-size:14px}
 .empty img{width:64px;height:64px;border-radius:18px;object-fit:cover}.empty b{color:var(--tx);font-size:18px}
+.m{position:relative}.m.sel{background:#ffffff0c}
+.tb{position:absolute;right:16px;top:-14px;display:none;gap:2px;padding:3px;border-radius:10px;background:var(--bg2);border:1px solid var(--line);box-shadow:0 6px 18px #0006;z-index:2}
+.m:hover .tb,.m.sel .tb{display:flex}
+.tb button{width:32px;height:30px;border-radius:7px;color:var(--mut);font-size:13px}.tb button:hover{background:var(--bg3);color:var(--tx)}.tb [data-act=del]:hover{color:var(--err)}
+.rp{font-size:13px;color:var(--mut);margin-bottom:3px;padding-left:10px;border-left:2px solid var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.rp b{color:var(--tx);margin:0 4px}
+.ed{font-size:11px;color:var(--mut)}
+.rb{font-style:normal;font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;margin-left:8px;background:#6c7bff26;color:#aab4ff}.rb.owner{background:#ffb84d26;color:#ffcf7a}.rb.admin{background:#ff6b7a26;color:#ff9aa5}
 .prev{margin:0 16px 8px;padding:8px;display:flex;align-items:center;gap:12px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);font-size:13px}
 .prev img{width:44px;height:44px;border-radius:10px;object-fit:cover}.prev span{flex:1}
 .pop{position:absolute;bottom:84px;right:20px;display:flex;gap:4px;padding:8px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);font-size:22px;z-index:5}
@@ -148,8 +155,9 @@ header b{font-size:15px;white-space:nowrap}
 
     <div id="feed"></div>
 
+    <div class="prev hidden" id="rbar"><i class="fa-solid fa-reply"></i><span id="rtxt"></span><button class="ib" id="rmReply" aria-label="Cancel"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="prev hidden" id="prev">
-      <img id="prevImg" alt="Attachment"/><span>Image ready to send</span>
+      <img id="prevImg" alt="Attachment"/><span>Image ready to send. Only the latest 20 pictures are kept.</span>
       <button class="ib" id="rmImg" aria-label="Remove image"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
@@ -160,7 +168,7 @@ header b{font-size:15px;white-space:nowrap}
     <div class="bar">
       <img src="1000588477.png" alt=""/>
       <label title="Attach image" aria-label="Attach image"><i class="fa-solid fa-plus"></i><input type="file" id="imgIn" accept="image/*" class="hidden"/></label>
-      <input type="text" id="msg" placeholder="Enter Message.." maxlength="500" autocomplete="off"/>
+      <input type="text" id="msg" placeholder="Enter Message.." maxlength="340" autocomplete="off"/>
       <button id="emojiBtn" type="button" aria-label="Emoji"><i class="fa-regular fa-face-smile"></i></button>
       <button id="sendBtn" type="button" aria-label="Send message"><i class="fa-solid fa-spa"></i></button>
       <button id="micBtn" type="button" aria-label="Voice note"><i class="fa-solid fa-microphone"></i></button>
