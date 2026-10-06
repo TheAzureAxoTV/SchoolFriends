@@ -2,6 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+<script>
+/* startup guard: shows a clear message instead of a black screen */
+(function(){
+  function msg(t){var d=document.createElement("div");d.style.cssText="position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:28px;text-align:center;font:16px/1.5 sans-serif;color:#fff;background:#070913";d.textContent=t;(document.body||document.documentElement).appendChild(d);}
+  window.addEventListener("load",function(){
+    if(!document.getElementById("sf-eof")){msg("index.html is incomplete (the upload was cut off). Please re-upload the file itself instead of pasting its text.");return;}
+    setTimeout(function(){
+      function shown(id){var e=document.getElementById(id);return !!e&&getComputedStyle(e).display!=="none";}
+      if(!shown("auth")&&!shown("app"))msg("The page loaded but nothing is visible. app.js ready: "+(window.__sfReady?"yes":"no")+". Please send a screenshot of this message.");
+    },4500);
+  });
+})();
+</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SchoolFriends</title>
   <meta name="theme-color" content="#0b0e1a">
@@ -212,4 +225,221 @@
     @keyframes modalIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
     .modal-close { position: absolute; top: 18px; right: 18px; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--txt-muted); }
     .modal-close:hover { background: var(--bg-hover); color: #fff; }
-    #bigAv { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; margin: 0 auto 20px; border: 2px dashed rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: c
+    #bigAv { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; margin: 0 auto 20px; border: 2px dashed rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    #bigAv img { width: 100%; height: 100%; }
+    #profForm { display: flex; flex-direction: column; gap: 14px; }
+    #profForm input { width: 100%; height: 44px; background: var(--bg-chat); border: 1px solid var(--border); border-radius: 12px; padding: 0 14px; color: #fff; }
+    #profForm input:focus { border-color: var(--border-focus); }
+    #profForm button[type="submit"] { height: 44px; background: var(--grad); color: #fff; font-weight: 600; border-radius: 12px; margin-top: 6px; box-shadow: var(--grad-glow); }
+    
+    #termModal .modal-card { max-width: 600px; }
+    #termOut { background: #070913; border: 1px solid var(--border); border-radius: 10px; padding: 14px; height: 260px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #2fd6a0; margin: 20px 0 12px; white-space: pre-wrap; word-break: break-all; }
+    #termIn { width: 100%; height: 40px; background: var(--bg-chat); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; font-family: monospace; color: #fff; }
+
+    #toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 16px); background: var(--bg-card); color: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; font-size: 13px; font-weight: 500; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); opacity: 0; pointer-events: none; transition: opacity 200ms ease, transform 200ms cubic-bezier(0.16, 1, 0.3, 1); z-index: 150; }
+    #toast.show { opacity: 1; transform: translate(-50%, 0); }
+    #toast.bad { border-color: var(--danger); color: #ff8ca3; }
+
+    /* RESPONSIVE (<860px) */
+    @media (max-width: 859px) {
+      #side { position: fixed; top: 0; bottom: 0; left: 72px; width: 280px; transform: translateX(-100%); transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 10px 0 25px rgba(0, 0, 0, 0.5); }
+      #side.open { transform: translateX(0); }
+      #menuBtn { display: flex; }
+      .chat-bottom { padding: 0 12px 12px; }
+      #feed { padding: 14px 12px 8px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+      @media (min-width: 860px) { #scrim { display: none !important; } }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><linearGradient id="sf-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7c6cff"/><stop offset="50%" stop-color="#3aa0ff"/><stop offset="100%" stop-color="#2fd6a0"/></linearGradient></defs></svg>
+<!-- AUTH SCREEN -->
+  <section id="auth">
+    <div class="auth-card">
+      <div id="lastChip" class="hidden"></div>
+      <div class="brand-logo-wrap">
+        <svg class="sf-logo" viewBox="0 0 48 48">
+          <rect width="48" height="48" rx="14" fill="url(#sf-grad)"/>
+          <rect x="1" y="1" width="46" height="23" rx="13" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+          <path d="M15 15h11a6 6 0 0 1 6 6c0 3.5-3 5.5-6.5 6l-3.5.5c-3.5.5-5.5 2.5-5.5 6a6 6 0 0 0 6 6h11" fill="none" stroke="#ffffff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="33" cy="33" r="2.2" fill="#ffffff"/>
+          <circle cx="15" cy="15" r="2.2" fill="#ffffff"/>
+        </svg>
+      </div>
+      <h1>Welcome Back</h1>
+      <p class="sub">Your private hangout. Chat, share and catch up with your crew.</p>
+      
+      <button id="gBtn" type="button">
+        <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        <span id="gLabel">Continue with Google</span>
+      </button>
+
+      <label class="auth-toggle">
+        <input type="checkbox" id="keep" checked>
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+        Stay signed in on this device
+      </label>
+
+      <p id="authMsg" role="alert"></p>
+      <p class="auth-legal">By continuing, you agree to the House Rules.</p>
+      <p id="ver"></p>
+    </div>
+  </section>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="app" class="hidden">
+    <!-- SERVER RAIL -->
+    <nav>
+      <div class="rail-top">
+        <button class="rail-btn" title="SchoolFriends Home" type="button">
+          <svg class="sf-logo" style="width: 44px; height: 44px;" viewBox="0 0 48 48">
+            
+            <rect width="48" height="48" rx="14" fill="url(#sf-grad)"/>
+            <path d="M15 15h11a6 6 0 0 1 6 6c0 3.5-3 5.5-6.5 6l-3.5.5c-3.5.5-5.5 2.5-5.5 6a6 6 0 0 0 6 6h11" fill="none" stroke="#ffffff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="33" cy="33" r="2.2" fill="#ffffff"/>
+            <circle cx="15" cy="15" r="2.2" fill="#ffffff"/>
+          </svg>
+        </button>
+      </div>
+      <div class="rail-divider"></div>
+      <div id="rail"></div>
+    </nav>
+
+    <!-- SCRIM FOR MOBILE DRAWER -->
+    <div id="scrim" class="hidden"></div>
+
+    <!-- SIDEBAR -->
+    <aside id="side">
+      <div class="side-head">
+        <div class="wordmark">
+          <span class="w1">School</span><span class="w2">Friends</span>
+        </div>
+      </div>
+      <div class="ch-label">Text Channels</div>
+      <div id="chs"></div>
+
+      <!-- USER PANEL -->
+      <div class="user-panel">
+        <button id="avBtn" type="button">
+          <img id="meImg" alt="">
+          <div class="status-dot"></div>
+        </button>
+        <div class="user-meta">
+          <input id="meName" maxlength="32" value="" placeholder="Your name">
+          <div id="meBio"></div>
+        </div>
+        <button id="profBtn" class="panel-btn" title="Edit Profile" type="button">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+        <button id="outBtn" class="panel-btn" title="Sign Out" type="button">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CHAT AREA -->
+    <main>
+      <header class="chat-head">
+        <button id="menuBtn" type="button" aria-label="Open channels">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <img id="chIcon" alt="">
+        <div class="chat-head-info">
+          <h2 id="chTitle"></h2>
+          <p id="chDesc"></p>
+        </div>
+        <button id="termBtn" class="hidden" type="button" title="Terminal">
+          <i class="fa-solid fa-terminal"></i>
+        </button>
+      </header>
+
+      <!-- MESSAGES FEED -->
+      <div id="feed"></div>
+
+      <!-- COMPOSER AREA -->
+      <div class="chat-bottom">
+        <div id="rbar" class="hidden">
+          <span id="rtxt"></span>
+          <button id="rmReply" type="button" aria-label="Cancel reply">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div id="prev" class="hidden">
+          <img id="prevImg" alt="Attachment preview">
+          <button id="rmImg" type="button" aria-label="Remove image">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div id="pop" class="hidden">
+          <button type="button" data-e="😀">😀</button>
+          <button type="button" data-e="🔥">🔥</button>
+          <button type="button" data-e="🎮">🎮</button>
+          <button type="button" data-e="❤️">❤️</button>
+          <button type="button" data-e="👍">👍</button>
+        </div>
+
+        <div class="composer-wrap">
+          <label title="Upload image">
+            <i class="fa-solid fa-circle-plus"></i>
+            <input type="file" id="imgIn" accept="image/*" class="hidden">
+          </label>
+          <input type="text" id="msg" maxlength="340" placeholder="Message #general">
+          <button id="emojiBtn" class="comp-btn" type="button" title="Add emoji">
+            <i class="fa-regular fa-face-smile"></i>
+          </button>
+          <button id="sendBtn" class="comp-btn" type="button" title="Send message">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+          <button id="micBtn" class="comp-btn" type="button" title="Voice note">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- AVATAR FILE INPUT -->
+  <input type="file" id="avFile" accept="image/*" class="hidden">
+
+  <!-- PROFILE MODAL -->
+  <div id="profModal" class="modal hidden">
+    <div class="modal-card">
+      <button class="modal-close" data-close type="button" aria-label="Close modal">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <button id="bigAv" type="button" title="Click to change avatar">
+        <img id="bigImg" alt="">
+      </button>
+      <form id="profForm">
+        <input id="fName" maxlength="32" required placeholder="Display Name">
+        <input id="fBio" maxlength="80" placeholder="Status or bio">
+        <button type="submit">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TERMINAL MODAL -->
+  <div id="termModal" class="modal hidden">
+    <div class="modal-card">
+      <button class="modal-close" data-close type="button" aria-label="Close modal">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <pre id="termOut"></pre>
+      <input id="termIn" placeholder="Enter command...">
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- APP SCRIPT -->
+  <i id="sf-eof" hidden></i>
+<script type="module" src="app.js"></script>
+</body>
+</html>
