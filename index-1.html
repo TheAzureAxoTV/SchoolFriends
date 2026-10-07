@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SchoolFriends | Winter Hangout</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <style>
+    :root {
+      --bg-darkest: #070d1a;
+      --bg-side: #0e1d38;
+      --bg-chat: #102140;
+      --bg-card: rgba(255,255,255,.055);
+      --border: rgba(184,230,255,.13);
+      --border-focus: #2ba8ff;
+      --txt-muted: #91a7bf;
+      --grad: linear-gradient(135deg, #1a4d6d 0%, #2ba8ff 60%, #b8e6ff 100%);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg-darkest);
+      color: #fff;
+    }
+
+    body { overflow-x: hidden; }
+
+    button, input { font: inherit; }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .hidden { display: none !important; }
+
+    #snowCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .snow-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 1;
+      opacity: .35;
+    }
+
+    .snowflake {
+      position: absolute;
+      color: #fff;
+      animation: drift 9s linear infinite;
+    }
+
+    .snowflake:first-child {
+      left: 18%;
+      top: -30px;
+      font-size: 28px;
+    }
+
+    .snowflake:last-child {
+      left: 76%;
+      top: -40px;
+      font-size: 20px;
+      animation-delay: 3s;
+    }
+
+    @keyframes drift {
+      to { transform: translate3d(40px, 110vh, 0) rotate(180deg); }
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    .view-container {
+      min-height: 100vh;
+    }
+
+    /* HOME */
+    #homeView {
+      padding: 32px;
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .home-hero {
+      padding: 34px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at top right, rgba(43,168,255,.17), transparent 40%),
+        rgba(8,18,38,.86);
+      box-shadow: 0 20px 70px rgba(0,0,0,.35);
+    }
+
+    .home-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .h-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(43,168,255,.1);
+      border: 1px solid rgba(43,168,255,.2);
+      color: #b8e6ff;
+      font-size: 11px;
+    }
+
+    .home-hero h2 {
+      margin: 0 0 10px;
+      font-size: clamp(26px, 5vw, 42px);
+    }
+
+    .home-hero p {
+      max-width: 720px;
+      color: var(--txt-muted);
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    .home-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .h-action-btn, .q-btn {
+      min-height: 38px;
+      border-radius: 10px;
+      padding: 0 13px;
+      color: #dff5ff;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      transition: .2s ease;
+    }
+
+    .h-action-btn:hover, .q-btn:hover,
+    .theme-choice-btn.active {
+      background: rgba(43,168,255,.16);
+      border-color: var(--border-focus);
+    }
+
+    .home-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .home-card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(8,18,38,.82);
+      padding: 18px;
+    }
+
+    .home-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .activity-item {
+      display: flex;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      color: #c5d7e8;
+      font-size: 12px;
+    }
+
+    .activity-item:last-child { border-bottom: 0; }
+    .activity-item > i { color: var(--border-focus); }
+
+    .glow-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #46e6a3;
+      box-shadow: 0 0 12px #46e6a3;
+    }
+
+    /* DM */
+    #dmView {
+      display: grid;
+      grid-template-columns: 270px 1fr;
+      background: rgba(5,10,22,.8);
+    }
+
+    .dm-sidebar {
+      background: rgba(10,22,43,.94);
+      border-right: 1px solid var(--border);
+      padding: 16px;
+    }
+
+    .dm-sidebar-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 4px 15px;
+      font-weight: 700;
+    }
+
+    .dm-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .dm-user-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 11px;
+      color: #fff;
+      background: transparent;
+      text-align: left;
+    }
+
+    .dm-user-btn:hover,
+    .dm-user-btn.active {
+      background: rgba(43,168,255,.11);
+    }
+
+    .dm-av-wrap {
+      position: relative;
+      flex: 0 0 auto;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #102448;
+      border: 1px solid #2ba8ff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status-dot {
+      position: absolute;
+      right: -1px;
+      bottom: -1px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #43e79b;
+      border: 2px solid #0c1730;
+    }
+
+    .dm-main-area {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .dm-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,22,43,.72);
+    }
+
+    .dm-header h3 { margin: 0; }
+
+    .dm-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px;
+    }
+
+    .dm-message {
+      margin: 8px 0;
+      max-width: 75%;
+      padding: 10px 13px;
+      border-radius: 13px;
+      background: rgba(255,255,255,.07);
+      color: #e8f5ff;
+      font-size: 13px;
+    }
+
+    .dm-message.mine {
+      margin-left: auto;
+      background: rgba(43,168,255,.18);
+    }
+
+    .dm-composer {
+      display: flex;
+      gap: 8px;
+      padding: 14px;
+      border-top: 1px solid var(--border);
+      background: rgba(8,18,38,.9);
+    }
+
+    .dm-composer input,
+    .composer-wrap input,
+    .field-group input {
+      outline: none;
+      color: #fff;
+    }
+
+    .dm-composer input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(255,255,255,.05);
+      padding: 0 14px;
+    }
+
+    /* CHAT */
+    #chatView {
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(circle at 80% 0%, rgba(43,168,255,.07), transparent 35%),
+        var(--bg-chat);
+    }
+
+    .chat-head {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5,12,26,.5);
+    }
+
+    .chat-head button {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      color: #fff;
+    }
+
+    #chIcon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: rgba(255,255,255,.06);
+    }
+
+    .chat-head-info h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .chat-head-info p {
+      margin: 3px 0 0;
+      color: var(--txt-muted);
+      font-size: 11px;
+    }
+
+    #feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px;
+    }
+
+    .chat-message {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 17px;
+    }
+
+    .chat-avatar {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #102448;
+      border: 1px solid var(--border-focus);
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .chat-message strong {
+      font-size: 13px;
+    }
+
+    .chat-message p {
+      margin: 4px 0 0;
+      color: #c8d7e5;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .chat-bottom {
+      padding: 10px 14px 14px;
+      background: rgba(5,12,26,.86);
+      border-top: 1px solid var(--border);
+    }
+
+    .composer-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,.045);
+    }
+
+    .composer-wrap label {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      color: #2ba8ff;
+      cursor: pointer;
+    }
+
+    .composer-wrap input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      font-size: 13px;
+    }
+
+    .comp-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      color: #b8e6ff;
+      background: transparent;
+    }
+
+    .comp-btn:hover { background: rgba(255,255,255,.07); }
+
+    .music-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+      padding: 8px 2px 0;
+    }
+
+    .music-left, .music-right {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .music-play-btn, .panel-btn {
+      width: 31px;
+      height: 31px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.05);
+      color: #dff5ff;
+    }
+
+    .music-track {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-size: 11px;
+      color: #c8d7e5;
+    }
+
+    .vol-slider { width: 75px; accent-color: var(--border-focus); }
+
+    /* MODALS */
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(0,0,0,.62);
+      backdrop-filter: blur(8px);
+    }
+
+    .modal-card {
+      position: relative;
+      width: min(100%, 520px);
+      max-height: 85vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: #0b1830;
+      box-shadow: 0 30px 90px rgba(0,0,0,.55);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: rgba(255,255,255,.06);
+      color: #fff;
+    }
+
+    .field-group { margin-bottom: 14px; }
+
+    .field-label {
+      display: block;
+      margin-bottom: 7px;
+      color: #dff5ff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .theme-choice-btn { width: 100%; }
+
+    .auth-toggle input { display: none; }
+
+    .switch-track {
+      display: block;
+      width: 46px;
+      height: 25px;
+      padding: 3px;
+      border-radius: 999px;
+      background: #243650;
+      cursor: pointer;
+    }
+
+    .switch-thumb {
+      display: block;
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform .2s;
+    }
+
+    .auth-toggle input:checked + .switch-track {
+      background: var(--border-focus);
+    }
+
+    .auth-toggle input:checked + .switch-track .switch-thumb {
+      transform: translateX(21px);
+    }
+
+    .playlist-items {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .playlist-track {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px;
+      border-radius: 10px;
+      color: #c8d7e5;
+      cursor: pointer;
+    }
+
+    .playlist-track:hover,
+    .playlist-track.playing {
+      background: rgba(43,168,255,.12);
+      color: #fff;
+    }
+
+    code {
+      color: #b8e6ff;
+      background: rgba(255,255,255,.06);
+      padding: 2px 5px;
+      border-radius: 5px;
+    }
+
+    @media (max-width: 700px) {
+      #homeView { padding: 16px; }
+      .home-grid { grid-template-columns: 1fr; }
+      #dmView { grid-template-columns: 1fr; }
+      .dm-sidebar { display: none; }
+      .music-bar { flex-wrap: wrap; }
+      .music-right { margin-left: auto; }
+      .home-hero { padding: 23px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Audio element used by the music player -->
+  <audio id="ambientAudio" preload="none"></audio>
+
+  <!-- ULTRA-PERFORMANT WINTER SNOWFALL CANVAS -->
+  <canvas id="snowCanvas" aria-hidden="true"></canvas>
+  <div class="snow-canvas" aria-hidden="true">
+    <div class="snowflake">❄</div>
+    <div class="snowflake">❅</div>
+  </div>
+
+  <!-- MAIN CONTENT AREA WITH HOME, CHAT, AND 1-TO-1 DM VIEWS -->
+  <main>
+    <!-- HOME TIMELINE VIEW -->
+    <div id="homeView" class="view-container hidden">
+      <div class="home-hero">
+        <div class="home-badges">
+          <span class="h-badge"><i class="fa-solid fa-snowflake"></i> Winter Hangout</span>
+          <span class="h-badge" id="homeThemeBadge"><i class="fa-solid fa-wand-magic-sparkles"></i> 30m Auto-Theme Active</span>
+          <span class="h-badge" id="homeMusicBadge"><i class="fa-brands fa-github"></i> Schoolfriendsmusic Synced</span>
+        </div>
+        <h2>Welcome to SchoolFriends <span style="font-size:20px;">❄️</span></h2>
+        <p>Your private crew hangout. Catch up on what happened, join discussions, start 1-to-1 direct chats, or listen to ambient winter lo-fi from GitHub.</p>
+        <div class="home-quick-actions">
+          <button type="button" class="h-action-btn" id="homeGoChatBtn">
+            <i class="fa-solid fa-comments" style="color:#2ba8ff;"></i> Jump into #SchoolChat
+          </button>
+          <button type="button" class="h-action-btn" id="homeGoDmBtn">
+            <i class="fa-solid fa-user-group" style="color:#4dd9ff;"></i> Open 1-to-1 DMs
+          </button>
+          <button type="button" class="h-action-btn" id="homeOpenPlaylistBtn">
+            <i class="fa-solid fa-headphones" style="color:#ff8ca3;"></i> Schoolfriendsmusic Playlist
+          </button>
+        </div>
+      </div>
+
+      <div class="home-grid">
+        <div class="home-card">
+          <div class="home-card-head">
+            <span><i class="fa-solid fa-bolt" style="color:#2ba8ff;margin-right:6px;"></i> Recent Activity</span>
+            <span style="font-size:11px;color:var(--txt-muted);">Live updates</span>
+          </div>
+          <div class="activity-item">
+            <i class="fa-solid fa-circle-check"></i>
+            <div><strong>SchoolChat:</strong> Active chat with the crew.</div>
+          </div>
+          <div class="activity-item">
+            <i class="fa-solid fa-music"></i>
+            <div><strong>Music Lounge:</strong> Synced with GitHub repo <code>Schoolfriendsmusic</code>.</div>
+          </div>
+          <div class="activity-item">
+            <i class="fa-solid fa-snowflake"></i>
+            <div><strong>Winter Background:</strong> Changes automatically every 30 minutes!</div>
+          </div>
+        </div>
+
+        <div class="home-card">
+          <div class="home-card-head">
+            <span><i class="fa-solid fa-users" style="color:#4dd9ff;margin-right:6px;"></i> Active Crew</span>
+            <span class="glow-dot"></span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(43,168,255,0.06);border-radius:10px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:28px;height:28px;border-radius:50%;background:#102448;border:1px solid #2ba8ff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;">M</div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:#fff;">mukhopadhyaysudip3</div>
+                  <div style="font-size:11px;color:#4dd9ff;">Online • Owner</div>
+                </div>
+              </div>
+              <button type="button" class="q-btn home-dm-quick" data-user="mukhopadhyaysudip3" style="width:auto;padding:4px 10px;height:26px;">DM</button>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(43,168,255,0.06);border-radius:10px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:28px;height:28px;border-radius:50%;background:#102448;border:1px solid #7c6cff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;">T</div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:#fff;">TheAzureAxoTV</div>
+                  <div style="font-size:11px;color:#4dd9ff;">Online • Admin</div>
+                </div>
+              </div>
+              <button type="button" class="q-btn home-dm-quick" data-user="TheAzureAxoTV" style="width:auto;padding:4px 10px;height:26px;">DM</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1-TO-1 CHAT VIEW -->
+    <div id="dmView" class="view-container hidden">
+      <aside class="dm-sidebar">
+        <div class="dm-sidebar-head">
+          <span>Direct Messages</span>
+          <i class="fa-solid fa-user-plus"></i>
+        </div>
+        <div class="dm-list" id="dmUsersList">
+          <button type="button" class="dm-user-btn active" data-dm="mukhopadhyaysudip3">
+            <div class="dm-av-wrap"><span>M</span><div class="status-dot"></div></div>
+            <div style="text-align:left;overflow:hidden;flex:1;">
+              <div style="font-size:13px;font-weight:600;color:#fff;">mukhopadhyaysudip3</div>
+              <div style="font-size:11px;color:var(--txt-muted);">Hey, chilling here ❄️</div>
+            </div>
+          </button>
+
+          <button type="button" class="dm-user-btn" data-dm="TheAzureAxoTV">
+            <div class="dm-av-wrap"><span>T</span><div class="status-dot"></div></div>
+            <div style="text-align:left;overflow:hidden;flex:1;">
+              <div style="font-size:13px;font-weight:600;color:#fff;">TheAzureAxoTV</div>
+              <div style="font-size:11px;color:var(--txt-muted);">Hi! What's up?</div>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <div class="dm-main-area">
+        <header class="dm-header">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="dm-av-wrap" style="width:34px;height:34px;">
+              <span id="dmHeaderInitial">M</span>
+              <div class="status-dot"></div>
+            </div>
+            <div>
+              <h3 id="dmHeaderName" style="font-size:15px;font-weight:700;color:#fff;">mukhopadhyaysudip3</h3>
+              <div id="dmHeaderStatus" style="font-size:11px;color:#4dd9ff;">Active now • Private 1-to-1</div>
+            </div>
+          </div>
+        </header>
+
+        <div class="dm-feed" id="dmFeed">
+          <div style="text-align:center;padding:18px 0;color:var(--txt-muted);font-size:12px;">
+            <i class="fa-solid fa-lock" style="margin-right:6px;"></i>
+            Direct conversation with <strong id="dmPartnerText" style="color:#b8e6ff;">mukhopadhyaysudip3</strong>.
+          </div>
+        </div>
+
+        <form class="dm-composer" id="dmForm">
+          <input type="text" id="dmInput" placeholder="Message friend directly..." maxlength="300">
+          <button type="submit" class="comp-btn" style="width:44px;height:44px;background:var(--grad);border-radius:12px;color:#fff;">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- SCHOOLCHAT -->
+    <div id="chatView" class="view-container">
+      <header class="chat-head">
+        <button id="menuBtn" type="button" aria-label="Open channels"><i class="fa-solid fa-bars"></i></button>
+        <img id="chIcon" alt="">
+        <div class="chat-head-info">
+          <h2 id="chTitle"># SchoolChat</h2>
+          <p id="chDesc">Winter hangout • Break the ice ❄️</p>
+        </div>
+      </header>
+
+      <div id="feed">
+        <div class="chat-message">
+          <div class="chat-avatar">S</div>
+          <div>
+            <strong>SchoolFriends</strong>
+            <p>Welcome to #SchoolChat! ❄️</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-bottom">
+        <div id="rbar" class="hidden">
+          <span id="rtxt"></span>
+          <button id="rmReply" type="button"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div id="prev" class="hidden">
+          <img id="prevImg" alt="">
+          <button id="rmImg" type="button"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div id="pop" class="hidden">
+          <button type="button" data-e="❄️">❄️</button>
+          <button type="button" data-e="🔥">🔥</button>
+          <button type="button" data-e="🎮">🎮</button>
+        </div>
+
+        <div class="composer-wrap">
+          <label title="Attach image">
+            <i class="fa-solid fa-snowflake"></i>
+            <input type="file" id="imgIn" accept="image/*" class="hidden">
+          </label>
+          <input type="text" id="msg" maxlength="340" placeholder="Message #SchoolChat... Break the ice ❄️">
+          <button id="emojiBtn" class="comp-btn" type="button"><i class="fa-regular fa-face-smile"></i></button>
+          <button id="sendBtn" class="comp-btn" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+
+        <!-- MUSIC BAR WITH GITHUB SYNC -->
+        <div class="music-bar">
+          <div class="music-left">
+            <button type="button" class="music-play-btn" id="mPrevBtn" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
+            <button type="button" class="music-play-btn" id="mPlayBtn"><i class="fa-solid fa-play" id="mPlayIcon"></i></button>
+            <button type="button" class="music-play-btn" id="mNextBtn" title="Next"><i class="fa-solid fa-forward-step"></i></button>
+            <span class="music-track" id="mTrackTitle" title="View GitHub playlist">
+              <i class="fa-solid fa-headphones" style="color:#2ba8ff;"></i>
+              <span id="mTrackName">Schoolfriends Chill Mix</span>
+            </span>
+          </div>
+
+          <div class="music-right">
+            <button type="button" class="panel-btn" id="mPlaylistBtn" title="GitHub Playlist"><i class="fa-solid fa-list-ul"></i></button>
+            <input type="range" class="vol-slider" id="mVolume" min="0" max="100" value="30">
+            <button type="button" class="panel-btn" id="mMuteBtn"><i class="fa-solid fa-volume-xmark"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-card" style="max-width:520px;padding:22px;">
+      <button class="modal-close" data-close type="button"><i class="fa-solid fa-xmark"></i></button>
+      <h2 style="font-size:18px;font-weight:700;color:#fff;margin-bottom:16px;">
+        <i class="fa-solid fa-gear" style="color:#2ba8ff;"></i> Settings
+      </h2>
+
+      <div class="field-group">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label class="field-label" style="margin:0;">30-Minute Winter Themes</label>
+          <span class="h-badge" style="font-size:11px;">
+            <i class="fa-solid fa-clock"></i> Next in <span id="themeMinutesLeft">28</span>m
+          </span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button type="button" class="q-btn theme-choice-btn active" data-tidx="0">Glacier Blizzard</button>
+          <button type="button" class="q-btn theme-choice-btn" data-tidx="1">Aurora Borealis</button>
+          <button type="button" class="q-btn theme-choice-btn" data-tidx="2">Midnight Frost</button>
+          <button type="button" class="q-btn theme-choice-btn" data-tidx="3">Alpine Twilight</button>
+          <button type="button" class="q-btn theme-choice-btn" data-tidx="4">Frozen Fjord</button>
+          <button type="button" class="q-btn theme-choice-btn" data-tidx="5">Crystalline Cave</button>
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <label class="field-label" style="margin:0;">Snow Falling Effect</label>
+          <div style="font-size:11px;color:var(--txt-muted);">Ultra-smooth on all devices</div>
+        </div>
+        <label class="auth-toggle">
+          <input type="checkbox" id="snowToggleCheck" checked>
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </label>
+      </div>
+
+      <div class="field-group" style="margin-top:14px;">
+        <label class="field-label">GitHub Music Repository (Schoolfriendsmusic)</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="ghRepoInput" value="mukhopadhyaysudip3/Schoolfriendsmusic"
+                 style="flex:1;height:38px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:0 12px;color:#fff;">
+          <button type="button" class="q-btn" id="syncGhMusicBtn"
+                  style="width:auto;padding:0 14px;background:rgba(43,168,255,.2);color:#fff;height:38px;">
+            <i class="fa-solid fa-arrows-rotate"></i> Sync
+          </button>
+        </div>
+        <div id="ghMusicStatusText" style="font-size:11px;color:#4dd9ff;margin-top:5px;">
+          <i class="fa-solid fa-circle-check"></i> Connected to Schoolfriendsmusic repo.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAYLIST MODAL -->
+  <div id="playlistModal" class="modal hidden">
+    <div class="modal-card" style="max-width:480px;padding:22px;">
+      <button class="modal-close" data-close type="button"><i class="fa-solid fa-xmark"></i></button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h2 style="font-size:18px;font-weight:700;color:#fff;">
+          <i class="fa-brands fa-github" style="color:#2ba8ff;"></i> Schoolfriendsmusic
+        </h2>
+        <button type="button" class="q-btn" id="playlistRefreshBtn" style="width:auto;padding:4px 10px;height:28px;">
+          <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+      </div>
+      <div class="playlist-items" id="playlistItemsContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. CANVAS SNOW ENGINE
+      const canvas = document.getElementById('snowCanvas');
+      let snowEnabled = true;
+
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+          width = canvas.width = window.innerWidth;
+          height = canvas.height = window.innerHeight;
+        });
+
+        const flakes = Array.from({ length: 48 }, () => ({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: Math.random() * 2.4 + 1.2,
+          d: Math.random() * 48,
+          speed: Math.random() * 0.9 + 0.45,
+          opacity: Math.random() * 0.55 + 0.35
+        }));
+
+        let angle = 0;
+        let snowFrame = null;
+
+        function renderSnow() {
+          if (!snowEnabled) {
+            ctx.clearRect(0, 0, width, height);
+            snowFrame = null;
+            return;
+          }
+
+          ctx.clearRect(0, 0, width, height);
+          angle += 0.01;
+
+          flakes.forEach(f => {
+            f.y += f.speed;
+            f.x += Math.sin(angle + f.d) * 0.65;
+
+            if (f.y > height + 6) {
+              f.y = -6;
+              f.x = Math.random() * width;
+            }
+
+            if (f.x > width + 6) f.x = -6;
+            if (f.x < -6) f.x = width + 6;
+
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(240,248,255,${f.opacity})`;
+            ctx.fill();
+          });
+
+          snowFrame = requestAnimationFrame(renderSnow);
+        }
+
+        renderSnow();
+
+        const snowToggle = document.getElementById('snowToggleCheck');
+        if (snowToggle) {
+          snowToggle.addEventListener('change', () => {
+            snowEnabled = snowToggle.checked;
+            if (snowEnabled && !snowFrame) renderSnow();
+          });
+        }
+      }
+
+      // 2. 30-MINUTE THEME ROTATOR
+      const winterThemes = [
+        {
+          name: 'Glacier Blizzard',
+          bgDarkest: '#070d1a',
+          bgSide: '#0e1d38',
+          bgChat: '#102140',
+          grad: 'linear-gradient(135deg,#1a4d6d 0%,#2ba8ff 60%,#b8e6ff 100%)',
+          accent: '#2ba8ff'
+        },
+        {
+          name: 'Aurora Borealis',
+          bgDarkest: '#041416',
+          bgSide: '#0c2d32',
+          bgChat: '#0f3940',
+          grad: 'linear-gradient(135deg,#0f4a56 0%,#2fd6a0 60%,#a8ffeb 100%)',
+          accent: '#2fd6a0'
+        },
+        {
+          name: 'Midnight Frost',
+          bgDarkest: '#060a17',
+          bgSide: '#0e1836',
+          bgChat: '#122048',
+          grad: 'linear-gradient(135deg,#24326d 0%,#7c9eff 60%,#e0e8ff 100%)',
+          accent: '#7c9eff'
+        },
+        {
+          name: 'Alpine Twilight',
+          bgDarkest: '#0c0818',
+          bgSide: '#1d143a',
+          bgChat: '#251b4a',
+          grad: 'linear-gradient(135deg,#442a78 0%,#b59dff 60%,#f4e8ff 100%)',
+          accent: '#b59dff'
+        },
+        {
+          name: 'Frozen Fjord',
+          bgDarkest: '#05111a',
+          bgSide: '#0d283e',
+          bgChat: '#11334e',
+          grad: 'linear-gradient(135deg,#184c70 0%,#4ed4ff 60%,#d8f5ff 100%)',
+          accent: '#4ed4ff'
+        },
+        {
+          name: 'Crystalline Cave',
+          bgDarkest: '#05141c',
+          bgSide: '#0b2e40',
+          bgChat: '#0f3c53',
+          grad: 'linear-gradient(135deg,#185c7a 0%,#79f0ff 60%,#ffffff 100%)',
+          accent: '#79f0ff'
+        }
+      ];
+
+      function applyTheme(idx) {
+        const safeIdx = ((idx % winterThemes.length) + winterThemes.length) % winterThemes.length;
+        const t = winterThemes[safeIdx];
+        const r = document.documentElement;
+
+        r.style.setProperty('--bg-darkest', t.bgDarkest);
+        r.style.setProperty('--bg-side', t.bgSide);
+        r.style.setProperty('--bg-chat', t.bgChat);
+        r.style.setProperty('--grad', t.grad);
+        r.style.setProperty('--border-focus', t.accent);
+
+        document.querySelectorAll('.theme-choice-btn').forEach(b => {
+          b.classList.toggle('active', parseInt(b.getAttribute('data-tidx'), 10) === safeIdx);
+        });
+      }
+
+      function updateTimer() {
+        const now = Date.now();
+        const cycle = Math.floor(now / (30 * 60 * 1000));
+        const left = Math.ceil(((30 * 60 * 1000) - (now % (30 * 60 * 1000))) / 60000);
+        const el = document.getElementById('themeMinutesLeft');
+        if (el) el.textContent = left;
+        applyTheme(cycle % winterThemes.length);
+      }
+
+      updateTimer();
+      setInterval(updateTimer, 60000);
+
+      document.querySelectorAll('.theme-choice-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          applyTheme(parseInt(btn.getAttribute('data-tidx'), 10) || 0);
+        });
+      });
+
+      // 3. TABS SWITCHER
+      function switchTab(target) {
+        if (target === 'settings') {
+          document.getElementById('settingsModal')?.classList.remove('hidden');
+          return;
+        }
+
+        if (target === 'admin') {
+          document.getElementById('adminModal')?.classList.remove('hidden');
+          return;
+        }
+
+        document.querySelectorAll('.nav-tab').forEach(t => {
+          t.classList.toggle('active', t.getAttribute('data-tab') === target);
+        });
+
+        document.getElementById('homeView')?.classList.toggle('hidden', target !== 'home');
+        document.getElementById('dmView')?.classList.toggle('hidden', target !== 'dm');
+        document.getElementById('chatView')?.classList.toggle('hidden', target !== 'chat');
+      }
+
+      document.querySelectorAll('.nav-tab').forEach(t =>
+        t.addEventListener('click', () => switchTab(t.getAttribute('data-tab')))
+      );
+
+      document.getElementById('homeGoChatBtn')?.addEventListener('click', () => switchTab('chat'));
+      document.getElementById('homeGoDmBtn')?.addEventListener('click', () => switchTab('dm'));
+      document.getElementById('qGroupBtn')?.addEventListener('click', () => switchTab('chat'));
+      document.getElementById('qDmsBtn')?.addEventListener('click', () => switchTab('dm'));
+
+      // Playlist shortcut from Home
+      document.getElementById('homeOpenPlaylistBtn')?.addEventListener('click', () => {
+        renderPlaylist();
+        document.getElementById('playlistModal')?.classList.remove('hidden');
+      });
+
+      // 4. GITHUB MUSIC
+      const audio = document.getElementById('ambientAudio');
+
+      let playlist = [{
+        name: 'SchoolFriends Chill Beat',
+        url: 'https://assets.mixkit.co/music/preview/mixkit-chill-bro-494.mp3'
+      }];
+
+      let currentTrack = 0;
+
+      async function fetchGitHubSongs(repo) {
+        try {
+          const res = await fetch(`https://api.github.com/repos/${repo}/contents`);
+
+          if (res.ok) {
+            const files = await res.json();
+
+            const songs = files
+              .filter(f => /\.(mp3|ogg|wav|m4a)$/i.test(f.name))
+              .map(f => ({
+                name: f.name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' '),
+                url: f.download_url || `https://raw.githubusercontent.com/${repo}/main/${f.name}`
+              }));
+
+            if (songs.length) {
+              playlist = songs;
+              currentTrack = 0;
+            }
+          }
+
+          const status = document.getElementById('ghMusicStatusText');
+          if (status) {
+            status.innerHTML = '<i class="fa-solid fa-circle-check"></i> Connected to Schoolfriendsmusic repo.';
+          }
+        } catch (e) {
+          const status = document.getElementById('ghMusicStatusText');
+          if (status) {
+            status.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Could not sync GitHub music. Using fallback track.';
+          }
+        }
+
+        renderPlaylist();
+        updateTrackName();
+      }
+
+      function renderPlaylist() {
+        const list = document.getElementById('playlistItemsContainer');
+        if (!list) return;
+
+        list.innerHTML = '';
+
+        playlist.forEach((tr, i) => {
+          const d = document.createElement('div');
+          d.className = `playlist-track ${i === currentTrack ? 'playing' : ''}`;
+
+          const icon = document.createElement('i');
+          icon.className = 'fa-solid fa-music';
+
+          const span = document.createElement('span');
+          span.textContent = tr.name;
+
+          d.append(icon, span);
+
+          d.onclick = () => {
+            playTrack(i);
+            document.getElementById('playlistModal')?.classList.add('hidden');
+          };
+
+          list.appendChild(d);
+        });
+      }
+
+      function updateTrackName() {
+        const el = document.getElementById('mTrackName');
+        if (el && playlist[currentTrack]) el.textContent = playlist[currentTrack].name;
+      }
+
+      function updatePlayIcon() {
+        const icon = document.getElementById('mPlayIcon');
+        if (!icon) return;
+        icon.className = audio && !audio.paused
+          ? 'fa-solid fa-pause'
+          : 'fa-solid fa-play';
+      }
+
+      function playTrack(i) {
+        if (!audio || !playlist.length) return;
+
+        currentTrack = (i + playlist.length) % playlist.length;
+        audio.src = playlist[currentTrack].url;
+
+        audio.play().then(updatePlayIcon).catch(() => {
+          updatePlayIcon();
+        });
+
+        updateTrackName();
+        renderPlaylist();
+      }
+
+      document.getElementById('mPlayBtn')?.addEventListener('click', () => {
+        if (!audio.src) {
+          playTrack(0);
+        } else if (audio.paused) {
+          audio.play().then(updatePlayIcon).catch(() => {});
+        } else {
+          audio.pause();
+          updatePlayIcon();
+        }
+      });
+
+      document.getElementById('mNextBtn')?.addEventListener('click', () => playTrack(currentTrack + 1));
+      document.getElementById('mPrevBtn')?.addEventListener('click', () => playTrack(currentTrack - 1));
+
+      audio?.addEventListener('ended', () => playTrack(currentTrack + 1));
+
+      document.getElementById('mPlaylistBtn')?.addEventListener('click', () => {
+        renderPlaylist();
+        document.getElementById('playlistModal')?.classList.remove('hidden');
+      });
+
+      document.getElementById('playlistRefreshBtn')?.addEventListener('click', () => {
+        const repo = document.getElementById('ghRepoInput')?.value.trim()
+          || 'mukhopadhyaysudip3/Schoolfriendsmusic';
+        fetchGitHubSongs(repo);
+      });
+
+      document.getElementById('syncGhMusicBtn')?.addEventListener('click', () => {
+        const repo = document.getElementById('ghRepoInput')?.value.trim()
+          || 'mukhopadhyaysudip3/Schoolfriendsmusic';
+        fetchGitHubSongs(repo);
+      });
+
+      const volume = document.getElementById('mVolume');
+      if (volume && audio) {
+        audio.volume = Number(volume.value) / 100;
+        volume.addEventListener('input', () => {
+          audio.volume = Number(volume.value) / 100;
+        });
+      }
+
+      document.getElementById('mMuteBtn')?.addEventListener('click', () => {
+        if (!audio) return;
+        audio.muted = !audio.muted;
+        const icon = document.querySelector('#mMuteBtn i');
+        if (icon) {
+          icon.className = audio.muted
+            ? 'fa-solid fa-volume-xmark'
+            : 'fa-solid fa-volume-high';
+        }
+      });
+
+      fetchGitHubSongs('mukhopadhyaysudip3/Schoolfriendsmusic');
+
+      // 5. DM USER SWITCHING
+      const dmButtons = document.querySelectorAll('.dm-user-btn');
+
+      function openDM(user) {
+        dmButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.getAttribute('data-dm') === user);
+        });
+
+        const initial = user.charAt(0).toUpperCase();
+
+        const headerInitial = document.getElementById('dmHeaderInitial');
+        const headerName = document.getElementById('dmHeaderName');
+        const partner = document.getElementById('dmPartnerText');
+
+        if (headerInitial) headerInitial.textContent = initial;
+        if (headerName) headerName.textContent = user;
+        if (partner) partner.textContent = user;
+      }
+
+      dmButtons.forEach(btn => {
+        btn.addEventListener('click', () => openDM(btn.getAttribute('data-dm')));
+      });
+
+      document.querySelectorAll('.home-dm-quick').forEach(btn => {
+        btn.addEventListener('click', () => {
+          openDM(btn.getAttribute('data-user'));
+          switchTab('dm');
+        });
+      });
+
+      // 6. DM MESSAGE SENDING
+      document.getElementById('dmForm')?.addEventListener('submit', e => {
+        e.preventDefault();
+
+        const input = document.getElementById('dmInput');
+        const feed = document.getElementById('dmFeed');
+
+        if (!input || !feed) return;
+
+        const text = input.value.trim();
+        if (!text) return;
+
+        const message = document.createElement('div');
+        message.className = 'dm-message mine';
+        message.textContent = text;
+
+        feed.appendChild(message);
+        input.value = '';
+        feed.scrollTop = feed.scrollHeight;
+      });
+
+      // 7. MAIN CHAT MESSAGE SENDING
+      const msgInput = document.getElementById('msg');
+      const feed = document.getElementById('feed');
+
+      function sendMainMessage() {
+        if (!msgInput || !feed) return;
+
+        const text = msgInput.value.trim();
+        if (!text) return;
+
+        const message = document.createElement('div');
+        message.className = 'chat-message';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'chat-avatar';
+        avatar.textContent = 'Y';
+
+        const body = document.createElement('div');
+
+        const name = document.createElement('strong');
+        name.textContent = 'You';
+
+        const p = document.createElement('p');
+        p.textContent = text;
+
+        body.append(name, p);
+        message.append(avatar, body);
+        feed.appendChild(message);
+
+        msgInput.value = '';
+        feed.scrollTop = feed.scrollHeight;
+      }
+
+      document.getElementById('sendBtn')?.addEventListener('click', sendMainMessage);
+
+      msgInput?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sendMainMessage();
+        }
+      });
+
+      // 8. EMOJI POPUP
+      document.getElementById('emojiBtn')?.addEventListener('click', () => {
+        document.getElementById('pop')?.classList.toggle('hidden');
+      });
+
+      document.querySelectorAll('#pop [data-e]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!msgInput) return;
+          msgInput.value += btn.getAttribute('data-e');
+          msgInput.focus();
+          document.getElementById('pop')?.classList.add('hidden');
+        });
+      });
+
+      // 9. IMAGE PREVIEW
+      const imgIn = document.getElementById('imgIn');
+
+      imgIn?.addEventListener('change', () => {
+        const file = imgIn.files?.[0];
+        const preview = document.getElementById('prev');
+        const previewImg = document.getElementById('prevImg');
+
+        if (!file || !preview || !previewImg) return;
+
+        const reader = new FileReader();
+
+        reader.onload = e => {
+          previewImg.src = e.target.result;
+          previewImg.style.maxWidth = '160px';
+          previewImg.style.maxHeight = '100px';
+          previewImg.style.borderRadius = '8px';
+          preview.classList.remove('hidden');
+        };
+
+        reader.readAsDataURL(file);
+      });
+
+      document.getElementById('rmImg')?.addEventListener('click', () => {
+        if (imgIn) imgIn.value = '';
+        document.getElementById('prev')?.classList.add('hidden');
+      });
+
+      // 10. MODALS CLOSE
+      document.querySelectorAll('[data-close]').forEach(b => {
+        b.addEventListener('click', () => {
+          b.closest('.modal')?.classList.add('hidden');
+        });
+      });
+
+      document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', e => {
+          if (e.target === modal) modal.classList.add('hidden');
+        });
+      });
+
+      // 11. START ON CHAT
+      switchTab('chat');
+    });
+  </script>
+</body>
+</html>
