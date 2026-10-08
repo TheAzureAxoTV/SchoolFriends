@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SchoolFriends</title>
+  <meta name="description" content="A private hangout for your crew to chat, share, and catch up with a chill winter frosted UI.">
+  <meta name="theme-color" content="#0a1428">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231a4d6d'/%3E%3Cstop offset='50%25' stop-color='%232ba8ff'/%3E%3Cstop offset='100%25' stop-color='%23f0f8ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='48' height='48' rx='14' fill='%230a1428' stroke='%232ba8ff' stroke-width='1.5'/%3E%3Cpath d='M24 10v28M10 24h28M14 14l20 20M34 14L14 34' stroke='url(%23g)' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='24' r='3' fill='%23f0f8ff'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0a1428;
+      --bg2: #0f1d38;
+      --panel: #13243f;
+      --line: rgba(240, 248, 255, 0.10);
+      --frost: #f0f8ff;
+      --ice: #9ad7ff;
+      --accent: #2ba8ff;
+      --teal: #1a4d6d;
+      --online: #4dd9ff;
+      --offline: #556b82;
+      --away: #ffd24d;
+      --danger: #ff5277;
+      --grad: linear-gradient(135deg, #1a4d6d 0%, #2ba8ff 60%, #b8e6ff 100%);
+      --grad-panel: linear-gradient(145deg, rgba(19, 36, 63, 0.95), rgba(15, 29, 56, 0.95));
+      --user-accent: #2ba8ff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      background: var(--bg);
+      color: var(--frost);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+      background: none;
+      border: none;
+      outline: none;
+    }
+
+    button { cursor: pointer; user-select: none; }
+    img { display: block; max-width: 100%; object-fit: cover; }
+    .hidden { display: none !important; }
+
+    /* Snowfall CSS */
+    .snow-container {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 1000;
+      overflow: hidden;
+    }
+    body.no-snow .snow-container { display: none !important; }
+    .snowflake {
+      position: absolute;
+      top: -20px;
+      color: var(--frost);
+      opacity: 0.6;
+      user-select: none;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.7; }
+      50% { transform: translateY(50vh) translateX(15px) rotate(180deg); opacity: 0.8; }
+      100% { transform: translateY(105vh) translateX(-15px) rotate(360deg); opacity: 0.1; }
+    }
+
+    /* Auth Screen */
+    #auth {
+      position: fixed; inset: 0;
+      z-index: 500;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: radial-gradient(circle at 50% 30%, #102448 0%, #070d1a 80%);
+      padding: 20px; text-align: center;
+    }
+    .auth-card {
+      width: 100%; max-width: 410px;
+      background: var(--panel);
+      border: 1px solid rgba(43, 168, 255, 0.3);
+      border-radius: 22px;
+      padding: 36px 28px;
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6);
+      animation: authRise 350ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes authRise {
+      from { opacity: 0.3; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .auth-ice-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px;
+      background: rgba(43, 168, 255, 0.15);
+      border: 1px solid rgba(43, 168, 255, 0.3);
+      border-radius: 99px;
+      font-size: 11px; font-weight: 700; color: var(--ice);
+      letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .auth-card h1 { font-size: 26px; font-weight: 800; color: #ffffff; margin-bottom: 8px; }
+    .auth-card p.sub { font-size: 14px; line-height: 1.45; color: var(--ice); opacity: 0.8; margin-bottom: 24px; }
+    #gBtn {
+      width: 100%; height: 48px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+      background: #ffffff; color: #1a202c;
+      font-weight: 600; font-size: 14px;
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      transition: transform 160ms ease;
+    }
+    #gBtn:hover { transform: translateY(-2px); }
+    #gBtn:active { transform: scale(0.98); }
+    .auth-toggle {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-top: 20px; font-size: 13px; color: var(--ice); cursor: pointer;
+    }
+    .auth-toggle input { display: none; }
+    .switch-track {
+      width: 38px; height: 22px; background: #182e56;
+      border: 1px solid var(--line); border-radius: 99px;
+      position: relative; transition: background 200ms ease; flex-shrink: 0;
+    }
+    .switch-thumb {
+      width: 16px; height: 16px; background: #ffffff; border-radius: 50%;
+      position: absolute; top: 2px; left: 3px;
+      transition: transform 200ms ease;
+    }
+    .auth-toggle input:checked + .switch-track { background: var(--accent); border-color: var(--accent); }
+    .auth-toggle input:checked + .switch-track .switch-thumb { transform: translateX(16px); }
+    #authMsg { margin-top: 14px; min-height: 18px; font-size: 12px; color: var(--danger); font-weight: 500; }
+    .auth-legal { margin-top: 16px; font-size: 12px; color: var(--offline); line-height: 1.4; }
+    #ver { margin-top: 10px; font-size: 11px; color: var(--offline); opacity: 0.8; }
+
+    /* Main App Layout */
+    #app {
+      display: flex; flex-direction: column;
+      height: 100vh; height: 100dvh; width: 100%;
+      position: fixed; inset: 0; overflow: hidden; background: var(--bg);
+    }
+
+    /* Top Navbar */
+    header.top-nav {
+      height: 58px; background: var(--bg2);
+      border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; z-index: 100; flex-shrink: 0;
+    }
+    .nav-left { display: flex; align-items: center; gap: 16px; }
+    .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; cursor: pointer; }
+    .brand-icon {
+      width: 34px; height: 34px; background: var(--grad);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      color: #ffffff; font-size: 16px; box-shadow: 0 0 12px rgba(43, 168, 255, 0.4);
+    }
+    .wordmark { font-size: 18px; letter-spacing: -0.03em; display: inline-flex; align-items: center; }
+    .wordmark .w1 { color: #ffffff; font-weight: 700; }
+    .wordmark .w2 {
+      background: linear-gradient(135deg, #2ba8ff 0%, #b8e6ff 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      font-weight: 800; margin-left: 2px;
+    }
+
+    /* Nav Tabs */
+    .nav-tabs { display: flex; align-items: center; gap: 4px; }
+    .nav-tab {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 14px; border-radius: 12px;
+      color: var(--ice); opacity: 0.8; font-size: 13px; font-weight: 500;
+      transition: all 180ms ease; border: 1px solid transparent;
+    }
+    .nav-tab:hover { opacity: 1; color: #ffffff; background: rgba(43, 168, 255, 0.12); }
+    .nav-tab.active {
+      opacity: 1; color: #ffffff;
+      background: rgba(43, 168, 255, 0.2);
+      border: 1px solid rgba(43, 168, 255, 0.45);
+      box-shadow: 0 0 12px rgba(43, 168, 255, 0.2);
+      font-weight: 600;
+    }
+
+    /* Nav Right Side */
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+
+    /* Music Mini Player */
+    .music-bar {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(19, 36, 63, 0.8);
+      border: 1px solid var(--line); border-radius: 99px;
+      padding: 4px 12px; font-size: 12px; color: var(--ice);
+    }
+    .music-play-btn {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(43, 168, 255, 0.2); color: var(--online);
+      display: flex; align-items: center; justify-content: center; font-size: 11px;
+    }
+    .music-play-btn:hover { background: var(--accent); color: #fff; }
+    .music-track { font-weight: 600; color: var(--frost); font-size: 12px; max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vol-slider { width: 60px; accent-color: var(--accent); height: 4px; cursor: pointer; }
+
+    /* Online Badge */
+    .online-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 10px; background: rgba(77, 217, 255, 0.1);
+      border: 1px solid rgba(77, 217, 255, 0.25); border-radius: 99px;
+      font-size: 12px; font-weight: 600; color: var(--online);
+    }
+    .glow-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--online); box-shadow: 0 0 8px var(--online);
+    }
+
+    /* User Profile Avatar in Nav */
+    .nav-user-av {
+      position: relative; width: 36px; height: 36px;
+      border-radius: 50%; overflow: hidden; cursor: pointer;
+      border: 1.5px solid var(--accent); box-shadow: 0 0 10px rgba(43, 168, 255, 0.3);
+    }
+    .nav-user-av img { width: 100%; height: 100%; }
+
+    /* Body Container */
+    .app-body { flex: 1; display: flex; width: 100%; overflow: hidden; position: relative; }
+    .tab-content { flex: 1; display: none; flex-direction: column; height: 100%; overflow: hidden; }
+    .tab-content.active { display: flex; }
+
+    /* TAB 1: HOME */
+    .home-container {
+      flex: 1; overflow-y: auto; padding: 20px;
+      display: flex; flex-direction: column; gap: 20px; max-width: 1000px; margin: 0 auto; width: 100%;
+    }
+    .home-container::-webkit-scrollbar { width: 6px; }
+    .home-container::-webkit-scrollbar-thumb { background: rgba(43, 168, 255, 0.2); border-radius: 3px; }
+
+    .banner-card {
+      width: 100%; min-height: 140px; border-radius: 20px;
+      background: var(--grad); padding: 24px;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      position: relative; overflow: hidden; border: 1px solid rgba(240, 248, 255, 0.2);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    .banner-card-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(10, 20, 40, 0.85) 0%, transparent 100%);
+    }
+    .banner-content { position: relative; z-index: 2; }
+    .banner-title { font-size: 22px; font-weight: 800; color: #ffffff; margin-bottom: 4px; }
+    .banner-text { font-size: 14px; color: var(--ice); max-width: 600px; }
+
+    .section-title { font-size: 15px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .online-grid { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+    .online-chip {
+      display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+      cursor: pointer; flex-shrink: 0; transition: border-color 160ms ease;
+    }
+    .online-chip:hover { border-color: var(--accent); }
+    .online-chip-av { position: relative; width: 32px; height: 32px; border-radius: 50%; }
+    .online-chip-av img { width: 100%; height: 100%; border-radius: 50%; }
+    .online-chip-dot {
+      position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+      border-radius: 50%; border: 2px solid var(--panel);
+    }
+
+    .home-feed { display: flex; flex-direction: column; gap: 10px; }
+
+    /* TAB 2: SCHOOLCHAT */
+    .chat-layout { flex: 1; display: flex; flex-direction: column; height: 100%; position: relative; overflow: hidden; }
+    #feed { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    #feed::-webkit-scrollbar { width: 6px; }
+    #feed::-webkit-scrollbar-thumb { background: rgba(43, 168, 255, 0.2); border-radius: 3px; }
+
+    /* Message Bubbles */
+    .m { position: relative; display: flex; gap: 12px; padding: 4px 8px; border-radius: 14px; }
+    .m:hover { background: rgba(43, 168, 255, 0.04); }
+    .m-av { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(43, 168, 255, 0.3); cursor: pointer; }
+    .m-body { max-width: 80%; display: flex; flex-direction: column; align-items: flex-start; background: var(--panel); padding: 10px 16px; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .m.mine { flex-direction: row-reverse; }
+    .m.mine .m-av { display: none; }
+    .m.mine .m-body {
+      align-items: flex-end;
+      background: var(--user-accent, var(--grad));
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 18px 4px 18px 18px;
+    }
+    .m-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .m-name { font-size: 13px; font-weight: 700; color: #ffffff; cursor: pointer; }
+    .m-time { font-size: 11px; color: var(--offline); }
+
+    /* Role Badges */
+    .rb { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.04em; }
+    .rb.owner { background: rgba(255, 210, 77, 0.2); color: #ffd24d; border: 1px solid rgba(255, 210, 77, 0.4); }
+    .rb.admin { background: rgba(43, 168, 255, 0.22); color: #79ccff; border: 1px solid rgba(43, 168, 255, 0.45); }
+    .rb.mod { background: rgba(77, 217, 255, 0.2); color: #4dd9ff; border: 1px solid rgba(77, 217, 255, 0.4); }
+    .rb.student { background: rgba(184, 230, 255, 0.15); color: #b8e6ff; border: 1px solid rgba(184, 230, 255, 0.3); }
+
+    .m-text { font-size: 14px; line-height: 1.45; word-break: break-word; color: var(--frost); }
+    .m-img { margin-top: 8px; max-width: 320px; max-height: 240px; border-radius: 12px; border: 1px solid rgba(43, 168, 255, 0.3); cursor: pointer; }
+
+    /* Message Toolbar */
+    .tb {
+      position: absolute; right: 16px; top: -12px;
+      display: flex; gap: 2px; background: var(--bg2);
+      border: 1px solid var(--line); border-radius: 8px; padding: 2px;
+      opacity: 0; pointer-events: none; transition: opacity 160ms ease; z-index: 10;
+    }
+    .m:hover .tb { opacity: 1; pointer-events: auto; }
+    .m.mine .tb { right: auto; left: 16px; }
+    .tb button { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--ice); font-size: 12px; }
+    .tb button:hover { background: rgba(43, 168, 255, 0.2); color: #ffffff; }
+
+    /* Chat Composer */
+    .chat-bottom { padding: 12px 16px; flex-shrink: 0; background: var(--bg2); border-top: 1px solid var(--line); }
+    #rbar, #prev {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+      padding: 6px 12px; margin-bottom: 8px; font-size: 12px; color: var(--ice);
+    }
+    .composer-wrap {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--panel); border: 1px solid rgba(43, 168, 255, 0.25);
+      border-radius: 16px; padding: 6px 12px;
+    }
+    .composer-wrap input { flex: 1; padding: 8px 0; font-size: 14px; color: #ffffff; }
+    .comp-btn { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; }
+    .comp-btn:hover { background: rgba(43, 168, 255, 0.15); color: #ffffff; }
+
+    /* TAB 3: 1-TO-1 DMs */
+    .dm-layout { flex: 1; display: flex; width: 100%; height: 100%; overflow: hidden; }
+    .dm-sidebar { width: 280px; background: var(--bg2); border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+    .dm-search { padding: 12px; border-bottom: 1px solid var(--line); }
+    .dm-search input { width: 100%; padding: 8px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; font-size: 13px; color: #fff; }
+    .dm-user-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .dm-user-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      border-bottom: 1px solid rgba(240, 248, 255, 0.05); cursor: pointer; transition: background 150ms ease;
+    }
+    .dm-user-row:hover, .dm-user-row.active { background: rgba(43, 168, 255, 0.15); }
+    .dm-user-av { position: relative; width: 38px; height: 38px; border-radius: 50%; }
+    .dm-user-av img { width: 100%; height: 100%; border-radius: 50%; }
+    .dm-main { flex: 1; display: flex; flex-direction: column; height: 100%; background: var(--bg); }
+    #dmFeed { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+
+    /* TAB 4: SETTINGS */
+    .settings-container {
+      flex: 1; overflow-y: auto; padding: 24px; max-width: 600px; margin: 0 auto; width: 100%;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .setting-card {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .setting-info h3 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .setting-info p { font-size: 12px; color: var(--offline); }
+
+    /* TAB 5: ADMIN */
+    .admin-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .admin-nav { display: flex; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+    .admin-tab-btn { padding: 8px 16px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-weight: 600; color: var(--ice); }
+    .admin-tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .admin-subtab { display: none; flex-direction: column; gap: 16px; }
+    .admin-subtab.active { display: flex; }
+
+    /* PROFILE MODAL */
+    #profModal {
+      position: fixed; inset: 0; z-index: 600;
+      background: rgba(3, 8, 18, 0.8); backdrop-filter: none;
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .prof-card {
+      width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto;
+      background: var(--panel); border: 1px solid rgba(43, 168, 255, 0.35);
+      border-radius: 22px; box-shadow: 0 16px 36px rgba(0,0,0,0.7);
+      position: relative; display: flex; flex-direction: column;
+    }
+    .prof-banner-wrap {
+      width: 100%; height: 130px; position: relative; background: var(--grad);
+      border-radius: 22px 22px 0 0; overflow: hidden; cursor: pointer;
+    }
+    .prof-banner-wrap img { width: 100%; height: 100%; }
+    .prof-banner-upload-hint {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.3);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 12px; font-weight: 600; opacity: 0; transition: opacity 160ms;
+    }
+    .prof-banner-wrap:hover .prof-banner-upload-hint { opacity: 1; }
+
+    .prof-header-row {
+      position: relative; padding: 0 20px; display: flex; align-items: flex-end;
+      justify-content: space-between; margin-top: -40px; margin-bottom: 12px;
+    }
+    .prof-avatar-wrap {
+      position: relative; width: 80px; height: 80px; border-radius: 50%;
+      border: 4px solid var(--panel); overflow: hidden; background: var(--bg2); cursor: pointer;
+    }
+    .prof-avatar-wrap img { width: 100%; height: 100%; }
+
+    .prof-body { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+    .prof-field { display: flex; flex-direction: column; gap: 6px; }
+    .prof-field label { font-size: 11px; font-weight: 700; color: var(--ice); text-transform: uppercase; letter-spacing: 0.06em; }
+    .prof-input, .prof-select, .prof-textarea {
+      width: 100%; padding: 10px 12px; background: var(--bg2);
+      border: 1px solid var(--line); border-radius: 12px; color: #fff; font-size: 13px;
+    }
+    .prof-input:focus, .prof-select:focus, .prof-textarea:focus { border-color: var(--accent); }
+
+    /* Status dot indicator in modal */
+    .status-select-wrap { display: flex; align-items: center; gap: 10px; }
+    .modal-status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--online); flex-shrink: 0; }
+
+    /* Quick status buttons */
+    .quick-status-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .quick-status-btn {
+      padding: 4px 10px; background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line); border-radius: 99px;
+      font-size: 11px; color: var(--ice); transition: all 140ms ease;
+    }
+    .quick-status-btn:hover { background: rgba(43, 168, 255, 0.2); color: #fff; border-color: var(--accent); }
+
+    /* Color Swatches */
+    .color-swatches { display: flex; gap: 10px; }
+    .swatch {
+      width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent; transition: transform 140ms ease;
+    }
+    .swatch:hover { transform: scale(1.15); }
+    .swatch.selected { border-color: #ffffff; box-shadow: 0 0 10px currentColor; }
+
+    /* Badges & Info Row */
+    .prof-info-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px;
+      font-size: 12px; color: var(--ice);
+    }
+
+    /* Social Links Chips */
+    .social-chips-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .social-chip {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+      background: rgba(43, 168, 255, 0.12); border: 1px solid rgba(43, 168, 255, 0.3);
+      border-radius: 8px; font-size: 12px; color: #b8e6ff; text-decoration: none; cursor: pointer;
+    }
+    .social-chip:hover { background: var(--accent); color: #fff; }
+
+    /* Profile Modal Save Button */
+    .btn-primary {
+      width: 100%; height: 44px; background: var(--grad);
+      border-radius: 14px; font-weight: 700; color: #fff; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 14px rgba(43, 168, 255, 0.3); transition: transform 140ms ease;
+    }
+    .btn-primary:active { transform: scale(0.98); }
+
+    /* CONSOLE MODAL */
+    #consoleModal {
+      position: fixed; inset: 0; z-index: 700;
+      background: rgba(3, 8, 18, 0.85); display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .console-win {
+      width: 100%; max-width: 680px; height: 450px;
+      background: #050b14; border: 1px solid #2ba8ff; border-radius: 16px;
+      display: flex; flex-direction: column; overflow: hidden; font-family: 'JetBrains Mono', monospace;
+    }
+    .console-head {
+      height: 38px; background: #0a1428; border-bottom: 1px solid rgba(43, 168, 255, 0.3);
+      padding: 0 14px; display: flex; align-items: center; justify-content: space-between;
+      font-size: 12px; color: var(--accent); font-weight: 600;
+    }
+    #consoleOutput { flex: 1; overflow-y: auto; padding: 12px; font-size: 12px; color: #a0c0e0; display: flex; flex-direction: column; gap: 4px; }
+    .console-input-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #08101e; border-top: 1px solid rgba(43, 168, 255, 0.2); }
+    .console-prompt { color: var(--accent); font-weight: 700; font-size: 13px; }
+    #consoleInput { flex: 1; color: #fff; font-size: 12px; }
+
+    /* Toasts */
+    #toastContainer {
+      position: fixed; bottom: 20px; right: 20px; z-index: 999;
+      display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      padding: 10px 18px; background: var(--panel); border: 1px solid var(--accent);
+      border-radius: 12px; color: #fff; font-size: 13px; font-weight: 600;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5); pointer-events: auto;
+      animation: toastIn 200ms ease;
+    }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <!-- Fallback Message if app.js fails -->
+  <div id="appFallback" class="hidden" style="position:fixed; inset:0; background:#0a1428; color:#ff5277; display:flex; align-items:center; justify-content:center; text-align:center; padding:20px; z-index:9999; font-weight:600;">
+    The app couldn't start. Refresh or clear your browser cache.
+  </div>
+
+  <!-- Snowfall Background -->
+  <div class="snow-container" id="snowContainer">
+    <div class="snowflake" style="left:5%; font-size:10px; animation-duration:9s; animation-delay:0s;">❄</div>
+    <div class="snowflake" style="left:12%; font-size:14px; animation-duration:12s; animation-delay:2s;">❅</div>
+    <div class="snowflake" style="left:20%; font-size:8px; animation-duration:8s; animation-delay:4s;">❆</div>
+    <div class="snowflake" style="left:28%; font-size:12px; animation-duration:14s; animation-delay:1s;">❄</div>
+    <div class="snowflake" style="left:35%; font-size:9px; animation-duration:10s; animation-delay:3s;">❅</div>
+    <div class="snowflake" style="left:42%; font-size:13px; animation-duration:11s; animation-delay:5s;">❆</div>
+    <div class="snowflake" style="left:50%; font-size:11px; animation-duration:13s; animation-delay:0.5s;">❄</div>
+    <div class="snowflake" style="left:58%; font-size:15px; animation-duration:15s; animation-delay:2.5s;">❅</div>
+    <div class="snowflake" style="left:65%; font-size:8px; animation-duration:9s; animation-delay:4.5s;">❆</div>
+    <div class="snowflake" style="left:73%; font-size:12px; animation-duration:12s; animation-delay:1.5s;">❄</div>
+    <div class="snowflake" style="left:80%; font-size:10px; animation-duration:10s; animation-delay:3.5s;">❅</div>
+    <div class="snowflake" style="left:88%; font-size:14px; animation-duration:13s; animation-delay:2s;">❆</div>
+    <div class="snowflake" style="left:95%; font-size:9px; animation-duration:11s; animation-delay:4s;">❄</div>
+  </div>
+
+  <!-- Audio Element for Ambient Chill Track -->
+  <audio id="bgMusic" loop preload="auto">
+    <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=chill-ambient-11322.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- AUTH SCREEN -->
+  <div id="auth">
+    <div class="auth-card">
+      <div class="auth-ice-badge"><i class="fa-solid fa-snowflake"></i> Private Hangout</div>
+      <h1>SchoolFriends</h1>
+      <p class="sub">Your private crew hangout. Chat, share memories, and vibe together.</p>
+
+      <button id="gBtn">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.15C3.26 21.39 7.37 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.24C.45 8.15 0 9.99 0 12s.45 3.85 1.24 5.42l4.04-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.61 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
+        Sign in with Google
+      </button>
+
+      <label class="auth-toggle">
+        <input type="checkbox" id="staySigned" checked>
+        <div class="switch-track"><div class="switch-thumb"></div></div>
+        <span>Stay signed in</span>
+      </label>
+
+      <div id="authMsg"></div>
+      <div class="auth-legal">By continuing, you agree to the House Rules.</div>
+      <div id="ver">v1 | app running</div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="app" class="hidden">
+    <!-- Top Navbar -->
+    <header class="top-nav">
+      <div class="nav-left">
+        <div class="nav-brand" id="brandHomeBtn">
+          <div class="brand-icon"><i class="fa-solid fa-snowflake"></i></div>
+          <div class="wordmark"><span class="w1">School</span><span class="w2">Friends</span></div>
+        </div>
+
+        <nav class="nav-tabs">
+          <button class="nav-tab active" data-tab="home"><i class="fa-solid fa-house"></i> <span>Home</span></button>
+          <button class="nav-tab" data-tab="schoolchat"><i class="fa-solid fa-comments"></i> <span>SchoolChat</span></button>
+          <button class="nav-tab" data-tab="dms"><i class="fa-solid fa-user-group"></i> <span>1-to-1</span></button>
+          <button class="nav-tab" data-tab="settings"><i class="fa-solid fa-gear"></i> <span>Settings</span></button>
+          <button class="nav-tab hidden" data-tab="admin" id="adminTabBtn"><i class="fa-solid fa-shield-halved"></i> <span>Admin</span></button>
+        </nav>
+      </div>
+
+      <div class="nav-right">
+        <!-- Mini Music Player -->
+        <div class="music-bar">
+          <button class="music-play-btn" id="musicPlayBtn"><i class="fa-solid fa-play"></i></button>
+          <span class="music-track" id="musicTrack">Winter Ambient</span>
+          <input type="range" class="vol-slider" id="volSlider" min="0" max="1" step="0.05" value="0.25">
+          <button id="musicMuteBtn" style="color:var(--ice);"><i class="fa-solid fa-volume-high"></i></button>
+        </div>
+
+        <!-- Online Counter -->
+        <div class="online-badge">
+          <div class="glow-dot"></div>
+          <span id="onlineCounter">1 online</span>
+        </div>
+
+        <!-- User Avatar -->
+        <div class="nav-user-av" id="navUserAv" title="Edit Profile">
+          <img id="navAvImg" src="https://api.dicebear.com/7.x/bottts/svg?seed=SF" alt="User Avatar">
+        </div>
+      </div>
+    </header>
+
+    <!-- App Body Containers -->
+    <div class="app-body">
+      <!-- TAB 1: HOME -->
+      <div class="tab-content active" id="tabHome">
+        <div class="home-container">
+          <!-- Banner Card -->
+          <div class="banner-card" id="homeBanner">
+            <div class="banner-card-overlay"></div>
+            <div class="banner-content">
+              <h2 class="banner-title" id="bannerTitle">Welcome to SchoolFriends</h2>
+              <p class="banner-text" id="bannerText">The private hangout spot for the crew. Catch up, share photos, and hang out.</p>
+            </div>
+          </div>
+
+          <!-- Online Friends Grid -->
+          <div>
+            <div class="section-title"><i class="fa-solid fa-circle-nodes" style="color:var(--online);"></i> Online Friends</div>
+            <div class="online-grid" id="onlineFriendsGrid">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Recent Activity Feed -->
+          <div>
+            <div class="section-title"><i class="fa-solid fa-bolt" style="color:var(--accent);"></i> Recent Activity</div>
+            <div class="home-feed" id="homeFeed">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: SCHOOLCHAT -->
+      <div class="tab-content" id="tabSchoolchat">
+        <div class="chat-layout">
+          <div id="feed">
+            <!-- Messages rendered via JS -->
+          </div>
+
+          <!-- Chat Bottom Area -->
+          <div class="chat-bottom">
+            <div id="rbar" class="hidden">
+              <span id="rbarText">Replying to message...</span>
+              <button id="rmReply"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div id="prev" class="hidden">
+              <img id="prevImg" src="" alt="Preview">
+              <span id="prevText">Image attached</span>
+              <button id="rmImg"><i class="fa-solid fa-trash"></i></button>
+            </div>
+
+            <div class="composer-wrap">
+              <label for="imgUploadInput" title="Attach Image"><i class="fa-solid fa-paperclip"></i></label>
+              <input type="file" id="imgUploadInput" accept="image/*" class="hidden">
+
+              <input type="text" id="msg" placeholder="Send a message to SchoolFriends..." autocomplete="off">
+
+              <button class="comp-btn" id="sendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: 1-TO-1 DMs -->
+      <div class="tab-content" id="tabDms">
+        <div class="dm-layout">
+          <div class="dm-sidebar">
+            <div class="dm-search">
+              <input type="text" id="dmSearch" placeholder="Search friends...">
+            </div>
+            <div class="dm-user-list" id="dmUserList">
+              <!-- Friends list rendered via JS -->
+            </div>
+          </div>
+
+          <div class="dm-main">
+            <div style="height:50px; border-bottom:1px solid var(--line); display:flex; align-items:center; padding:0 16px; background:var(--bg2);">
+              <h3 id="dmTargetName" style="font-size:15px; font-weight:700; color:#fff;">Select a friend to DM</h3>
+            </div>
+
+            <div id="dmFeed">
+              <!-- DM messages rendered via JS -->
+            </div>
+
+            <div class="chat-bottom">
+              <div class="composer-wrap">
+                <input type="text" id="dmMsg" placeholder="Send a private message..." autocomplete="off">
+                <button class="comp-btn" id="dmSendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: SETTINGS -->
+      <div class="tab-content" id="tabSettings">
+        <div class="settings-container">
+          <h2 style="font-size:20px; font-weight:800; color:#fff; margin-bottom:10px;">Settings</h2>
+
+          <div class="setting-card">
+            <div class="setting-info">
+              <h3>Snowfall Effect</h3>
+              <p>Display falling snow in the background</p>
+            </div>
+            <label class="auth-toggle">
+              <input type="checkbox" id="snowToggle" checked>
+              <div class="switch-track"><div class="switch-thumb"></div></div>
+            </label>
+          </div>
+
+          <div class="setting-card">
+            <div class="setting-info">
+              <h3>Ambient Audio</h3>
+              <p>Enable chill background audio and sound effects</p>
+            </div>
+            <label class="auth-toggle">
+              <input type="checkbox" id="musicToggle" checked>
+              <div class="switch-track"><div class="switch-thumb"></div></div>
+            </label>
+          </div>
+
+          <div class="setting-card">
+            <div class="setting-info">
+              <h3>Show Online Status</h3>
+              <p>Allow friends to see when you are active</p>
+            </div>
+            <label class="auth-toggle">
+              <input type="checkbox" id="onlineStatusToggle" checked>
+              <div class="switch-track"><div class="switch-thumb"></div></div>
+            </label>
+          </div>
+
+          <button id="signOutBtn" class="setting-card" style="border-color:var(--danger); color:var(--danger); font-weight:700; justify-content:center;">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 5: ADMIN -->
+      <div class="tab-content" id="tabAdmin">
+        <div class="admin-container">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <h2 style="font-size:20px; font-weight:800; color:#fff;">Admin Console</h2>
+            <button class="admin-tab-btn" id="openConsoleBtn"><i class="fa-solid fa-terminal"></i> Open Terminal</button>
+          </div>
+
+          <div class="admin-nav">
+            <button class="admin-tab-btn active" data-subtab="banners">Banners</button>
+            <button class="admin-tab-btn" data-subtab="users">Users</button>
+            <button class="admin-tab-btn" data-subtab="logs">Logs</button>
+            <button class="admin-tab-btn" data-subtab="stats">Stats</button>
+          </div>
+
+          <!-- Banners Subtab -->
+          <div class="admin-subtab active" id="subtabBanners">
+            <div class="setting-card" style="flex-direction:column; align-items:stretch; gap:12px;">
+              <h3>Set Active Banner</h3>
+              <input type="text" id="adminBannerTitle" class="prof-input" placeholder="Banner Title">
+              <input type="text" id="adminBannerText" class="prof-input" placeholder="Banner Text Description">
+              <button class="btn-primary" id="saveBannerBtn">Save Banner</button>
+            </div>
+          </div>
+
+          <!-- Users Subtab -->
+          <div class="admin-subtab" id="subtabUsers">
+            <input type="text" id="adminUserSearch" class="prof-input" placeholder="Search user by name or email...">
+            <div id="adminUserList" style="display:flex; flex-direction:column; gap:10px;">
+              <!-- Users list rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Logs Subtab -->
+          <div class="admin-subtab" id="subtabLogs">
+            <div id="adminLogsList" style="display:flex; flex-direction:column; gap:8px; font-family:monospace; font-size:12px;">
+              <!-- Admin logs -->
+            </div>
+          </div>
+
+          <!-- Stats Subtab -->
+          <div class="admin-subtab" id="subtabStats">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
+              <div class="setting-card"><div><h3>Online Now</h3><b id="statOnline">1</b></div></div>
+              <div class="setting-card"><div><h3>Total Members</h3><b id="statTotal">1</b></div></div>
+              <div class="setting-card"><div><h3>Messages Today</h3><b id="statMsgs">0</b></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE MODAL -->
+  <div id="profModal" class="hidden">
+    <div class="prof-card">
+      <form id="profForm" onsubmit="return false;">
+        <!-- Banner Image -->
+        <div class="prof-banner-wrap" id="bannerWrap">
+          <img id="bigImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='300' viewBox='0 0 800 300'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%230f2b48'/%3E%3Cstop offset='50%25' stop-color='%231a4d6d'/%3E%3Cstop offset='100%25' stop-color='%230a1428'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='800' height='300' fill='url(%23bg)'/%3E%3Ccircle cx='400' cy='150' r='180' fill='%232ba8ff' opacity='0.15' filter='blur(40px)'/%3E%3Cpath d='M0 220 Q 200 180 400 230 T 800 210 L 800 300 L 0 300 Z' fill='%2313243f' opacity='0.6'/%3E%3C/svg%3E" alt="Banner">
+          <div class="prof-banner-upload-hint"><i class="fa-solid fa-camera"></i> Click to change banner</div>
+          <input type="file" id="bannerInput" accept="image/*" class="hidden">
+        </div>
+
+        <div class="prof-header-row">
+          <!-- Avatar Overlap -->
+          <div class="prof-avatar-wrap" id="avatarWrap">
+            <img id="bigAv" src="https://api.dicebear.com/7.x/bottts/svg?seed=SF" alt="Avatar">
+            <input type="file" id="avInput" accept="image/*" class="hidden">
+          </div>
+
+          <!-- Status Dropdown & Dot -->
+          <div class="status-select-wrap">
+            <div class="modal-status-dot" id="fStatusDot"></div>
+            <select id="fStatus" class="prof-select">
+              <option value="online">Online</option>
+              <option value="away">Away</option>
+              <option value="busy">Busy</option>
+              <option value="dnd">Do Not Disturb</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="prof-body">
+          <!-- Display Name -->
+          <div class="prof-field">
+            <label for="fName">Display Name</label>
+            <input type="text" id="fName" class="prof-input" placeholder="Your name" maxlength="32">
+          </div>
+
+          <!-- User Bio & Quick Buttons -->
+          <div class="prof-field">
+            <label for="fBio">Bio / Status Message</label>
+            <textarea id="fBio" class="prof-textarea" rows="2" placeholder="Say something cool..." maxlength="80"></textarea>
+
+            <div class="quick-status-row">
+              <button type="button" class="quick-status-btn" data-status="Working on the site 🚀">Working on the site 🚀</button>
+              <button type="button" class="quick-status-btn" data-status="AFK">AFK</button>
+              <button type="button" class="quick-status-btn" data-status="In class">In class</button>
+              <button type="button" class="quick-status-btn" data-status="Grinding">Grinding</button>
+              <button type="button" class="quick-status-btn" data-status="Vibing">Vibing</button>
+            </div>
+          </div>
+
+          <!-- Info Row -->
+          <div class="prof-info-row">
+            <span id="profJoinedDate">Joined Jan 2025</span>
+            <span class="rb student" id="profRoleBadge">STUDENT</span>
+            <span id="profFriendCount">1 friend</span>
+          </div>
+
+          <!-- Theme Accent Color -->
+          <div class="prof-field">
+            <label>Chat Accent Color</label>
+            <div class="color-swatches" id="accentSwatches">
+              <div class="swatch selected" data-color="#2ba8ff" style="background:#2ba8ff;"></div>
+              <div class="swatch" data-color="#8b5cf6" style="background:#8b5cf6;"></div>
+              <div class="swatch" data-color="#06b6d4" style="background:#06b6d4;"></div>
+              <div class="swatch" data-color="#0d9488" style="background:#0d9488;"></div>
+              <div class="swatch" data-color="#ec4899" style="background:#ec4899;"></div>
+            </div>
+          </div>
+
+          <!-- Social Links -->
+          <div class="prof-field">
+            <label>Social Links</label>
+            <input type="text" id="fDiscord" class="prof-input" placeholder="Discord username" style="margin-bottom:6px;">
+            <input type="text" id="fGithub" class="prof-input" placeholder="GitHub username" style="margin-bottom:6px;">
+            <input type="text" id="fTwitter" class="prof-input" placeholder="X / Twitter handle">
+          </div>
+
+          <!-- Rendered Chips Display -->
+          <div class="social-chips-row" id="profSocialChips">
+            <!-- Chips rendered dynamically -->
+          </div>
+
+          <!-- Save Button -->
+          <button type="button" id="profSaveBtn" class="btn-primary">
+            <span id="profSaveText">Save Changes</span>
+          </button>
+          <button type="button" id="profCloseBtn" style="color:var(--offline); font-size:12px; text-align:center; padding:6px;">Close</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TERMINAL CONSOLE MODAL -->
+  <div id="consoleModal" class="hidden">
+    <div class="console-win">
+      <div class="console-head">
+        <span><i class="fa-solid fa-terminal"></i> SchoolFriends Terminal Console</span>
+        <button id="closeConsoleBtn" style="color:#ff5277; font-weight:700;">[X]</button>
+      </div>
+      <div id="consoleOutput">
+        <div>Welcome to SchoolFriends Terminal v1.0. Type /help for available commands.</div>
+      </div>
+      <div class="console-input-row">
+        <span class="console-prompt">&gt;</span>
+        <input type="text" id="consoleInput" placeholder="Type a command..." autocomplete="off">
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
+
+  <!-- ES Module Script -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
